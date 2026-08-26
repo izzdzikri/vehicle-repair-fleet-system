@@ -15,6 +15,10 @@
     use App\Http\Controllers\ChatbotController;
     use App\Http\Controllers\AccountRequestController;
     use App\Http\Controllers\ProfileController;
+    use App\Http\Controllers\InvoiceController;
+    use App\Http\Controllers\StaffManagementController;
+    use App\Http\Controllers\SupplierController;
+    use App\Http\Controllers\PurchaseOrderController;
 
     Route::get('/', fn() => redirect('/login'));
     Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->name('chatbot.reply');
@@ -62,6 +66,7 @@
 
     // Appointments (regular + walk-in + complete)
     Route::get('/appointments',                         [AppointmentController::class, 'index'])->name('admin.appointments');
+    Route::get('/appointments/queue',                   [AppointmentController::class, 'queue'])->name('admin.appointments.queue');
     Route::get('/appointments/walkin',                  [AppointmentController::class, 'walkinCreate'])->name('admin.appointments.walkin');
     Route::post('/appointments/walkin',                 [AppointmentController::class, 'walkinStore'])->name('admin.appointments.walkin.store');
     Route::get('/appointments/{appointment}',           [AppointmentController::class, 'show'])->name('admin.appointments.show');
@@ -70,6 +75,7 @@
     Route::patch('/appointments/{appointment}/complete',[AppointmentController::class, 'complete'])->name('admin.appointments.complete');
 
     // Job Cards
+    Route::get('/job-cards/schedule', [JobCardController::class, 'schedule'])->name('admin.job-cards.schedule');
     Route::resource('job-cards', JobCardController::class);
     Route::patch('/job-cards/{jobCard}/stage',    [JobCardController::class, 'updateStage'])->name('job-cards.stage');
     Route::post('/job-cards/{jobCard}/parts',     [JobCardController::class, 'addPart'])->name('job-cards.add-part');
@@ -92,6 +98,28 @@
     Route::get('/maintenance',                  [MaintenanceAlertController::class, 'index'])->name('admin.maintenance');
     Route::post('/maintenance',                 [MaintenanceAlertController::class, 'store'])->name('admin.maintenance.store');
     Route::patch('/maintenance/{alert}/read',   [MaintenanceAlertController::class, 'markRead'])->name('admin.maintenance.read');
+
+    // Invoices & Payments
+    Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('admin.invoices');
+    Route::post('/invoices/generate',            [InvoiceController::class, 'generate'])->name('admin.invoices.generate');
+    Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('admin.invoices.show');
+    Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('admin.invoices.payments');
+
+    // Staff Management — attendance, leave, performance
+    Route::get('/staff-management/attendance',            [StaffManagementController::class, 'attendance'])->name('admin.staff-management.attendance');
+    Route::get('/staff-management/leave',                 [StaffManagementController::class, 'leave'])->name('admin.staff-management.leave');
+    Route::patch('/staff-management/leave/{leaveRequest}/approve', [StaffManagementController::class, 'approveLeave'])->name('admin.staff-management.leave.approve');
+    Route::patch('/staff-management/leave/{leaveRequest}/reject',  [StaffManagementController::class, 'rejectLeave'])->name('admin.staff-management.leave.reject');
+    Route::get('/staff-management/performance',           [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
+
+    // Suppliers & Purchase Orders
+    Route::get('/suppliers',  [SupplierController::class, 'index'])->name('admin.suppliers');
+    Route::post('/suppliers', [SupplierController::class, 'store'])->name('admin.suppliers.store');
+    Route::get('/purchase-orders',                        [PurchaseOrderController::class, 'index'])->name('admin.purchase-orders');
+    Route::post('/purchase-orders',                       [PurchaseOrderController::class, 'store'])->name('admin.purchase-orders.store');
+    Route::patch('/purchase-orders/{purchaseOrder}/order', [PurchaseOrderController::class, 'markOrdered'])->name('admin.purchase-orders.order');
+    Route::patch('/purchase-orders/{purchaseOrder}/receive',[PurchaseOrderController::class, 'markReceived'])->name('admin.purchase-orders.receive');
+    Route::patch('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('admin.purchase-orders.cancel');
 });
 
 // ----------------------------------------------------------------
@@ -103,7 +131,9 @@
     // Walk-in appointment (staff can create too)
     Route::get('/appointments/walkin',               [AppointmentController::class, 'walkinCreate'])->name('staff.appointments.walkin');
     Route::post('/appointments/walkin',              [AppointmentController::class, 'walkinStore'])->name('staff.appointments.walkin.store');
+    Route::get('/appointments/queue',                [AppointmentController::class, 'queue'])->name('staff.appointments.queue');
 
+    Route::get('/job-cards/schedule',                [JobCardController::class, 'schedule'])->name('staff.job-cards.schedule');
     Route::get('/job-cards/{jobCard}',               [JobCardController::class, 'show'])->name('staff.job-cards.show');
     Route::patch('/job-cards/{jobCard}/stage',       [JobCardController::class, 'updateStage'])->name('staff.job-cards.stage');
     Route::post('/job-cards/{jobCard}/parts',        [JobCardController::class, 'addPart'])->name('staff.job-cards.add-part');
@@ -113,6 +143,19 @@
     // Job Cards
     Route::post('/job-cards/{jobCard}/labour',              [JobCardController::class, 'addLabour'])->name('staff.job-cards.add-labour');
     Route::delete('/job-cards/labour/{labourCharge}',       [JobCardController::class, 'removeLabour'])->name('staff.job-cards.remove-labour');
+
+    // Invoices & Payments
+    Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('staff.invoices');
+    Route::post('/invoices/generate',            [InvoiceController::class, 'generate'])->name('staff.invoices.generate');
+    Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('staff.invoices.show');
+    Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('staff.invoices.payments');
+
+    // Staff Management — own attendance + leave
+    Route::get('/staff-management/attendance',              [StaffManagementController::class, 'attendance'])->name('staff.staff-management.attendance');
+    Route::post('/staff-management/attendance/clock-in',    [StaffManagementController::class, 'clockIn'])->name('staff.staff-management.clock-in');
+    Route::post('/staff-management/attendance/clock-out',   [StaffManagementController::class, 'clockOut'])->name('staff.staff-management.clock-out');
+    Route::get('/staff-management/leave',                   [StaffManagementController::class, 'leave'])->name('staff.staff-management.leave');
+    Route::post('/staff-management/leave',                  [StaffManagementController::class, 'storeLeave'])->name('staff.staff-management.leave.store');
 });
 
 // ----------------------------------------------------------------
@@ -126,6 +169,8 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     Route::post('/account-requests', [AccountRequestController::class, 'store'])->name('client.account-requests.store');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('client.maintenance.read');
     Route::get('/company', [ClientController::class, 'company'])->name('client.company');
+    Route::get('/invoices',           [InvoiceController::class, 'index'])->name('client.invoices');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('client.invoices.show');
 });
 
 // ----------------------------------------------------------------
@@ -139,4 +184,6 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     // Individual customers also get maintenance alerts
     Route::get('/maintenance',            [MaintenanceAlertController::class, 'index'])->name('customer.maintenance');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('customer.maintenance.read');
+    Route::get('/invoices',           [InvoiceController::class, 'index'])->name('customer.invoices');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('customer.invoices.show');
 });

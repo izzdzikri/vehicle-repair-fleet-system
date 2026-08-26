@@ -72,12 +72,20 @@
                         $pendingBadge  = \App\Models\Appointment::where('status','pending')->count();
                         $lowBadge      = \App\Models\SparePart::whereColumn('stock','<=','min_stock')->count();
                         $requestBadge  = \App\Models\AccountRequest::where('status','pending')->count();
+                        $poBadge       = \App\Models\PurchaseOrder::where('status','draft')->count();
+                        $leaveBadge    = \App\Models\LeaveRequest::where('status','pending')->count();
                     @endphp
                     {!! $link('/admin/dashboard',       'layout-dashboard', 'Dashboard',         'admin/dashboard') !!}
                     {!! $link('/admin/appointments',    'calendar',         'Appointments',      'admin/appointments*', $pendingBadge ?: null) !!}
+                    {!! $link('/admin/appointments/queue', 'clock',         'Today\'s Queue',    'admin/appointments/queue') !!}
                     {!! $link('/admin/job-cards',       'clipboard-list',   'Job Cards',         'admin/job-cards*') !!}
+                    {!! $link('/admin/job-cards/schedule', 'list-ordered',  'Job Schedule',      'admin/job-cards/schedule') !!}
                     {!! $link('/admin/spare-parts',     'package',          'Inventory',         'admin/spare-parts*', $lowBadge ?: null) !!}
                     {!! $link('/admin/vehicles',        'car',              'Vehicles',          'admin/vehicles*') !!}
+                    {!! $link('/admin/invoices',        'receipt',          'Invoices',          'admin/invoices*') !!}
+                    {!! $link('/admin/suppliers',       'truck',            'Suppliers',         'admin/suppliers*') !!}
+                    {!! $link('/admin/purchase-orders', 'shopping-cart',    'Purchase Orders',   'admin/purchase-orders*', $poBadge ?: null) !!}
+                    {!! $link('/admin/staff-management/attendance', 'user-cog', 'Staff Management', 'admin/staff-management*', $leaveBadge ?: null) !!}
                     {!! $link('/admin/users',           'users',            'Users',             'admin/users*') !!}
                     {!! $link('/admin/companies',       'building-2',       'Companies',         'admin/companies*') !!}
                     {!! $link('/admin/job-types',       'list-checks',      'Job Types',         'admin/job-types*') !!}
@@ -87,12 +95,18 @@
 
                 @elseif(auth()->user()->role === 'staff')
                     {!! $link('/staff/dashboard',       'layout-dashboard', 'Dashboard',         'staff/dashboard') !!}
+                    {!! $link('/staff/appointments/queue', 'clock',         'Today\'s Queue',    'staff/appointments/queue') !!}
+                    {!! $link('/staff/job-cards/schedule', 'list-ordered',  'Job Schedule',      'staff/job-cards/schedule') !!}
                     {!! $link('/staff/inventory',       'package',          'Inventory',         'staff/inventory') !!}
+                    {!! $link('/staff/invoices',        'receipt',          'Invoices',          'staff/invoices*') !!}
+                    {!! $link('/staff/staff-management/attendance', 'clock-4', 'My Attendance',  'staff/staff-management/attendance') !!}
+                    {!! $link('/staff/staff-management/leave',      'calendar-off', 'Leave',     'staff/staff-management/leave') !!}
 
                 @elseif(auth()->user()->role === 'corporate')
                     {!! $link('/client/dashboard',      'layout-dashboard', 'Dashboard',         'client/dashboard') !!}
                     {!! $link('/client/appointments',   'calendar',         'Appointments',      'client/appointments*') !!}
                     {!! $link('/client/vehicles',       'car',              'My Fleet',          'client/vehicles*') !!}
+                    {!! $link('/client/invoices',       'receipt',          'Invoices',          'client/invoices*') !!}
                     {!! $link('/client/maintenance',    'bell',             'Maintenance Alerts','client/maintenance*') !!}
                     {!! $link('/client/company',        'building-2',       'Company',           'client/company*') !!}
 
@@ -106,6 +120,7 @@
                     {!! $link('/customer/dashboard',    'layout-dashboard', 'Dashboard',         'customer/dashboard') !!}
                     {!! $link('/customer/appointments', 'calendar',         'Appointments',      'customer/appointments*') !!}
                     {!! $link('/customer/vehicles',     'car',              'My Vehicles',       'customer/vehicles*') !!}
+                    {!! $link('/customer/invoices',     'receipt',          'Invoices',          'customer/invoices*') !!}
                     {!! $link('/customer/maintenance',  'bell',             'Maintenance Alerts','customer/maintenance*', $myAlertBadge ?: null) !!}
                 @endif
             </nav>

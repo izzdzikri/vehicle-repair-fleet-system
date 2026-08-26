@@ -88,12 +88,30 @@ class JobCardController extends Controller
     return view('job-cards.show', compact('jobCard', 'spareParts', 'jobTypes'));
     }
 
+    // ----------------------------------------------------------------
+    // EDF (Earliest Deadline First) schedule board
+    // ----------------------------------------------------------------
+
+    public function schedule() {
+        $jobs = JobCard::with(['vehicle', 'staff', 'jobType', 'appointment'])
+            ->where('current_stage', '!=', 'completed')
+            ->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')
+            ->get();
+
+        $grouped = $jobs->groupBy(fn($j) => $j->staff->name ?? 'Unassigned');
+
+        return view('job-cards.schedule', compact('jobs', 'grouped'));
+    }
+
     public function updateStage(Request $request, JobCard $jobCard) {
         $request->validate([
             'current_stage' => 'required|in:received,diagnosing,waiting_parts,repairing,quality_check,completed',
         ]);
 
-        $jobCard->update(['current_stage' => $request->current_stage]);
+        $jobCard->update([
+            'current_stage' => $request->current_stage,
+            'completed_at'  => $request->current_stage === 'completed' ? now() : $jobCard->completed_at,
+        ]);
 
         if ($request->current_stage === 'completed') {
             // Mark appointment as completed too

@@ -20,6 +20,8 @@ class User extends Authenticatable
         'avatar',
         'pic_role',
         'specialties',
+        'monthly_salary',
+        'hire_date',
     ];
 
     protected $hidden = [
@@ -31,6 +33,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
         'specialties'       => 'array',
+        'hire_date'         => 'date',
     ];
 
     // ----------------------------------------------------------------
@@ -52,6 +55,14 @@ class User extends Authenticatable
     // Staff assigned job cards
     public function jobCards() {
         return $this->hasMany(JobCard::class, 'staff_id');
+    }
+
+    public function attendances() {
+        return $this->hasMany(StaffAttendance::class, 'staff_id');
+    }
+
+    public function leaveRequests() {
+        return $this->hasMany(LeaveRequest::class, 'staff_id');
     }
 
     // ----------------------------------------------------------------

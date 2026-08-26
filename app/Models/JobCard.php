@@ -8,11 +8,12 @@ class JobCard extends Model
     protected $fillable = [
         'appointment_id', 'vehicle_id', 'staff_id', 'job_type_id',
         'current_stage', 'diagnosis', 'symptoms', 'technician_notes',
-        'total_cost', 'estimated_completion',
+        'total_cost', 'estimated_completion', 'completed_at',
     ];
 
     protected $casts = [
         'estimated_completion' => 'datetime',
+        'completed_at'         => 'datetime',
         'symptoms'             => 'array',
     ];
 
@@ -42,5 +43,9 @@ class JobCard extends Model
 
     public function labourCharges() {
         return $this->hasMany(LabourCharge::class);
+    }
+
+    public function invoice() {
+        return $this->hasOne(Invoice::class);
     }
 }

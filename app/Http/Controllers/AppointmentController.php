@@ -50,6 +50,33 @@ class AppointmentController extends Controller
 }
 
     // ----------------------------------------------------------------
+    // Today's Service Queue — Walk-in vs Booked priority
+    // ----------------------------------------------------------------
+
+    /**
+     * Priority rule (agreed with supervisor):
+     *   1. Booked (pre-scheduled) appointments take priority over walk-ins,
+     *      ordered by their reserved time slot.
+     *   2. Walk-ins are queued after, ordered by arrival time (created_at).
+     */
+    public function queue() {
+        $appointments = Appointment::with(['vehicle', 'user', 'jobCard.staff'])
+            ->whereDate('date', today())
+            ->where('status', 'confirmed')
+            ->get()
+            ->sortBy(function ($apt) {
+                $priorityWeight = $apt->is_walkin ? 1 : 0;
+                $timeKey = $apt->is_walkin
+                    ? $apt->created_at->format('H:i:s')
+                    : substr($apt->time, 0, 8);
+                return $priorityWeight . '_' . $timeKey;
+            })
+            ->values();
+
+        return view('appointments.queue', compact('appointments'));
+    }
+
+    // ----------------------------------------------------------------
     // Customer booking (individual / corporate)
     // ----------------------------------------------------------------
 
