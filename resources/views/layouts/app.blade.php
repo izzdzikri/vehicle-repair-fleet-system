@@ -65,6 +65,9 @@
                         $html .= '</a>';
                         return $html;
                     };
+                    $section = function($label) {
+                        return '<p class="px-3 pt-4 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-wider first:pt-0">'.$label.'</p>';
+                    };
                 @endphp
 
                 @if(auth()->user()->role === 'admin')
@@ -75,39 +78,69 @@
                         $poBadge       = \App\Models\PurchaseOrder::where('status','draft')->count();
                         $leaveBadge    = \App\Models\LeaveRequest::where('status','pending')->count();
                     @endphp
+
+                    {!! $section('Overview') !!}
                     {!! $link('/admin/dashboard',       'layout-dashboard', 'Dashboard',         'admin/dashboard') !!}
+
+                    {!! $section('Front Desk') !!}
                     {!! $link('/admin/appointments',    'calendar',         'Appointments',      'admin/appointments*', $pendingBadge ?: null) !!}
                     {!! $link('/admin/appointments/queue', 'clock',         'Today\'s Queue',    'admin/appointments/queue') !!}
+                    {!! $link('/admin/vehicles',        'car',              'Vehicles',          'admin/vehicles*') !!}
+
+                    {!! $section('Workshop') !!}
                     {!! $link('/admin/job-cards',       'clipboard-list',   'Job Cards',         'admin/job-cards*') !!}
                     {!! $link('/admin/job-cards/schedule', 'list-ordered',  'Job Schedule',      'admin/job-cards/schedule') !!}
+                    {!! $link('/admin/maintenance',     'bell',             'Maintenance',       'admin/maintenance*') !!}
+
+                    {!! $section('Inventory') !!}
                     {!! $link('/admin/spare-parts',     'package',          'Inventory',         'admin/spare-parts*', $lowBadge ?: null) !!}
-                    {!! $link('/admin/vehicles',        'car',              'Vehicles',          'admin/vehicles*') !!}
-                    {!! $link('/admin/invoices',        'receipt',          'Invoices',          'admin/invoices*') !!}
                     {!! $link('/admin/suppliers',       'truck',            'Suppliers',         'admin/suppliers*') !!}
                     {!! $link('/admin/purchase-orders', 'shopping-cart',    'Purchase Orders',   'admin/purchase-orders*', $poBadge ?: null) !!}
-                    {!! $link('/admin/staff-management/attendance', 'user-cog', 'Staff Management', 'admin/staff-management*', $leaveBadge ?: null) !!}
+
+                    {!! $section('Finance') !!}
+                    {!! $link('/admin/invoices',        'receipt',          'Invoices',          'admin/invoices*') !!}
+
+                    {!! $section('People') !!}
                     {!! $link('/admin/users',           'users',            'Users',             'admin/users*') !!}
+                    {!! $link('/admin/staff-management/attendance', 'user-cog', 'Staff Management', 'admin/staff-management*', $leaveBadge ?: null) !!}
                     {!! $link('/admin/companies',       'building-2',       'Companies',         'admin/companies*') !!}
-                    {!! $link('/admin/job-types',       'list-checks',      'Job Types',         'admin/job-types*') !!}
-                    {!! $link('/admin/maintenance',     'bell',             'Maintenance',       'admin/maintenance*') !!}
-                    {!! $link('/admin/reports',         'bar-chart-2',      'Reports',           'admin/reports') !!}
                     {!! $link('/admin/account-requests','user-x',           'Account Requests',  'admin/account-requests*', $requestBadge ?: null) !!}
 
+                    {!! $section('System') !!}
+                    {!! $link('/admin/job-types',       'list-checks',      'Job Types',         'admin/job-types*') !!}
+                    {!! $link('/admin/reports',         'bar-chart-2',      'Reports',           'admin/reports') !!}
+
                 @elseif(auth()->user()->role === 'staff')
+                    {!! $section('Overview') !!}
                     {!! $link('/staff/dashboard',       'layout-dashboard', 'Dashboard',         'staff/dashboard') !!}
+
+                    {!! $section('Front Desk') !!}
                     {!! $link('/staff/appointments/queue', 'clock',         'Today\'s Queue',    'staff/appointments/queue') !!}
+
+                    {!! $section('Workshop') !!}
                     {!! $link('/staff/job-cards/schedule', 'list-ordered',  'Job Schedule',      'staff/job-cards/schedule') !!}
                     {!! $link('/staff/inventory',       'package',          'Inventory',         'staff/inventory') !!}
+
+                    {!! $section('Finance') !!}
                     {!! $link('/staff/invoices',        'receipt',          'Invoices',          'staff/invoices*') !!}
+
+                    {!! $section('My Account') !!}
                     {!! $link('/staff/staff-management/attendance', 'clock-4', 'My Attendance',  'staff/staff-management/attendance') !!}
                     {!! $link('/staff/staff-management/leave',      'calendar-off', 'Leave',     'staff/staff-management/leave') !!}
 
                 @elseif(auth()->user()->role === 'corporate')
+                    {!! $section('Overview') !!}
                     {!! $link('/client/dashboard',      'layout-dashboard', 'Dashboard',         'client/dashboard') !!}
+
+                    {!! $section('Fleet') !!}
                     {!! $link('/client/appointments',   'calendar',         'Appointments',      'client/appointments*') !!}
                     {!! $link('/client/vehicles',       'car',              'My Fleet',          'client/vehicles*') !!}
-                    {!! $link('/client/invoices',       'receipt',          'Invoices',          'client/invoices*') !!}
                     {!! $link('/client/maintenance',    'bell',             'Maintenance Alerts','client/maintenance*') !!}
+
+                    {!! $section('Finance') !!}
+                    {!! $link('/client/invoices',       'receipt',          'Invoices',          'client/invoices*') !!}
+
+                    {!! $section('Company') !!}
                     {!! $link('/client/company',        'building-2',       'Company',           'client/company*') !!}
 
                 @elseif(auth()->user()->role === 'individual')
@@ -117,11 +150,17 @@
                             \App\Models\Vehicle::where('user_id', auth()->id())->pluck('id')
                         )->where('is_read', false)->count();
                     @endphp
+
+                    {!! $section('Overview') !!}
                     {!! $link('/customer/dashboard',    'layout-dashboard', 'Dashboard',         'customer/dashboard') !!}
+
+                    {!! $section('My Vehicles') !!}
                     {!! $link('/customer/appointments', 'calendar',         'Appointments',      'customer/appointments*') !!}
                     {!! $link('/customer/vehicles',     'car',              'My Vehicles',       'customer/vehicles*') !!}
-                    {!! $link('/customer/invoices',     'receipt',          'Invoices',          'customer/invoices*') !!}
                     {!! $link('/customer/maintenance',  'bell',             'Maintenance Alerts','customer/maintenance*', $myAlertBadge ?: null) !!}
+
+                    {!! $section('Finance') !!}
+                    {!! $link('/customer/invoices',     'receipt',          'Invoices',          'customer/invoices*') !!}
                 @endif
             </nav>
 
@@ -153,12 +192,44 @@
         {{-- Main content --}}
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
+            @php
+                $crumbLabels = [
+                    'admin' => 'Admin', 'staff' => 'Staff', 'client' => 'Client', 'customer' => 'Customer',
+                    'dashboard' => 'Dashboard', 'users' => 'Users', 'specialties' => 'Specialties',
+                    'toggle' => 'Toggle Status', 'companies' => 'Companies',
+                    'account-requests' => 'Account Requests', 'approve' => 'Approve', 'reject' => 'Reject',
+                    'job-types' => 'Job Types', 'appointments' => 'Appointments', 'walkin' => 'Walk-in',
+                    'queue' => "Today's Queue", 'confirm' => 'Confirm', 'cancel' => 'Cancel',
+                    'complete' => 'Complete', 'job-cards' => 'Job Cards', 'schedule' => 'Job Schedule',
+                    'stage' => 'Update Stage', 'parts' => 'Parts', 'symptoms' => 'Symptoms',
+                    'labour' => 'Labour', 'spare-parts' => 'Inventory', 'inventory' => 'Inventory',
+                    'vehicles' => 'Vehicles', 'create' => 'Create', 'edit' => 'Edit', 'reports' => 'Reports',
+                    'maintenance' => 'Maintenance', 'read' => 'Mark Read', 'invoices' => 'Invoices',
+                    'generate' => 'Generate', 'payments' => 'Payments',
+                    'staff-management' => 'Staff Management', 'attendance' => 'Attendance',
+                    'clock-in' => 'Clock In', 'clock-out' => 'Clock Out', 'leave' => 'Leave Requests',
+                    'performance' => 'Performance', 'suppliers' => 'Suppliers',
+                    'purchase-orders' => 'Purchase Orders', 'order' => 'Order', 'receive' => 'Receive',
+                    'company' => 'Company', 'profile' => 'Profile',
+                ];
+
+                $segments = request()->segments();
+                $crumbs   = [];
+                $accum    = '';
+                foreach ($segments as $seg) {
+                    $accum .= '/' . $seg;
+                    if (is_numeric($seg)) continue;
+                    $label = $crumbLabels[$seg] ?? \Illuminate\Support\Str::title(str_replace(['-', '_'], ' ', $seg));
+                    $crumbs[] = ['label' => $label, 'href' => $accum];
+                }
+            @endphp
+
             {{-- Top bar --}}
             <header class="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 min-w-0">
                     {{-- Hamburger --}}
                     <button @click="sidebarOpen = true"
-                        class="lg:hidden text-gray-500 hover:text-gray-700 p-1">
+                        class="lg:hidden text-gray-500 hover:text-gray-700 p-1 shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="3" y1="6" x2="21" y2="6"/>
@@ -166,12 +237,36 @@
                             <line x1="3" y1="18" x2="21" y2="18"/>
                         </svg>
                     </button>
-                    <div>
-                        <h1 class="text-base font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h1>
+
+                    {{-- Universal back button (hidden on each role's own dashboard, since that's "home") --}}
+                    @unless(request()->is('*/dashboard'))
+                    <button onclick="history.back()" title="Go back"
+                        class="text-gray-400 hover:text-gray-700 p-1 shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    @endunless
+
+                    <div class="min-w-0">
+                        @if(count($crumbs) > 1)
+                        <nav class="flex items-center gap-1 text-xs text-gray-400 truncate">
+                            @foreach($crumbs as $i => $crumb)
+                                @if($i > 0)<span>/</span>@endif
+                                @if($i === count($crumbs) - 1)
+                                    <span class="text-gray-500 font-medium truncate">{{ $crumb['label'] }}</span>
+                                @else
+                                    <a href="{{ $crumb['href'] }}" class="hover:text-blue-600 hover:underline shrink-0">{{ $crumb['label'] }}</a>
+                                @endif
+                            @endforeach
+                        </nav>
+                        @endif
+                        <h1 class="text-base font-semibold text-gray-800 truncate">@yield('page-title', 'Dashboard')</h1>
                         <p class="text-xs text-gray-400 hidden sm:block">{{ now()->format('l, d F Y') }}</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 shrink-0">
                     <a href="/profile" class="flex items-center gap-2 hover:opacity-80">
                         <img src="{{ auth()->user()->avatar_url }}"
                             class="w-8 h-8 rounded-full object-cover border-2 border-blue-400">

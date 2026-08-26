@@ -106,4 +106,35 @@
 
 </div>
 
+{{-- Quick Actions --}}
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-700 mb-4">Quick Actions</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <a href="/admin/appointments/queue" class="flex flex-col items-center gap-2 p-4 rounded-lg border hover:bg-gray-50 text-center transition">
+            <i data-lucide="clock" class="w-5 h-5 text-blue-500"></i>
+            <span class="text-xs font-medium text-gray-600">Today's Queue</span>
+        </a>
+        <a href="/admin/job-cards/schedule" class="flex flex-col items-center gap-2 p-4 rounded-lg border hover:bg-gray-50 text-center transition">
+            <i data-lucide="list-ordered" class="w-5 h-5 text-purple-500"></i>
+            <span class="text-xs font-medium text-gray-600">Job Schedule</span>
+        </a>
+        <a href="/admin/invoices" class="flex flex-col items-center gap-2 p-4 rounded-lg border hover:bg-gray-50 text-center transition">
+            <i data-lucide="receipt" class="w-5 h-5 text-green-600"></i>
+            <span class="text-xs font-medium text-gray-600">Invoices</span>
+        </a>
+        <a href="/admin/purchase-orders" class="flex flex-col items-center gap-2 p-4 rounded-lg border hover:bg-gray-50 text-center transition">
+            <i data-lucide="shopping-cart" class="w-5 h-5 text-orange-500"></i>
+            <span class="text-xs font-medium text-gray-600">Purchase Orders</span>
+        </a>
+        <a href="/admin/suppliers" class="flex flex-col items-center gap-2 p-4 rounded-lg border hover:bg-gray-50 text-center transition">
+            <i data-lucide="truck" class="w-5 h-5 text-cyan-600"></i>
+            <span class="text-xs font-medium text-gray-600">Suppliers</span>
+        </a>
+        <a href="/admin/staff-management/attendance" class="flex flex-col items-center gap-2 p-4 rounded-lg border hover:bg-gray-50 text-center transition">
+            <i data-lucide="user-cog" class="w-5 h-5 text-red-500"></i>
+            <span class="text-xs font-medium text-gray-600">Staff Mgmt</span>
+        </a>
+    </div>
+</div>
+
 @endsection

@@ -7,10 +7,10 @@
 <div class="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm">{{ session('success') }}</div>
 @endif
 
-<div class="flex gap-2 mb-4">
-    <a href="/admin/staff-management/attendance" class="px-3 py-1.5 rounded text-sm bg-blue-600 text-white">Attendance</a>
-    <a href="/admin/staff-management/leave" class="px-3 py-1.5 rounded text-sm bg-white border text-gray-600 hover:bg-gray-50">Leave Requests</a>
-    <a href="/admin/staff-management/performance" class="px-3 py-1.5 rounded text-sm bg-white border text-gray-600 hover:bg-gray-50">Performance</a>
+<div class="flex gap-2 mb-4 flex-wrap">
+    <a href="/admin/staff-management/attendance" class="px-4 py-2 rounded text-sm font-medium bg-blue-600 text-white">Attendance</a>
+    <a href="/admin/staff-management/leave" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Leave Requests</a>
+    <a href="/admin/staff-management/performance" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Performance</a>
 </div>
 
 <form method="GET" action="/admin/staff-management/attendance" class="mb-4 flex gap-3 items-end">
