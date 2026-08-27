@@ -43,25 +43,31 @@
 
 {{-- Filter tabs — admin sees full lifecycle --}}
 @if(auth()->user()->role === 'admin')
-@php $qs = $search ? '&search='.urlencode($search) : ''; @endphp
+@php
+    $searchQs = $search ? 'search=' . urlencode($search) : '';
+    $tabHref  = function ($status = null) use ($searchQs) {
+        $params = array_filter([$status ? "status={$status}" : null, $searchQs]);
+        return '/admin/appointments' . (count($params) ? '?' . implode('&', $params) : '');
+    };
+@endphp
 <div class="flex gap-2 mb-4 flex-wrap">
-    <a href="/admin/appointments?1=1{{ $qs }}"
+    <a href="{{ $tabHref() }}"
         class="px-4 py-2 rounded text-sm font-medium {{ !request('status') ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
         All ({{ $statusCounts['all'] }})
     </a>
-    <a href="/admin/appointments?status=pending{{ $qs }}"
+    <a href="{{ $tabHref('pending') }}"
         class="px-4 py-2 rounded text-sm font-medium {{ request('status') === 'pending' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
         Pending ({{ $statusCounts['pending'] }})
     </a>
-    <a href="/admin/appointments?status=confirmed{{ $qs }}"
+    <a href="{{ $tabHref('confirmed') }}"
         class="px-4 py-2 rounded text-sm font-medium {{ request('status') === 'confirmed' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
         Confirmed ({{ $statusCounts['confirmed'] }})
     </a>
-    <a href="/admin/appointments?status=completed{{ $qs }}"
+    <a href="{{ $tabHref('completed') }}"
         class="px-4 py-2 rounded text-sm font-medium {{ request('status') === 'completed' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
         Completed ({{ $statusCounts['completed'] }})
     </a>
-    <a href="/admin/appointments?status=cancelled{{ $qs }}"
+    <a href="{{ $tabHref('cancelled') }}"
         class="px-4 py-2 rounded text-sm font-medium {{ request('status') === 'cancelled' ? 'bg-red-500 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
         Cancelled ({{ $statusCounts['cancelled'] }})
     </a>

@@ -193,4 +193,40 @@ class AdminController extends Controller
     public function storeJobType(Request $request) {
         $request->validate([
             'name'               => 'required|string|max:100',
-            'category'
+            'category'           => 'required|string',
+            'estimated_minutes'  => 'required|integer|min:5',
+            'base_price'         => 'required|numeric|min:0',
+        ]);
+        JobType::create($request->all());
+        return back()->with('success','Job type added.');
+    }
+
+    public function updateJobType(Request $request, \App\Models\JobType $jobType) {
+    $request->validate([
+        'name'               => 'required|string|max:100',
+        'category'           => 'required|string|max:50',
+        'estimated_minutes'  => 'required|integer|min:1',
+        'base_price'         => 'required|numeric|min:0',
+    ]);
+
+    $jobType->update($request->only(['name','category','estimated_minutes','base_price','description']));
+
+    return back()->with('success', 'Job type updated.');
+    }
+
+    public function deleteJobType(JobType $jobType) {
+        $jobType->delete();
+        return back()->with('success','Job type deleted.');
+    }
+
+    public function updateSpecialties(Request $request, \App\Models\User $user) {
+    $request->validate([
+        'specialties'   => 'nullable|array',
+        'specialties.*' => 'exists:job_types,id',
+    ]);
+
+    $user->update(['specialties' => $request->specialties ?? []]);
+
+    return back()->with('success', 'Staff specialties updated.');
+    }   
+}

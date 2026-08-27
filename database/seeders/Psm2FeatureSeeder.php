@@ -38,9 +38,28 @@ class Psm2FeatureSeeder extends Seeder
         DB::table('users')->where('id', 4)->update(['monthly_salary' => 2500.00, 'hire_date' => '2024-07-01']);
 
         // ----------------------------------------------------------------
+        // TRUNCATE all tables this seeder owns.
+        //
+        // Wrapped in FOREIGN_KEY_CHECKS=0/1 (same convention as
+        // FreshSeeder.php) because MySQL/InnoDB refuses to TRUNCATE any
+        // table that another table has a foreign key pointing at,
+        // regardless of truncate order or whether the referencing table
+        // is empty. Disabling checks for this block sidesteps that
+        // entirely instead of having to hand-order every truncate.
+        // ----------------------------------------------------------------
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('staff_attendance')->truncate();
+        DB::table('leave_requests')->truncate();
+        DB::table('salary_payments')->truncate();
+        DB::table('payments')->truncate();
+        DB::table('invoices')->truncate();
+        DB::table('purchase_orders')->truncate();
+        DB::table('suppliers')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+        // ----------------------------------------------------------------
         // Staff attendance — last 10 working days for each staff member
         // ----------------------------------------------------------------
-        DB::table('staff_attendance')->truncate();
         $staffIds = [2, 3, 4];
         foreach ($staffIds as $staffId) {
             for ($i = 10; $i >= 1; $i--) {
@@ -65,7 +84,6 @@ class Psm2FeatureSeeder extends Seeder
         // ----------------------------------------------------------------
         // Leave requests
         // ----------------------------------------------------------------
-        DB::table('leave_requests')->truncate();
         DB::table('leave_requests')->insert([
             [
                 'staff_id'    => 3,
@@ -94,7 +112,6 @@ class Psm2FeatureSeeder extends Seeder
         // ----------------------------------------------------------------
         // Salary payments — last 2 months for each staff member
         // ----------------------------------------------------------------
-        DB::table('salary_payments')->truncate();
         $salaries = [2 => 2800.00, 3 => 2600.00, 4 => 2500.00];
         foreach ($salaries as $staffId => $amount) {
             foreach ([1, 2] as $monthsAgo) {
@@ -116,7 +133,6 @@ class Psm2FeatureSeeder extends Seeder
         // ----------------------------------------------------------------
         // Suppliers
         // ----------------------------------------------------------------
-        DB::table('suppliers')->truncate();
         DB::table('suppliers')->insert([
             [
                 'id' => 1, 'name' => 'AutoParts Sdn Bhd', 'contact_person' => 'Encik Faizal Rahman',
@@ -144,7 +160,6 @@ class Psm2FeatureSeeder extends Seeder
         // part still at/under min stock gets auto-drafted the first time
         // the Purchase Orders page is visited.
         // ----------------------------------------------------------------
-        DB::table('purchase_orders')->truncate();
         DB::table('purchase_orders')->insert([
             [
                 'supplier_id' => 1, 'spare_part_id' => 10, // Serpentine Belt (seeded low stock)
@@ -165,9 +180,6 @@ class Psm2FeatureSeeder extends Seeder
         // ----------------------------------------------------------------
         // Invoices + payments for a few already-completed job cards
         // ----------------------------------------------------------------
-        DB::table('invoices')->truncate();
-        DB::table('payments')->truncate();
-
         $invoiceSeed = [
             // job_card_id => [tax_rate, fully paid?]
             1 => ['tax_rate' => 0, 'paid' => true],

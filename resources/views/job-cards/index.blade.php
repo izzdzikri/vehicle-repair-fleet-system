@@ -28,14 +28,20 @@
 </form>
 
 {{-- Filter tabs --}}
-@php $qs = $search ? '&search='.urlencode($search) : ''; @endphp
+@php
+    $searchQs = $search ? 'search=' . urlencode($search) : '';
+    $tabHref  = function ($stage = null) use ($searchQs) {
+        $params = array_filter([$stage ? "stage={$stage}" : null, $searchQs]);
+        return '/admin/job-cards' . (count($params) ? '?' . implode('&', $params) : '');
+    };
+@endphp
 <div class="flex gap-2 mb-4 flex-wrap">
-    <a href="/admin/job-cards?1=1{{ $qs }}"
+    <a href="{{ $tabHref() }}"
         class="px-4 py-2 rounded text-sm font-medium {{ !request('stage') ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
         All ({{ $stageCounts['all'] }})
     </a>
     @foreach(['received','diagnosing','waiting_parts','repairing','quality_check','completed'] as $stage)
-    <a href="/admin/job-cards?stage={{ $stage }}{{ $qs }}"
+    <a href="{{ $tabHref($stage) }}"
         class="px-4 py-2 rounded text-sm font-medium capitalize {{ request('stage') === $stage ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
         {{ ucfirst(str_replace('_',' ',$stage)) }} ({{ $stageCounts[$stage] }})
     </a>
