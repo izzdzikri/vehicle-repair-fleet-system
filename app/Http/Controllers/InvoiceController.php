@@ -10,34 +10,40 @@ use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
 {
-    public function index() {
-        $user = auth()->user();
+    public function index(Request $request) {
+        $user    = auth()->user();
+        $search  = trim((string) $request->input('search'));
+        $perPage = 15;
 
         if (in_array($user->role, ['admin', 'staff'])) {
-            $invoices = Invoice::with(['jobCard.vehicle', 'jobCard.appointment.user'])
-                ->latest()->get();
+            $base = Invoice::query();
+        } elseif ($user->role === 'corporate') {
+            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+            $base = Invoice::whereHas('jobCard.appointment', fn($q) => $q->whereIn('user_id', $companyUserIds));
+        } else {
+            $base = Invoice::whereHas('jobCard.appointment', fn($q) => $q->where('user_id', $user->id));
+        }
 
+        if ($search !== '') {
+            $base->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $invoices = $base->with(['jobCard.vehicle', 'jobCard.appointment.user'])
+            ->latest()->paginate($perPage)->withQueryString();
+
+        $pendingJobCards = collect();
+        if (in_array($user->role, ['admin', 'staff'])) {
             $pendingJobCards = JobCard::with(['vehicle', 'appointment.user'])
                 ->where('current_stage', 'completed')
                 ->whereDoesntHave('invoice')
                 ->latest()
                 ->get();
-
-        } elseif ($user->role === 'corporate') {
-            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
-            $invoices = Invoice::with(['jobCard.vehicle', 'jobCard.appointment.user'])
-                ->whereHas('jobCard.appointment', fn($q) => $q->whereIn('user_id', $companyUserIds))
-                ->latest()->get();
-            $pendingJobCards = collect();
-
-        } else {
-            $invoices = Invoice::with(['jobCard.vehicle', 'jobCard.appointment.user'])
-                ->whereHas('jobCard.appointment', fn($q) => $q->where('user_id', $user->id))
-                ->latest()->get();
-            $pendingJobCards = collect();
         }
 
-        return view('invoices.index', compact('invoices', 'pendingJobCards'));
+        return view('invoices.index', compact('invoices', 'pendingJobCards', 'search'));
     }
 
     public function show(Invoice $invoice) {
@@ -70,7 +76,10 @@ class InvoiceController extends Controller
         ]);
 
         $jobCard = JobCard::findOrFail($request->job_card_id);
-        abort_unless($jobCard->current_stage === 'completed', 400, 'Job must be completed before invoicing.');
+
+        if ($jobCard->current_stage !== 'completed') {
+            return back()->with('error', 'Job must be completed before it can be invoiced.');
+        }
 
         if ($jobCard->invoice) {
             return back()->with('error', 'This job card already has an invoice.');
@@ -104,6 +113,10 @@ class InvoiceController extends Controller
             'invoice_number' => 'INV-' . now()->format('Y') . '-' . str_pad($invoice->id, 5, '0', STR_PAD_LEFT),
         ]);
 
+        // Resolve status immediately (handles RM0 invoices, which should
+        // land as "paid" with nothing owed rather than stuck "unpaid").
+        $invoice->recalculate();
+
         $prefix = auth()->user()->role === 'admin' ? 'admin' : 'staff';
         return redirect("/{$prefix}/invoices/{$invoice->id}")->with('success', 'Invoice generated.');
     }
@@ -115,6 +128,10 @@ class InvoiceController extends Controller
             'reference_no' => 'nullable|string|max:100',
             'paid_at'      => 'nullable|date',
         ]);
+
+        if ($request->amount > $invoice->balance) {
+            return back()->with('error', 'Payment exceeds the outstanding balance.');
+        }
 
         Payment::create([
             'invoice_id'   => $invoice->id,

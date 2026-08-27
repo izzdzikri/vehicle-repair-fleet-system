@@ -11,20 +11,21 @@
 <div class="flex justify-between items-center mb-4 gap-4 flex-wrap">
     <h2 class="text-lg font-semibold text-gray-700">
         Vehicles
-        <span class="text-sm font-normal text-gray-400 ml-2">{{ $vehicles->count() }} total</span>
+        <span class="text-sm font-normal text-gray-400 ml-2">{{ $vehicles->total() }} total</span>
     </h2>
     <div class="flex gap-2 flex-wrap">
-        @if(auth()->user()->role === 'admin')
-        <form method="GET" action="/admin/vehicles" class="flex gap-2">
-            <input type="text" name="search" value="{{ request('search') }}"
+        <form method="GET" action="{{ $base }}/vehicles" class="flex gap-2">
+            <input type="text" name="search" value="{{ $search }}"
                 placeholder="Search plate, brand, model..."
                 class="border rounded px-3 py-2 text-sm w-64">
             <button type="submit"
                 class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">
                 Search
             </button>
+            @if($search)
+            <a href="{{ $base }}/vehicles" class="px-4 py-2 rounded text-sm border text-gray-600 hover:bg-gray-50">Clear</a>
+            @endif
         </form>
-        @endif
         <a href="{{ $base }}/vehicles/create"
             class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
             + Add Vehicle
@@ -89,5 +90,11 @@
             @endforelse
         </tbody>
     </table>
-</div></div>
+    </div>
+    @if($vehicles->hasPages())
+    <div class="px-4 py-3 border-t">
+        {{ $vehicles->links() }}
+    </div>
+    @endif
+</div>
 @endsection

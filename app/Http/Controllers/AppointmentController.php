@@ -9,40 +9,63 @@ use Illuminate\Http\Request;
 class AppointmentController extends Controller
 {
     public function index(Request $request) {
-    $user = auth()->user();
+        $user    = auth()->user();
+        $search  = trim((string) $request->input('search'));
+        $perPage = 15;
 
-    if ($user->role === 'admin') {
-        $query = Appointment::with(['vehicle', 'user', 'jobCard']);
+        if ($user->role === 'admin') {
+            $base = Appointment::query();
+        } elseif ($user->role === 'corporate') {
+            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+            $base = Appointment::whereIn('user_id', $companyUserIds);
+        } else {
+            $base = Appointment::where('user_id', $user->id);
+        }
+
+        $applySearch = function ($query) use ($search) {
+            if ($search === '') return;
+            $query->where(function ($q) use ($search) {
+                $q->where('service_type', 'like', "%{$search}%")
+                  ->orWhere('walkin_name', 'like', "%{$search}%")
+                  ->orWhereHas('vehicle', fn($v) => $v->where('plate_number', 'like', "%{$search}%"))
+                  ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"));
+            });
+        };
+
+        // Status tab counts — computed against the full scope (search applied,
+        // status not), independently of the paginated result set below.
+        $countScope = clone $base;
+        $applySearch($countScope);
+        $statusCounts = [
+            'all'       => (clone $countScope)->count(),
+            'pending'   => (clone $countScope)->where('status', 'pending')->count(),
+            'confirmed' => (clone $countScope)->where('status', 'confirmed')->count(),
+            'completed' => (clone $countScope)->where('status', 'completed')->count(),
+            'cancelled' => (clone $countScope)->where('status', 'cancelled')->count(),
+        ];
+
+        $query = (clone $base)->with(['vehicle', 'user', 'jobCard']);
         if ($request->status) {
             $query->where('status', $request->status);
         }
-        $appointments = $query->latest()->get();
+        $applySearch($query);
 
-    } elseif ($user->role === 'corporate') {
-        // All PICs under same company
-        $companyUserIds = \App\Models\User::where('company_id', $user->company_id)->pluck('id');
-        $query = Appointment::whereIn('user_id', $companyUserIds)
-            ->with(['vehicle', 'jobCard', 'user']);
-        if ($request->status) {
-            $query->where('status', $request->status);
-        }
-        $appointments = $query->latest()->get();
+        $appointments = $query->latest()->paginate($perPage)->withQueryString();
 
-    } else {
-        $appointments = Appointment::where('user_id', $user->id)
-            ->with(['vehicle', 'jobCard'])
-            ->latest()
-            ->get();
-    }
-
-    return view('appointments.index', compact('appointments'));
+        return view('appointments.index', compact('appointments', 'search', 'statusCounts'));
     }
 
     public function show(Appointment $appointment) {
+    $user = auth()->user();
+
+    if ($user->role !== 'admin') {
+        $this->authorizeAppointmentAccess($appointment, $user);
+    }
+
     $appointment->load(['vehicle', 'user', 'jobCard']);
 
     // Set viewed flag so confirm button unlocks
-    if (auth()->user()->role === 'admin') {
+    if ($user->role === 'admin') {
         session(['viewed_appointment_' . $appointment->id => true]);
     }
 
@@ -81,20 +104,31 @@ class AppointmentController extends Controller
     // ----------------------------------------------------------------
 
     public function create() {
-        if (auth()->user()->status === 'inactive') {
+        $user = auth()->user();
+
+        if ($user->status === 'inactive') {
             return redirect()->back()->with('error',
                 'Your account is inactive. Contact the administrator to reactivate.');
         }
-        $vehicles = Vehicle::where('user_id', auth()->id())->get();
+
+        if ($user->role === 'corporate') {
+            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+            $vehicles = Vehicle::whereIn('user_id', $companyUserIds)->orderBy('plate_number')->get();
+        } else {
+            $vehicles = Vehicle::where('user_id', $user->id)->orderBy('plate_number')->get();
+        }
+
         return view('appointments.create', compact('vehicles'));
     }
 
     public function store(Request $request) {
-        if (auth()->user()->isSecondaryPic()) {
+        $user = auth()->user();
+
+        if ($user->isSecondaryPic()) {
             return redirect()->back()->with('error',
                 'Secondary PIC (Viewer) cannot make bookings. Contact your Primary PIC.');
         }
-        if (auth()->user()->status === 'inactive') {
+        if ($user->status === 'inactive') {
             return redirect()->back()->with('error',
                 'Your account is inactive. You cannot make bookings.');
         }
@@ -106,8 +140,19 @@ class AppointmentController extends Controller
             'service_type' => 'required|string|max:100',
         ]);
 
+        $vehicle = Vehicle::findOrFail($request->vehicle_id);
+
+        if ($user->role === 'corporate') {
+            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+            abort_unless($companyUserIds->contains($vehicle->user_id), 403,
+                'You can only book appointments for vehicles in your company fleet.');
+        } else {
+            abort_unless($vehicle->user_id === $user->id, 403,
+                'You can only book appointments for your own vehicles.');
+        }
+
         Appointment::create([
-            'user_id'      => auth()->id(),
+            'user_id'      => $user->id,
             'vehicle_id'   => $request->vehicle_id,
             'date'         => $request->date,
             'time'         => $request->time,
@@ -117,7 +162,7 @@ class AppointmentController extends Controller
             'is_walkin'    => false,
         ]);
 
-        $redirect = auth()->user()->role === 'corporate'
+        $redirect = $user->role === 'corporate'
             ? '/client/dashboard'
             : '/customer/dashboard';
 
@@ -196,5 +241,21 @@ class AppointmentController extends Controller
     public function complete(Appointment $appointment) {
         $appointment->update(['status' => 'completed']);
         return back()->with('success', 'Appointment marked as completed.');
+    }
+
+    /**
+     * Ensure a non-admin user is only viewing an appointment they (or,
+     * for corporate, their company) actually own.
+     */
+    private function authorizeAppointmentAccess(Appointment $appointment, $user): void {
+        if ($user->role === 'corporate') {
+            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+            abort_unless($companyUserIds->contains($appointment->user_id), 403,
+                'You do not have access to this appointment.');
+            return;
+        }
+
+        abort_unless($appointment->user_id === $user->id, 403,
+            'You do not have access to this appointment.');
     }
 }

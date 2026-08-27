@@ -36,15 +36,28 @@ class AdminController extends Controller
 
     // Users
     public function users(Request $request) {
-    $query = User::with('company');
-    if ($request->role)   $query->where('role',   $request->role);
-    if ($request->status) $query->where('status', $request->status);
-    $users = $query->orderBy('created_at','desc')->get();
+    $search = trim((string) $request->input('search'));
+
+    $base = User::query();
+    if ($request->role)   $base->where('role',   $request->role);
+    if ($request->status) $base->where('status', $request->status);
+    if ($search !== '') {
+        $base->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+        });
+    }
+
+    // "All" tab always reflects the true grand total, unaffected by any
+    // currently-applied role/status/search filter.
+    $totalUsers = User::count();
+
+    $users = $base->with('company')->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
     // Load all job types (for specialties management)
     $jobTypes = \App\Models\JobType::orderBy('category')->get();
 
-    return view('admin.users', compact('users', 'jobTypes'));
+    return view('admin.users', compact('users', 'jobTypes', 'search', 'totalUsers'));
     }
 
     public function showUser(User $user) {
@@ -180,40 +193,4 @@ class AdminController extends Controller
     public function storeJobType(Request $request) {
         $request->validate([
             'name'               => 'required|string|max:100',
-            'category'           => 'required|string',
-            'estimated_minutes'  => 'required|integer|min:5',
-            'base_price'         => 'required|numeric|min:0',
-        ]);
-        JobType::create($request->all());
-        return back()->with('success','Job type added.');
-    }
-
-    public function updateJobType(Request $request, \App\Models\JobType $jobType) {
-    $request->validate([
-        'name'               => 'required|string|max:100',
-        'category'           => 'required|string|max:50',
-        'estimated_minutes'  => 'required|integer|min:1',
-        'base_price'         => 'required|numeric|min:0',
-    ]);
-
-    $jobType->update($request->only(['name','category','estimated_minutes','base_price','description']));
-
-    return back()->with('success', 'Job type updated.');
-    }
-
-    public function deleteJobType(JobType $jobType) {
-        $jobType->delete();
-        return back()->with('success','Job type deleted.');
-    }
-
-    public function updateSpecialties(Request $request, \App\Models\User $user) {
-    $request->validate([
-        'specialties'   => 'nullable|array',
-        'specialties.*' => 'exists:job_types,id',
-    ]);
-
-    $user->update(['specialties' => $request->specialties ?? []]);
-
-    return back()->with('success', 'Staff specialties updated.');
-    }   
-}
+            'category'

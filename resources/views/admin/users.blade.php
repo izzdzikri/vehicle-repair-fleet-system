@@ -65,11 +65,24 @@
     </form>
 </div>
 
+{{-- Search --}}
+<form method="GET" class="mb-4 flex gap-2">
+    @if(request('role'))<input type="hidden" name="role" value="{{ request('role') }}">@endif
+    @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
+    <input type="text" name="search" value="{{ $search }}"
+        placeholder="Search by name or email..."
+        class="flex-1 max-w-md border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">Search</button>
+    @if($search)
+    <a href="/admin/users" class="px-4 py-2 rounded text-sm border text-gray-600 hover:bg-gray-50">Clear</a>
+    @endif
+</form>
+
 {{-- Filters --}}
 <div class="flex gap-2 mb-4 flex-wrap">
     <a href="/admin/users"
         class="px-4 py-2 rounded text-sm {{ !request('role') && !request('status') ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
-        All ({{ $users->count() }})
+        All ({{ $totalUsers }})
     </a>
     @foreach(['admin','staff','corporate','individual'] as $r)
     <a href="/admin/users?role={{ $r }}"
@@ -197,6 +210,11 @@
             @endforelse
         </tbody>
     </table>
+    @if($users->hasPages())
+    <div class="mt-4 pt-4 border-t">
+        {{ $users->links() }}
+    </div>
+    @endif
 </div>
 
 @endsection

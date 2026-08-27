@@ -14,23 +14,42 @@ use App\Models\LabourCharge;
 
 class JobCardController extends Controller
 {
-    public function index() {
-        $query = JobCard::with(['vehicle', 'staff', 'appointment', 'jobType']);
+    public function index(Request $request) {
+        $search  = trim((string) $request->input('search'));
+        $perPage = 15;
 
-        if (request('stage')) {
-            $query->where('current_stage', request('stage'));
+        $applySearch = function ($query) use ($search) {
+            if ($search === '') return;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('vehicle', fn($v) => $v->where('plate_number', 'like', "%{$search}%"))
+                  ->orWhereHas('staff', fn($s) => $s->where('name', 'like', "%{$search}%"));
+            });
+        };
+
+        // Stage tab counts, independent of pagination.
+        $countScope = JobCard::query();
+        $applySearch($countScope);
+        $stageCounts = ['all' => (clone $countScope)->count()];
+        foreach (['received', 'diagnosing', 'waiting_parts', 'repairing', 'quality_check', 'completed'] as $stage) {
+            $stageCounts[$stage] = (clone $countScope)->where('current_stage', $stage)->count();
         }
 
-        $jobs = $query->latest()->get();
-        return view('job-cards.index', compact('jobs'));
+        $query = JobCard::with(['vehicle', 'staff', 'appointment', 'jobType']);
+        if ($request->stage) {
+            $query->where('current_stage', $request->stage);
+        }
+        $applySearch($query);
+
+        $jobs = $query->latest()->paginate($perPage)->withQueryString();
+
+        return view('job-cards.index', compact('jobs', 'search', 'stageCounts'));
     }
 
     public function create() {
     $appointments = Appointment::where('status', 'confirmed')
+        ->whereDoesntHave('jobCard')
         ->with(['vehicle', 'user'])
-        ->get()
-        ->filter(fn($apt) => $apt->jobCard === null)
-        ->values();
+        ->get();
 
     $staff    = \App\Models\User::where('role', 'staff')
                     ->where('status', 'active')
@@ -110,7 +129,9 @@ class JobCardController extends Controller
 
         $jobCard->update([
             'current_stage' => $request->current_stage,
-            'completed_at'  => $request->current_stage === 'completed' ? now() : $jobCard->completed_at,
+            // Clear completed_at whenever a job is reopened, so a stale
+            // timestamp doesn't corrupt performance/turnaround metrics.
+            'completed_at'  => $request->current_stage === 'completed' ? now() : null,
         ]);
 
         if ($request->current_stage === 'completed') {

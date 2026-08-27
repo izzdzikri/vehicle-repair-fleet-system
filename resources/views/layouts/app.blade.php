@@ -10,6 +10,14 @@
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @media print {
+            aside, header, .no-print { display: none !important; }
+            main { padding: 0 !important; overflow: visible !important; }
+            body { background: white !important; }
+            .flex.h-screen { display: block !important; height: auto !important; }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen" x-data="{ sidebarOpen: false }">
 
@@ -52,8 +60,16 @@
             {{-- Nav links --}}
             <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
                 @php
-                    $link = function($href, $icon, $label, $pattern, $badge = null) {
-                        $active = request()->is(ltrim($pattern, '/'));
+                    // $patterns/$exclude accept a string or array. $exclude lets a
+                    // broader wildcard link (e.g. "admin/appointments*") defer to a
+                    // more specific sibling link (e.g. the exact "queue" page) so
+                    // they don't both light up at once.
+                    $link = function($href, $icon, $label, $patterns, $badge = null, $exclude = []) {
+                        $patterns = (array) $patterns;
+                        $active   = request()->is(...$patterns);
+                        if ($active && !empty($exclude) && request()->is(...(array) $exclude)) {
+                            $active = false;
+                        }
                         $base   = 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-gray-700 transition ';
                         $base  .= $active ? 'bg-gray-700 text-white' : 'text-gray-300';
                         $html   = '<a href="'.$href.'" class="'.$base.'">';
@@ -72,39 +88,45 @@
 
                 @if(auth()->user()->role === 'admin')
                     @php
-                        $pendingBadge  = \App\Models\Appointment::where('status','pending')->count();
-                        $lowBadge      = \App\Models\SparePart::whereColumn('stock','<=','min_stock')->count();
-                        $requestBadge  = \App\Models\AccountRequest::where('status','pending')->count();
-                        $poBadge       = \App\Models\PurchaseOrder::where('status','draft')->count();
-                        $leaveBadge    = \App\Models\LeaveRequest::where('status','pending')->count();
+                        // Batched into ONE cache entry (30s TTL) instead of 5
+                        // separate COUNT queries on every single page load.
+                        $sidebarCounts = \Illuminate\Support\Facades\Cache::remember('sidebar_counts_admin', 30, function () {
+                            return [
+                                'pending_appts'    => \App\Models\Appointment::where('status','pending')->count(),
+                                'low_stock'        => \App\Models\SparePart::whereColumn('stock','<=','min_stock')->count(),
+                                'pending_requests' => \App\Models\AccountRequest::where('status','pending')->count(),
+                                'draft_pos'        => \App\Models\PurchaseOrder::where('status','draft')->count(),
+                                'pending_leave'    => \App\Models\LeaveRequest::where('status','pending')->count(),
+                            ];
+                        });
                     @endphp
 
                     {!! $section('Overview') !!}
                     {!! $link('/admin/dashboard',       'layout-dashboard', 'Dashboard',         'admin/dashboard') !!}
 
                     {!! $section('Front Desk') !!}
-                    {!! $link('/admin/appointments',    'calendar',         'Appointments',      'admin/appointments*', $pendingBadge ?: null) !!}
+                    {!! $link('/admin/appointments',    'calendar',         'Appointments',      'admin/appointments*', $sidebarCounts['pending_appts'] ?: null, 'admin/appointments/queue') !!}
                     {!! $link('/admin/appointments/queue', 'clock',         'Today\'s Queue',    'admin/appointments/queue') !!}
                     {!! $link('/admin/vehicles',        'car',              'Vehicles',          'admin/vehicles*') !!}
 
                     {!! $section('Workshop') !!}
-                    {!! $link('/admin/job-cards',       'clipboard-list',   'Job Cards',         'admin/job-cards*') !!}
+                    {!! $link('/admin/job-cards',       'clipboard-list',   'Job Cards',         'admin/job-cards*', null, 'admin/job-cards/schedule') !!}
                     {!! $link('/admin/job-cards/schedule', 'list-ordered',  'Job Schedule',      'admin/job-cards/schedule') !!}
                     {!! $link('/admin/maintenance',     'bell',             'Maintenance',       'admin/maintenance*') !!}
 
                     {!! $section('Inventory') !!}
-                    {!! $link('/admin/spare-parts',     'package',          'Inventory',         'admin/spare-parts*', $lowBadge ?: null) !!}
+                    {!! $link('/admin/spare-parts',     'package',          'Inventory',         'admin/spare-parts*', $sidebarCounts['low_stock'] ?: null) !!}
                     {!! $link('/admin/suppliers',       'truck',            'Suppliers',         'admin/suppliers*') !!}
-                    {!! $link('/admin/purchase-orders', 'shopping-cart',    'Purchase Orders',   'admin/purchase-orders*', $poBadge ?: null) !!}
+                    {!! $link('/admin/purchase-orders', 'shopping-cart',    'Purchase Orders',   'admin/purchase-orders*', $sidebarCounts['draft_pos'] ?: null) !!}
 
                     {!! $section('Finance') !!}
                     {!! $link('/admin/invoices',        'receipt',          'Invoices',          'admin/invoices*') !!}
 
                     {!! $section('People') !!}
                     {!! $link('/admin/users',           'users',            'Users',             'admin/users*') !!}
-                    {!! $link('/admin/staff-management/attendance', 'user-cog', 'Staff Management', 'admin/staff-management*', $leaveBadge ?: null) !!}
+                    {!! $link('/admin/staff-management/attendance', 'user-cog', 'Staff Management', 'admin/staff-management*', $sidebarCounts['pending_leave'] ?: null) !!}
                     {!! $link('/admin/companies',       'building-2',       'Companies',         'admin/companies*') !!}
-                    {!! $link('/admin/account-requests','user-x',           'Account Requests',  'admin/account-requests*', $requestBadge ?: null) !!}
+                    {!! $link('/admin/account-requests','user-x',           'Account Requests',  'admin/account-requests*', $sidebarCounts['pending_requests'] ?: null) !!}
 
                     {!! $section('System') !!}
                     {!! $link('/admin/job-types',       'list-checks',      'Job Types',         'admin/job-types*') !!}
@@ -145,10 +167,12 @@
 
                 @elseif(auth()->user()->role === 'individual')
                     @php
-                        $myAlertBadge = \App\Models\MaintenanceAlert::whereIn(
-                            'vehicle_id',
-                            \App\Models\Vehicle::where('user_id', auth()->id())->pluck('id')
-                        )->where('is_read', false)->count();
+                        $myAlertBadge = \Illuminate\Support\Facades\Cache::remember('sidebar_alerts_user_'.auth()->id(), 30, function () {
+                            return \App\Models\MaintenanceAlert::whereIn(
+                                'vehicle_id',
+                                \App\Models\Vehicle::where('user_id', auth()->id())->pluck('id')
+                            )->where('is_read', false)->count();
+                        });
                     @endphp
 
                     {!! $section('Overview') !!}
@@ -208,7 +232,7 @@
                     'generate' => 'Generate', 'payments' => 'Payments',
                     'staff-management' => 'Staff Management', 'attendance' => 'Attendance',
                     'clock-in' => 'Clock In', 'clock-out' => 'Clock Out', 'leave' => 'Leave Requests',
-                    'performance' => 'Performance', 'suppliers' => 'Suppliers',
+                    'performance' => 'Performance', 'salary' => 'Salary', 'suppliers' => 'Suppliers',
                     'purchase-orders' => 'Purchase Orders', 'order' => 'Order', 'receive' => 'Receive',
                     'company' => 'Company', 'profile' => 'Profile',
                 ];
@@ -334,7 +358,7 @@
             const el = this.$refs.chatBody;
             if (el) el.scrollTop = el.scrollHeight;
         }
-    }" class="fixed bottom-4 right-4 z-50">
+    }" class="fixed bottom-4 right-4 z-50 no-print">
         <button @click="open = !open"
             class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-600 text-white shadow-lg
                    flex items-center justify-center hover:bg-blue-700 transition">

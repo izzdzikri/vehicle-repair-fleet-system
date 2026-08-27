@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\LeaveRequest;
 use App\Models\StaffAttendance;
+use App\Models\SalaryPayment;
 use App\Models\User;
 use App\Models\JobCard;
 use Illuminate\Http\Request;
@@ -56,7 +57,11 @@ class StaffManagementController extends Controller
             ['status' => 'present']
         );
 
-        if (!$record->clock_in) {
+        if ($record->wasRecentlyCreated) {
+            $record->update(['clock_in' => now()->format('H:i:s')]);
+        } elseif (!$record->clock_in && !in_array($record->status, ['leave', 'absent'])) {
+            // Only auto-flip to "present" if the day isn't already
+            // marked leave/absent (e.g. an approved leave request).
             $record->update(['clock_in' => now()->format('H:i:s'), 'status' => 'present']);
         }
 
@@ -157,8 +162,8 @@ class StaffManagementController extends Controller
                 ->get()
                 ->avg(fn($j) => $j->created_at->diffInHours($j->completed_at));
 
-            $presentDays = \App\Models\StaffAttendance::where('staff_id', $s->id)->where('status', 'present')->count();
-            $totalDays   = \App\Models\StaffAttendance::where('staff_id', $s->id)->count();
+            $presentDays = StaffAttendance::where('staff_id', $s->id)->where('status', 'present')->count();
+            $totalDays   = StaffAttendance::where('staff_id', $s->id)->count();
             $attendanceRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100) : null;
 
             return (object) [
@@ -172,5 +177,46 @@ class StaffManagementController extends Controller
         });
 
         return view('staff-management.performance', compact('report'));
+    }
+
+    // ------------------------------------------------------------
+    // Salary payments (admin only)
+    // ------------------------------------------------------------
+
+    public function salary() {
+        $staff    = User::where('role', 'staff')->get();
+        $payments = SalaryPayment::with(['staff', 'recorder'])->latest('paid_at')->get();
+
+        return view('staff-management.salary', compact('staff', 'payments'));
+    }
+
+    public function storeSalaryPayment(Request $request) {
+        $request->validate([
+            'staff_id' => 'required|exists:users,id',
+            'period'   => 'required|date_format:Y-m',
+            'amount'   => 'required|numeric|min:0.01',
+            'method'   => 'required|in:cash,bank_transfer,cheque',
+            'paid_at'  => 'required|date',
+            'notes'    => 'nullable|string|max:255',
+        ]);
+
+        $exists = SalaryPayment::where('staff_id', $request->staff_id)
+            ->where('period', $request->period)->exists();
+
+        if ($exists) {
+            return back()->with('error', 'A salary payment for this staff and period is already recorded.');
+        }
+
+        SalaryPayment::create([
+            'staff_id'    => $request->staff_id,
+            'period'      => $request->period,
+            'amount'      => $request->amount,
+            'method'      => $request->method,
+            'paid_at'     => $request->paid_at,
+            'notes'       => $request->notes,
+            'recorded_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Salary payment recorded.');
     }
 }

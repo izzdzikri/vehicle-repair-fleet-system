@@ -10,10 +10,15 @@
             'corporate' => '/client', default => '/customer',
         };
     @endphp
-    <a href="{{ $backPrefix }}/invoices" class="text-sm text-blue-600 hover:underline">← Back to Invoices</a>
+    <div class="flex justify-between items-center no-print">
+        <a href="{{ $backPrefix }}/invoices" class="text-sm text-blue-600 hover:underline">← Back to Invoices</a>
+        <button onclick="window.print()" class="flex items-center gap-2 text-sm bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print / Save as PDF
+        </button>
+    </div>
 
     @if(session('success'))
-    <div class="p-3 bg-green-100 text-green-700 rounded text-sm">{{ session('success') }}</div>
+    <div class="p-3 bg-green-100 text-green-700 rounded text-sm no-print">{{ session('success') }}</div>
     @endif
 
     {{-- Invoice Card --}}
@@ -122,7 +127,7 @@
         @if(in_array(auth()->user()->role, ['admin','staff']) && $invoice->balance > 0)
         <form method="POST"
             action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/invoices/{{ $invoice->id }}/payments"
-            class="flex gap-3 items-end flex-wrap mt-4 pt-4 border-t">
+            class="flex gap-3 items-end flex-wrap mt-4 pt-4 border-t no-print">
             @csrf
             <div class="w-32">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Amount (RM)</label>

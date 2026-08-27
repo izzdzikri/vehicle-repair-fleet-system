@@ -6,7 +6,7 @@
 <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
     <h2 class="text-lg font-semibold text-gray-700">
         Job Cards
-        <span class="text-sm font-normal text-gray-400 ml-2">{{ $jobs->count() }} total</span>
+        <span class="text-sm font-normal text-gray-400 ml-2">{{ $stageCounts['all'] }} total</span>
     </h2>
     <a href="/admin/job-cards/create"
         class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
@@ -14,16 +14,30 @@
     </a>
 </div>
 
+{{-- Search --}}
+<form method="GET" class="mb-4 flex gap-2">
+    @if(request('stage'))<input type="hidden" name="stage" value="{{ request('stage') }}">@endif
+    <input type="text" name="search" value="{{ $search }}"
+        placeholder="Search by plate number or staff name..."
+        class="flex-1 max-w-md border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">Search</button>
+    @if($search)
+    <a href="{{ url()->current() }}{{ request('stage') ? '?stage='.request('stage') : '' }}"
+        class="px-4 py-2 rounded text-sm border text-gray-600 hover:bg-gray-50">Clear</a>
+    @endif
+</form>
+
 {{-- Filter tabs --}}
+@php $qs = $search ? '&search='.urlencode($search) : ''; @endphp
 <div class="flex gap-2 mb-4 flex-wrap">
-    <a href="/admin/job-cards"
+    <a href="/admin/job-cards?1=1{{ $qs }}"
         class="px-4 py-2 rounded text-sm font-medium {{ !request('stage') ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
-        All ({{ $jobs->count() }})
+        All ({{ $stageCounts['all'] }})
     </a>
     @foreach(['received','diagnosing','waiting_parts','repairing','quality_check','completed'] as $stage)
-    <a href="/admin/job-cards?stage={{ $stage }}"
+    <a href="/admin/job-cards?stage={{ $stage }}{{ $qs }}"
         class="px-4 py-2 rounded text-sm font-medium capitalize {{ request('stage') === $stage ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
-        {{ ucfirst(str_replace('_',' ',$stage)) }}
+        {{ ucfirst(str_replace('_',' ',$stage)) }} ({{ $stageCounts[$stage] }})
     </a>
     @endforeach
 </div>
@@ -98,6 +112,11 @@
             @endforelse
         </tbody>
     </table>
-</div>
+    </div>
+    @if($jobs->hasPages())
+    <div class="px-4 py-3 border-t">
+        {{ $jobs->links() }}
+    </div>
+    @endif
 </div>
 @endsection

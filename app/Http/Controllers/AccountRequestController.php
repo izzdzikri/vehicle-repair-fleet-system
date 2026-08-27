@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class AccountRequestController extends Controller
 {
@@ -27,14 +28,23 @@ class AccountRequestController extends Controller
                 'Secondary PIC cannot submit account requests. Please contact your Primary PIC.');
         }
 
-        // Validation including pic_role
+        // Validation including pic_role. target_user_id is scoped to the
+        // requester's own company so a PIC can't target an account outside
+        // their own company (e.g. another company's PIC, or an admin).
         $request->validate([
             'type'           => 'required|in:add_pic,remove_pic,close_account',
             'pic_role'       => 'required_if:type,add_pic|nullable|in:primary,secondary',
             'target_name'    => 'required_if:type,add_pic|nullable|string|max:100',
             'target_email'   => 'required_if:type,add_pic|nullable|email|unique:users,email',
             'target_phone'   => 'nullable|string|max:20',
-            'target_user_id' => 'required_if:type,remove_pic|nullable|exists:users,id',
+            'target_user_id' => [
+                'required_if:type,remove_pic',
+                'nullable',
+                Rule::exists('users', 'id')->where(function ($query) use ($user) {
+                    $query->where('company_id', $user->company_id)
+                          ->where('role', 'corporate');
+                }),
+            ],
             'notes'          => 'nullable|string|max:500',
         ]);
 
@@ -79,7 +89,7 @@ class AccountRequestController extends Controller
         return back()->with('success', 'Request submitted. Awaiting admin approval.');
     }
 
-    // Admin approves (UPDATED with enhanced limits)
+    // Admin approves
     public function approve(AccountRequest $accountRequest) {
         if ($accountRequest->status !== 'pending') {
             return back()->with('error', 'Request already processed.');
@@ -122,6 +132,37 @@ class AccountRequestController extends Controller
                     'company_id' => $companyId,
                     'pic_role'   => $requestedRole,
                 ]);
+                break;
+
+            case 'remove_pic':
+                if (!$accountRequest->target_user_id) {
+                    return back()->with('error', 'No target user set for this removal request.');
+                }
+
+                $target = \App\Models\User::find($accountRequest->target_user_id);
+
+                if (!$target) {
+                    return back()->with('error', 'Target user no longer exists.');
+                }
+
+                // Never leave a company with zero active PICs.
+                $otherActivePics = \App\Models\User::where('company_id', $target->company_id)
+                    ->where('role', 'corporate')
+                    ->where('id', '!=', $target->id)
+                    ->where('status', 'active')
+                    ->count();
+
+                if ($otherActivePics === 0) {
+                    return back()->with('error', 'Cannot remove — this is the last active PIC for the company.');
+                }
+
+                $target->update(['status' => 'inactive']);
+                break;
+
+            case 'close_account':
+                \App\Models\User::where('company_id', $accountRequest->company_id)
+                    ->where('role', 'corporate')
+                    ->update(['status' => 'inactive']);
                 break;
         }
 

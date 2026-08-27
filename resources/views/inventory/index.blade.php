@@ -99,16 +99,25 @@
     </div>
     @endif
 
+    {{-- Search --}}
+    <form method="GET" class="mb-4 flex gap-2">
+        <input type="text" name="search" value="{{ $search }}"
+            placeholder="Search by name, part number, or brand..."
+            class="flex-1 max-w-md border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">Search</button>
+        @if($search)
+        <a href="{{ url()->current() }}" class="px-4 py-2 rounded text-sm border text-gray-600 hover:bg-gray-50">Clear</a>
+        @endif
+    </form>
+
     {{-- Parts Table --}}
     <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full text-sm min-w-[600px]">
         <div class="flex justify-between items-center px-6 py-4 border-b">
             <h2 class="text-lg font-semibold text-gray-700">
                 Spare Parts
-                <span class="text-sm font-normal text-gray-400 ml-2">{{ $parts->count() }} items</span>
+                <span class="text-sm font-normal text-gray-400 ml-2">{{ $totalParts }} items</span>
             </h2>
-            @php $lowCount = $parts->filter(fn($p) => $p->stock <= $p->min_stock)->count(); @endphp
             @if($lowCount)
             <span class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full font-medium">
                 ⚠ {{ $lowCount }} low stock
@@ -189,7 +198,13 @@
                 @endforelse
             </tbody>
         </table>
-    </div></div>
+    </div>
+    @if($parts->hasPages())
+    <div class="px-4 py-3 border-t">
+        {{ $parts->links() }}
+    </div>
+    @endif
+    </div>
 
     {{-- Edit Modal --}}
     @if(auth()->user()->role === 'admin')

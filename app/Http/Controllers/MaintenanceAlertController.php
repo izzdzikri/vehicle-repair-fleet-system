@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MaintenanceAlert;
 use App\Models\Vehicle;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class MaintenanceAlertController extends Controller
@@ -51,12 +52,22 @@ class MaintenanceAlertController extends Controller
     }
 
     public function markRead(MaintenanceAlert $alert) {
-        // Gate: only owner's vehicle or admin
         $user = auth()->user();
+
         if ($user->role !== 'admin') {
-            $ownsVehicle = Vehicle::where('id', $alert->vehicle_id)
-                ->where('user_id', $user->id)->exists();
-            abort_unless($ownsVehicle, 403);
+            $vehicle = Vehicle::find($alert->vehicle_id);
+            $allowed = false;
+
+            if ($vehicle) {
+                if ($user->role === 'corporate') {
+                    $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+                    $allowed = $companyUserIds->contains($vehicle->user_id);
+                } else {
+                    $allowed = $vehicle->user_id === $user->id;
+                }
+            }
+
+            abort_unless($allowed, 403);
         }
 
         $alert->update(['is_read' => true]);

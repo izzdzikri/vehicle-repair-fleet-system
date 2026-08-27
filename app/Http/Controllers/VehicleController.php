@@ -7,29 +7,35 @@ use Illuminate\Http\Request;
 
 class VehicleController extends Controller
 {
-    public function index() {
-    $user = auth()->user();
+    public function index(Request $request) {
+        $user   = auth()->user();
+        $search = trim((string) $request->input('search'));
 
-    if ($user->role === 'admin') {
-        $vehicles = Vehicle::with('owner')->orderBy('plate_number')->get();
-    } elseif ($user->role === 'corporate') {
-        // Show all vehicles under the same company
-        $companyUserIds = \App\Models\User::where('company_id', $user->company_id)->pluck('id');
-        $vehicles = Vehicle::whereIn('user_id', $companyUserIds)
-            ->with('owner')
-            ->orderBy('plate_number')
-            ->get();
-    } else {
-        $vehicles = Vehicle::where('user_id', $user->id)
-            ->with('owner')
-            ->orderBy('plate_number')
-            ->get();
-    }
+        if ($user->role === 'admin') {
+            $query = Vehicle::with('owner')->orderBy('plate_number');
+        } elseif ($user->role === 'corporate') {
+            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+            $query = Vehicle::whereIn('user_id', $companyUserIds)->with('owner')->orderBy('plate_number');
+        } else {
+            $query = Vehicle::where('user_id', $user->id)->with('owner')->orderBy('plate_number');
+        }
 
-    return view('vehicles.index', compact('vehicles'));
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('plate_number', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%")
+                  ->orWhere('model', 'like', "%{$search}%");
+            });
+        }
+
+        $vehicles = $query->paginate(20)->withQueryString();
+
+        return view('vehicles.index', compact('vehicles', 'search'));
     }
 
     public function show(Vehicle $vehicle) {
+        $this->authorizeVehicleAccess($vehicle);
+
         $vehicle->load([
             'owner',
             'serviceHistory.jobCard',
@@ -56,6 +62,10 @@ class VehicleController extends Controller
     }
 
     public function store(Request $request) {
+        if (auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic()) {
+            return back()->with('error', 'Secondary PIC (Viewer) cannot add vehicles. Contact your Primary PIC.');
+        }
+
         $request->validate([
             'plate_number' => 'required|unique:vehicles',
             'brand'        => 'required',
@@ -80,10 +90,13 @@ class VehicleController extends Controller
     }
 
     public function edit(Vehicle $vehicle) {
+        $this->authorizeVehicleAccess($vehicle);
         return view('vehicles.edit', compact('vehicle'));
     }
 
     public function update(Request $request, Vehicle $vehicle) {
+        $this->authorizeVehicleAccess($vehicle);
+
         $request->validate([
             'brand'   => 'required',
             'model'   => 'required',
@@ -102,7 +115,35 @@ class VehicleController extends Controller
     }
 
     public function destroy(Vehicle $vehicle) {
+        $this->authorizeVehicleAccess($vehicle);
+
+        if (auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic()) {
+            return back()->with('error', 'Secondary PIC (Viewer) cannot delete vehicles. Contact your Primary PIC.');
+        }
+
         $vehicle->delete();
         return redirect()->back()->with('success', 'Vehicle deleted.');
+    }
+
+    /**
+     * Ensure the current user is allowed to view/edit/delete this vehicle.
+     * Admins can access everything; corporate users can access any vehicle
+     * owned by any PIC in their own company; individuals can only access
+     * their own vehicles.
+     */
+    private function authorizeVehicleAccess(Vehicle $vehicle): void {
+        $user = auth()->user();
+
+        if ($user->role === 'admin') {
+            return;
+        }
+
+        if ($user->role === 'corporate') {
+            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+            abort_unless($companyUserIds->contains($vehicle->user_id), 403, 'You do not have access to this vehicle.');
+            return;
+        }
+
+        abort_unless($vehicle->user_id === $user->id, 403, 'You do not have access to this vehicle.');
     }
 }

@@ -6,7 +6,7 @@
 <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
     <h2 class="text-lg font-semibold text-gray-700">
         Appointments
-        <span class="text-sm font-normal text-gray-400 ml-2">{{ $appointments->count() }} total</span>
+        <span class="text-sm font-normal text-gray-400 ml-2">{{ $statusCounts['all'] }} total</span>
     </h2>
     <div class="flex gap-2">
         @if(auth()->user()->role === 'admin')
@@ -28,35 +28,42 @@
     </div>
 </div>
 
+{{-- Search --}}
+<form method="GET" class="mb-4 flex gap-2">
+    @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
+    <input type="text" name="search" value="{{ $search }}"
+        placeholder="Search by customer, plate number, or service..."
+        class="flex-1 max-w-md border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">Search</button>
+    @if($search)
+    <a href="{{ url()->current() }}{{ request('status') ? '?status='.request('status') : '' }}"
+        class="px-4 py-2 rounded text-sm border text-gray-600 hover:bg-gray-50">Clear</a>
+    @endif
+</form>
+
 {{-- Filter tabs — admin sees full lifecycle --}}
 @if(auth()->user()->role === 'admin')
-@php
-    $all       = $appointments->count();
-    $pending   = $appointments->where('status','pending')->count();
-    $confirmed = $appointments->where('status','confirmed')->count();
-    $completed = $appointments->where('status','completed')->count();
-    $cancelled = $appointments->where('status','cancelled')->count();
-@endphp
+@php $qs = $search ? '&search='.urlencode($search) : ''; @endphp
 <div class="flex gap-2 mb-4 flex-wrap">
-    <a href="/admin/appointments"
+    <a href="/admin/appointments?1=1{{ $qs }}"
         class="px-4 py-2 rounded text-sm font-medium {{ !request('status') ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
-        All ({{ $all }})
+        All ({{ $statusCounts['all'] }})
     </a>
-    <a href="/admin/appointments?status=pending"
+    <a href="/admin/appointments?status=pending{{ $qs }}"
         class="px-4 py-2 rounded text-sm font-medium {{ request('status') === 'pending' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
-        Pending ({{ $pending }})
+        Pending ({{ $statusCounts['pending'] }})
     </a>
-    <a href="/admin/appointments?status=confirmed"
+    <a href="/admin/appointments?status=confirmed{{ $qs }}"
         class="px-4 py-2 rounded text-sm font-medium {{ request('status') === 'confirmed' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
-        Confirmed ({{ $confirmed }})
+        Confirmed ({{ $statusCounts['confirmed'] }})
     </a>
-    <a href="/admin/appointments?status=completed"
+    <a href="/admin/appointments?status=completed{{ $qs }}"
         class="px-4 py-2 rounded text-sm font-medium {{ request('status') === 'completed' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
-        Completed ({{ $completed }})
+        Completed ({{ $statusCounts['completed'] }})
     </a>
-    <a href="/admin/appointments?status=cancelled"
+    <a href="/admin/appointments?status=cancelled{{ $qs }}"
         class="px-4 py-2 rounded text-sm font-medium {{ request('status') === 'cancelled' ? 'bg-red-500 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50' }}">
-        Cancelled ({{ $cancelled }})
+        Cancelled ({{ $statusCounts['cancelled'] }})
     </a>
 </div>
 @endif
@@ -194,5 +201,10 @@
         </tbody>
     </table>
     </div>
+    @if($appointments->hasPages())
+    <div class="px-4 py-3 border-t">
+        {{ $appointments->links() }}
+    </div>
+    @endif
 </div>
 @endsection

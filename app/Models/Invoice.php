@@ -29,12 +29,18 @@ class Invoice extends Model
 
     public function recalculate(): void {
         $paid = $this->payments()->sum('amount');
-        $status = 'unpaid';
-        if ($paid >= $this->total && $this->total > 0) {
+
+        if ($this->total <= 0) {
+            // Nothing owed — treat as settled immediately.
+            $status = 'paid';
+        } elseif ($paid >= $this->total) {
             $status = 'paid';
         } elseif ($paid > 0) {
             $status = 'partial';
+        } else {
+            $status = 'unpaid';
         }
+
         $this->update(['amount_paid' => $paid, 'status' => $status]);
     }
 

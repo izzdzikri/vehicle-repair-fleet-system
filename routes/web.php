@@ -105,16 +105,20 @@
     Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('admin.invoices.show');
     Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('admin.invoices.payments');
 
-    // Staff Management — attendance, leave, performance
+    // Staff Management — attendance, leave, performance, salary
     Route::get('/staff-management/attendance',            [StaffManagementController::class, 'attendance'])->name('admin.staff-management.attendance');
     Route::get('/staff-management/leave',                 [StaffManagementController::class, 'leave'])->name('admin.staff-management.leave');
     Route::patch('/staff-management/leave/{leaveRequest}/approve', [StaffManagementController::class, 'approveLeave'])->name('admin.staff-management.leave.approve');
     Route::patch('/staff-management/leave/{leaveRequest}/reject',  [StaffManagementController::class, 'rejectLeave'])->name('admin.staff-management.leave.reject');
     Route::get('/staff-management/performance',           [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
+    Route::get('/staff-management/salary',                [StaffManagementController::class, 'salary'])->name('admin.staff-management.salary');
+    Route::post('/staff-management/salary',                [StaffManagementController::class, 'storeSalaryPayment'])->name('admin.staff-management.salary.store');
 
     // Suppliers & Purchase Orders
-    Route::get('/suppliers',  [SupplierController::class, 'index'])->name('admin.suppliers');
-    Route::post('/suppliers', [SupplierController::class, 'store'])->name('admin.suppliers.store');
+    Route::get('/suppliers',               [SupplierController::class, 'index'])->name('admin.suppliers');
+    Route::post('/suppliers',              [SupplierController::class, 'store'])->name('admin.suppliers.store');
+    Route::put('/suppliers/{supplier}',    [SupplierController::class, 'update'])->name('admin.suppliers.update');
+    Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('admin.suppliers.destroy');
     Route::get('/purchase-orders',                        [PurchaseOrderController::class, 'index'])->name('admin.purchase-orders');
     Route::post('/purchase-orders',                       [PurchaseOrderController::class, 'store'])->name('admin.purchase-orders.store');
     Route::patch('/purchase-orders/{purchaseOrder}/order', [PurchaseOrderController::class, 'markOrdered'])->name('admin.purchase-orders.order');

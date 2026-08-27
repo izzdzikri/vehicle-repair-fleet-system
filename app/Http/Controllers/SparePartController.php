@@ -6,9 +6,24 @@ use Illuminate\Http\Request;
 
 class SparePartController extends Controller
 {
-    public function index() {
-        $parts = SparePart::orderBy('category')->orderBy('name')->get();
-        return view('inventory.index', compact('parts'));
+    public function index(Request $request) {
+        $search = trim((string) $request->input('search'));
+
+        $query = SparePart::query();
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('part_number', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%");
+            });
+        }
+
+        $totalParts = (clone $query)->count();
+        $lowCount   = (clone $query)->whereColumn('stock', '<=', 'min_stock')->count();
+
+        $parts = $query->orderBy('category')->orderBy('name')->paginate(20)->withQueryString();
+
+        return view('inventory.index', compact('parts', 'search', 'totalParts', 'lowCount'));
     }
 
     public function store(Request $request) {
