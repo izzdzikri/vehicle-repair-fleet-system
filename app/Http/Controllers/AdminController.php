@@ -29,6 +29,9 @@ class AdminController extends Controller
             'lowStock'          => SparePart::whereColumn('stock','<=','min_stock')->count(),
             'todayAppointments' => Appointment::whereDate('date', today())->count(),
             'pendingAppts'      => Appointment::where('status','pending')->count(),
+            'staleJobs'         => JobCard::where('current_stage', '!=', 'completed')
+                                       ->where('updated_at', '<', now()->subHours(3))
+                                       ->count(),
             'recentJobs'        => $recentJobs,
             'staffWorkload'     => $staffWorkload,
         ]);
@@ -118,7 +121,7 @@ class AdminController extends Controller
             'username'   => 'nullable|string|max:50|unique:users',
             'email'      => 'required|email|unique:users',
             'password'   => 'required|min:6',
-            'role'       => 'required|in:admin,staff,corporate,individual',
+            'role'       => 'required|in:admin,staff,coordinator,corporate,individual',
             'contact_no' => 'nullable|string|max:20',
             'avatar'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);

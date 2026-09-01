@@ -4,7 +4,7 @@
 @section('content')
 
 {{-- Stat Cards --}}
-<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4 text-center">
         <i data-lucide="car" class="w-6 h-6 text-blue-500 mx-auto mb-1"></i>
         <p class="text-xs text-gray-500 mb-1">Total Vehicles</p>
@@ -36,6 +36,14 @@
         <p class="text-3xl font-bold text-orange-500">{{ $pendingAppts }}</p>
         @if($pendingAppts > 0)
         <a href="/admin/appointments?status=pending" class="text-xs text-blue-600 hover:underline">Review →</a>
+        @endif
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+        <i data-lucide="alarm-clock" class="w-6 h-6 {{ $staleJobs > 0 ? 'text-red-500' : 'text-gray-400' }} mx-auto mb-1"></i>
+        <p class="text-xs text-gray-500 mb-1">Needs Status Update</p>
+        <p class="text-3xl font-bold {{ $staleJobs > 0 ? 'text-red-500' : 'text-gray-400' }}">{{ $staleJobs }}</p>
+        @if($staleJobs > 0)
+        <a href="/admin/job-cards/schedule" class="text-xs text-blue-600 hover:underline">Check in →</a>
         @endif
     </div>
 </div>
@@ -71,6 +79,9 @@
                               'bg-yellow-100 text-yellow-700') }}">
                             {{ ucfirst(str_replace('_',' ',$job->current_stage)) }}
                         </span>
+                        @if($job->is_stale)
+                        <span class="text-xs text-red-500" title="No update in {{ $job->hours_since_update }}h">⏰</span>
+                        @endif
                     </td>
                     <td class="py-2">
                         <a href="/admin/job-cards/{{ $job->id }}" class="text-blue-600 hover:underline text-xs">View</a>

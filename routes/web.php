@@ -4,6 +4,7 @@
     use App\Http\Controllers\AuthController;
     use App\Http\Controllers\AdminController;
     use App\Http\Controllers\StaffController;
+    use App\Http\Controllers\CoordinatorController;
     use App\Http\Controllers\ClientController;
     use App\Http\Controllers\CustomerController;
     use App\Http\Controllers\AppointmentController;
@@ -160,6 +161,16 @@
     Route::post('/staff-management/attendance/clock-out',   [StaffManagementController::class, 'clockOut'])->name('staff.staff-management.clock-out');
     Route::get('/staff-management/leave',                   [StaffManagementController::class, 'leave'])->name('staff.staff-management.leave');
     Route::post('/staff-management/leave',                  [StaffManagementController::class, 'storeLeave'])->name('staff.staff-management.leave.store');
+});
+
+// ----------------------------------------------------------------
+// Coordinator — read-only repair progress monitoring
+// ----------------------------------------------------------------
+    Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->group(function () {
+    Route::get('/dashboard',                         [CoordinatorController::class, 'dashboard'])->name('coordinator.dashboard');
+    Route::get('/job-cards',                         [CoordinatorController::class, 'jobCards'])->name('coordinator.job-cards');
+    Route::get('/job-cards/{jobCard}',                [CoordinatorController::class, 'showJobCard'])->name('coordinator.job-cards.show');
+    Route::post('/job-cards/{jobCard}/checkin',       [CoordinatorController::class, 'storeCheckin'])->name('coordinator.job-cards.checkin');
 });
 
 // ----------------------------------------------------------------

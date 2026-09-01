@@ -76,6 +76,13 @@
                 @endforeach
             </div>
 
+            @if($job->is_stale)
+            <div class="mb-2 inline-flex items-center gap-1 text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-medium animate-pulse">
+                <i data-lucide="alarm-clock" class="w-3 h-3"></i>
+                No update in {{ $job->hours_since_update }}h — please update this job's status
+            </div>
+            @endif
+
             @if($job->estimated_completion)
             <p class="text-xs {{ $job->estimated_completion->isPast() ? 'text-red-500 font-medium' : 'text-gray-400' }} mb-2">
                 Est: {{ $job->estimated_completion->format('d M Y H:i') }}

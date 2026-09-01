@@ -60,10 +60,6 @@
             {{-- Nav links --}}
             <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
                 @php
-                    // $patterns/$exclude accept a string or array. $exclude lets a
-                    // broader wildcard link (e.g. "admin/appointments*") defer to a
-                    // more specific sibling link (e.g. the exact "queue" page) so
-                    // they don't both light up at once.
                     $link = function($href, $icon, $label, $patterns, $badge = null, $exclude = []) {
                         $patterns = (array) $patterns;
                         $active   = request()->is(...$patterns);
@@ -88,8 +84,6 @@
 
                 @if(auth()->user()->role === 'admin')
                     @php
-                        // Batched into ONE cache entry (30s TTL) instead of 5
-                        // separate COUNT queries on every single page load.
                         $sidebarCounts = \Illuminate\Support\Facades\Cache::remember('sidebar_counts_admin', 30, function () {
                             return [
                                 'pending_appts'    => \App\Models\Appointment::where('status','pending')->count(),
@@ -149,6 +143,19 @@
                     {!! $section('My Account') !!}
                     {!! $link('/staff/staff-management/attendance', 'clock-4', 'My Attendance',  'staff/staff-management/attendance') !!}
                     {!! $link('/staff/staff-management/leave',      'calendar-off', 'Leave',     'staff/staff-management/leave') !!}
+
+                @elseif(auth()->user()->role === 'coordinator')
+                    @php
+                        $coordStaleBadge = \Illuminate\Support\Facades\Cache::remember('sidebar_stale_coordinator', 30, function () {
+                            return \App\Models\JobCard::where('current_stage','!=','completed')
+                                ->where('updated_at','<', now()->subHours(3))->count();
+                        });
+                    @endphp
+                    {!! $section('Overview') !!}
+                    {!! $link('/coordinator/dashboard', 'layout-dashboard', 'Dashboard',         'coordinator/dashboard') !!}
+
+                    {!! $section('Repair Progress') !!}
+                    {!! $link('/coordinator/job-cards', 'clipboard-check',  'Job Cards',         'coordinator/job-cards*', $coordStaleBadge ?: null) !!}
 
                 @elseif(auth()->user()->role === 'corporate')
                     {!! $section('Overview') !!}
@@ -218,7 +225,8 @@
 
             @php
                 $crumbLabels = [
-                    'admin' => 'Admin', 'staff' => 'Staff', 'client' => 'Client', 'customer' => 'Customer',
+                    'admin' => 'Admin', 'staff' => 'Staff', 'coordinator' => 'Coordinator',
+                    'client' => 'Client', 'customer' => 'Customer',
                     'dashboard' => 'Dashboard', 'users' => 'Users', 'specialties' => 'Specialties',
                     'toggle' => 'Toggle Status', 'companies' => 'Companies',
                     'account-requests' => 'Account Requests', 'approve' => 'Approve', 'reject' => 'Reject',
@@ -226,7 +234,7 @@
                     'queue' => "Today's Queue", 'confirm' => 'Confirm', 'cancel' => 'Cancel',
                     'complete' => 'Complete', 'job-cards' => 'Job Cards', 'schedule' => 'Job Schedule',
                     'stage' => 'Update Stage', 'parts' => 'Parts', 'symptoms' => 'Symptoms',
-                    'labour' => 'Labour', 'spare-parts' => 'Inventory', 'inventory' => 'Inventory',
+                    'labour' => 'Labour', 'checkin' => 'Check-in', 'spare-parts' => 'Inventory', 'inventory' => 'Inventory',
                     'vehicles' => 'Vehicles', 'create' => 'Create', 'edit' => 'Edit', 'reports' => 'Reports',
                     'maintenance' => 'Maintenance', 'read' => 'Mark Read', 'invoices' => 'Invoices',
                     'generate' => 'Generate', 'payments' => 'Payments',

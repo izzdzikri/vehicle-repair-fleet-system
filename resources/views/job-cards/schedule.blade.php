@@ -5,6 +5,7 @@
 
 <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
     ℹ Earliest Deadline First — active jobs are ordered by their estimated completion time so the most urgent work is always at the top.
+    Jobs with no update in over 3 hours are flagged below as a reminder to check in on their status.
 </div>
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -15,7 +16,7 @@
         </h2>
     </div>
     <div class="overflow-x-auto">
-    <table class="w-full text-sm min-w-[750px]">
+    <table class="w-full text-sm min-w-[850px]">
         <thead class="bg-gray-50">
             <tr class="text-left text-gray-500 border-b">
                 <th class="px-4 py-3">Priority</th>
@@ -24,6 +25,7 @@
                 <th class="px-4 py-3">Staff</th>
                 <th class="px-4 py-3">Stage</th>
                 <th class="px-4 py-3">Deadline</th>
+                <th class="px-4 py-3">Status Check</th>
                 <th class="px-4 py-3">Action</th>
             </tr>
         </thead>
@@ -66,12 +68,21 @@
                     @endif
                 </td>
                 <td class="px-4 py-3">
+                    @if($job->is_stale)
+                    <span class="inline-flex items-center gap-1 text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-medium animate-pulse">
+                        <i data-lucide="alarm-clock" class="w-3 h-3"></i> {{ $job->hours_since_update }}h — check in
+                    </span>
+                    @else
+                    <span class="text-xs text-gray-400">Updated {{ $job->hours_since_update }}h ago</span>
+                    @endif
+                </td>
+                <td class="px-4 py-3">
                     <a href="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $job->id }}"
                         class="text-blue-600 hover:underline text-xs font-medium">Open</a>
                 </td>
             </tr>
             @empty
-            <tr><td colspan="7" class="py-8 text-center text-gray-400">No active jobs. Everything's caught up.</td></tr>
+            <tr><td colspan="8" class="py-8 text-center text-gray-400">No active jobs. Everything's caught up.</td></tr>
             @endforelse
         </tbody>
     </table>

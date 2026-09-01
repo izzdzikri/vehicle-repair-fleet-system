@@ -48,4 +48,28 @@ class JobCard extends Model
     public function invoice() {
         return $this->hasOne(Invoice::class);
     }
+
+    public function checkins() {
+        return $this->hasMany(JobCardCheckin::class)->latest();
+    }
+
+    /**
+     * "Stale" = not completed, and hasn't had ANY touch (stage change,
+     * parts/labour/notes added) in over 3 hours. Used to nudge the
+     * coordinator to check in on jobs that may have been forgotten
+     * mid-repair — a busy mechanic under a car may simply not have had
+     * a moment to log in and update the system.
+     */
+    public function getIsStaleAttribute(): bool {
+        if ($this->current_stage === 'completed') return false;
+        return $this->updated_at->lt(now()->subHours(3));
+    }
+
+    public function getHoursSinceUpdateAttribute(): int {
+        return (int) $this->updated_at->diffInHours(now());
+    }
+
+    public function getLastCheckinAttribute() {
+        return $this->relationLoaded('checkins') ? $this->checkins->first() : $this->checkins()->first();
+    }
 }

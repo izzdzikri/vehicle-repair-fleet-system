@@ -11,6 +11,7 @@
     <a href="/admin/staff-management/attendance" class="px-4 py-2 rounded text-sm font-medium bg-blue-600 text-white">Attendance</a>
     <a href="/admin/staff-management/leave" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Leave Requests</a>
     <a href="/admin/staff-management/performance" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Performance</a>
+    <a href="/admin/staff-management/salary" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Salary</a>
 </div>
 
 <form method="GET" action="/admin/staff-management/attendance" class="mb-4 flex gap-3 items-end">

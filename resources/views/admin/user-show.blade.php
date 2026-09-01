@@ -21,10 +21,11 @@
                 <h2 class="text-xl font-bold text-gray-800">{{ $user->name }}</h2>
                 <div class="flex gap-2 mt-1 flex-wrap">
                     <span class="px-2 py-1 rounded-full text-xs font-medium
-                        {{ $user->role === 'admin'     ? 'bg-purple-100 text-purple-700' :
-                          ($user->role === 'staff'     ? 'bg-blue-100 text-blue-700' :
-                          ($user->role === 'corporate' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700')) }}">
+                        {{ $user->role === 'admin'       ? 'bg-purple-100 text-purple-700' :
+                          ($user->role === 'staff'       ? 'bg-blue-100 text-blue-700' :
+                          ($user->role === 'coordinator' ? 'bg-cyan-100 text-cyan-700' :
+                          ($user->role === 'corporate'   ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-green-100 text-green-700'))) }}">
                         {{ ucfirst($user->role) }}
                     </span>
                     <span class="px-2 py-1 rounded-full text-xs font-medium

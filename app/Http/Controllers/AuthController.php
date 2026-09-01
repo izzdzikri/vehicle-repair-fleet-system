@@ -29,10 +29,11 @@ public function login(Request $request) {
 
         $request->session()->regenerate();
         return match(Auth::user()->role) {
-            'admin'     => redirect('/admin/dashboard'),
-            'staff'     => redirect('/staff/dashboard'),
-            'corporate' => redirect('/client/dashboard'),
-            default     => redirect('/customer/dashboard'),
+            'admin'       => redirect('/admin/dashboard'),
+            'staff'       => redirect('/staff/dashboard'),
+            'coordinator' => redirect('/coordinator/dashboard'),
+            'corporate'   => redirect('/client/dashboard'),
+            default       => redirect('/customer/dashboard'),
         };
     }
 

@@ -51,7 +51,8 @@
             <select name="role" class="w-full border rounded px-3 py-2 text-sm" required>
                 <option value="">Select role</option>
                 <option value="admin">Admin</option>
-                <option value="staff">Staff</option>
+                <option value="staff">Staff (Mechanic)</option>
+                <option value="coordinator">Coordinator (Progress Check)</option>
                 <option value="corporate">Corporate Client</option>
                 <option value="individual">Individual Customer</option>
             </select>
@@ -84,7 +85,7 @@
         class="px-4 py-2 rounded text-sm {{ !request('role') && !request('status') ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
         All ({{ $totalUsers }})
     </a>
-    @foreach(['admin','staff','corporate','individual'] as $r)
+    @foreach(['admin','staff','coordinator','corporate','individual'] as $r)
     <a href="/admin/users?role={{ $r }}"
         class="px-4 py-2 rounded text-sm capitalize {{ request('role') === $r ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
         {{ ucfirst($r) }}
@@ -124,10 +125,11 @@
                 <td class="py-3 pr-4 text-gray-500">{{ $user->contact_no ?? '—' }}</td>
                 <td class="py-3 pr-4">
                     <span class="px-2 py-1 rounded-full text-xs font-medium
-                        {{ $user->role === 'admin'     ? 'bg-purple-100 text-purple-700' :
-                          ($user->role === 'staff'     ? 'bg-blue-100 text-blue-700' :
-                          ($user->role === 'corporate' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700')) }}">
+                        {{ $user->role === 'admin'       ? 'bg-purple-100 text-purple-700' :
+                          ($user->role === 'staff'       ? 'bg-blue-100 text-blue-700' :
+                          ($user->role === 'coordinator' ? 'bg-cyan-100 text-cyan-700' :
+                          ($user->role === 'corporate'   ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-green-100 text-green-700'))) }}">
                         {{ ucfirst($user->role) }}
                     </span>
                 </td>
