@@ -38,11 +38,34 @@
     });
 
 // ----------------------------------------------------------------
+// Permission-gated actions — available to admin automatically, and to
+// any staff member holding the specific permission (e.g. an accountant
+// or inventory manager sub-role). Kept outside the /admin prefix so
+// non-admin staff with the right permission can also reach it.
+// ----------------------------------------------------------------
+Route::middleware(['auth', 'permission:inventory.manage'])->group(function () {
+    Route::post('/inventory/spare-parts',              [SparePartController::class, 'store'])->name('inventory.spare-parts.store');
+    Route::put('/inventory/spare-parts/{sparePart}',    [SparePartController::class, 'update'])->name('inventory.spare-parts.update');
+    Route::delete('/inventory/spare-parts/{sparePart}', [SparePartController::class, 'destroy'])->name('inventory.spare-parts.destroy');
+});
+
+// Job Type (labour) pricing — same pattern as inventory above. The
+// listing page itself is gated too, since it's an internal pricing
+// config page, not something every staff member needs to see.
+Route::middleware(['auth', 'permission:pricing.manage'])->prefix('pricing')->group(function () {
+    Route::get('/job-types',              [AdminController::class, 'jobTypes'])->name('pricing.job-types');
+    Route::post('/job-types',             [AdminController::class, 'storeJobType'])->name('pricing.job-types.store');
+    Route::put('/job-types/{jobType}',    [AdminController::class, 'updateJobType'])->name('pricing.job-types.update');
+    Route::delete('/job-types/{jobType}', [AdminController::class, 'deleteJobType'])->name('pricing.job-types.destroy');
+});
+
+// ----------------------------------------------------------------
 // Admin
 // ----------------------------------------------------------------
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::post('/users/{user}/specialties', [AdminController::class, 'updateSpecialties'])->name('admin.users.specialties');
+    Route::post('/users/{user}/role',        [AdminController::class, 'updateRole'])->name('admin.users.role');
 
     // Users
     Route::get('/users',                 [AdminController::class, 'users'])->name('admin.users');
@@ -59,11 +82,6 @@
     Route::get('/account-requests',                      [AccountRequestController::class, 'index'])->name('admin.account-requests');
     Route::patch('/account-requests/{accountRequest}/approve', [AccountRequestController::class, 'approve'])->name('admin.account-requests.approve');
     Route::patch('/account-requests/{accountRequest}/reject',  [AccountRequestController::class, 'reject'])->name('admin.account-requests.reject');
-    // Job Types
-    Route::get('/job-types',              [AdminController::class, 'jobTypes'])->name('admin.job-types');
-    Route::post('/job-types',             [AdminController::class, 'storeJobType'])->name('admin.job-types.store');
-    Route::delete('/job-types/{jobType}', [AdminController::class, 'deleteJobType'])->name('admin.job-types.destroy');
-    Route::put('/job-types/{jobType}', [AdminController::class, 'updateJobType'])->name('admin.job-types.update');
 
     // Appointments (regular + walk-in + complete)
     Route::get('/appointments',                         [AppointmentController::class, 'index'])->name('admin.appointments');
@@ -83,11 +101,9 @@
     Route::post('/job-cards/{jobCard}/symptoms',  [JobCardController::class, 'updateSymptoms'])->name('job-cards.symptoms');
     Route::post('/job-cards/{jobCard}/labour',              [JobCardController::class, 'addLabour'])->name('job-cards.add-labour');
     Route::delete('/job-cards/labour/{labourCharge}',       [JobCardController::class, 'removeLabour'])->name('job-cards.remove-labour');
-    
-    // Inventory
-    Route::resource('spare-parts', SparePartController::class);
-    Route::put('/spare-parts/{sparePart}',    [SparePartController::class, 'update'])->name('spare-parts.update');
-    Route::delete('/spare-parts/{sparePart}', [SparePartController::class, 'destroy'])->name('spare-parts.destroy');
+
+    // Inventory (view only here — add/edit/delete handled by the permission-gated group above)
+    Route::get('/spare-parts', [SparePartController::class, 'index'])->name('admin.spare-parts.index');
 
     // Vehicles
     Route::resource('vehicles', VehicleController::class);
@@ -105,6 +121,7 @@
     Route::post('/invoices/generate',            [InvoiceController::class, 'generate'])->name('admin.invoices.generate');
     Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('admin.invoices.show');
     Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('admin.invoices.payments');
+    Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('admin.invoices.resend');
 
     // Staff Management — attendance, leave, performance, salary
     Route::get('/staff-management/attendance',            [StaffManagementController::class, 'attendance'])->name('admin.staff-management.attendance');
@@ -112,6 +129,7 @@
     Route::patch('/staff-management/leave/{leaveRequest}/approve', [StaffManagementController::class, 'approveLeave'])->name('admin.staff-management.leave.approve');
     Route::patch('/staff-management/leave/{leaveRequest}/reject',  [StaffManagementController::class, 'rejectLeave'])->name('admin.staff-management.leave.reject');
     Route::get('/staff-management/performance',           [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
+    Route::post('/staff-management/performance/email',    [StaffManagementController::class, 'emailPerformanceReport'])->name('admin.staff-management.performance.email');
     Route::get('/staff-management/salary',                [StaffManagementController::class, 'salary'])->name('admin.staff-management.salary');
     Route::post('/staff-management/salary',                [StaffManagementController::class, 'storeSalaryPayment'])->name('admin.staff-management.salary.store');
 
@@ -154,6 +172,7 @@
     Route::post('/invoices/generate',            [InvoiceController::class, 'generate'])->name('staff.invoices.generate');
     Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('staff.invoices.show');
     Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('staff.invoices.payments');
+    Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('staff.invoices.resend');
 
     // Staff Management — own attendance + leave
     Route::get('/staff-management/attendance',              [StaffManagementController::class, 'attendance'])->name('staff.staff-management.attendance');
@@ -196,7 +215,6 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     Route::resource('appointments',       AppointmentController::class);
     Route::resource('vehicles',           VehicleController::class);
     Route::delete('/account/delete', [AccountRequestController::class, 'deleteOwnAccount'])->name('customer.account.delete');
-    // Individual customers also get maintenance alerts
     Route::get('/maintenance',            [MaintenanceAlertController::class, 'index'])->name('customer.maintenance');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('customer.maintenance.read');
     Route::get('/invoices',           [InvoiceController::class, 'index'])->name('customer.invoices');

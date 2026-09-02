@@ -58,7 +58,7 @@
                     <th class="px-4 py-3">Phone</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Purchase Orders</th>
-                    <th class="px-4 py-3">Action</th>
+                    <th class="px-4 py-3 w-12">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,25 +72,35 @@
                         <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">{{ $s->purchase_orders_count }}</span>
                     </td>
                     <td class="px-4 py-3">
-                        <button
-                            @click="openEdit({
-                                id: {{ $s->id }},
-                                name: '{{ addslashes($s->name) }}',
-                                contact_person: '{{ addslashes($s->contact_person ?? '') }}',
-                                phone: '{{ addslashes($s->phone ?? '') }}',
-                                email: '{{ addslashes($s->email ?? '') }}',
-                                address: '{{ addslashes($s->address ?? '') }}'
-                            })"
-                            class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-200 mr-1">
-                            Edit
-                        </button>
-                        <form method="POST" action="/admin/suppliers/{{ $s->id }}" class="inline"
-                            onsubmit="return confirm('Delete {{ addslashes($s->name) }}?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200">
-                                Delete
+                        <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                            <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
+                                <i data-lucide="more-vertical" class="w-4 h-4"></i>
                             </button>
-                        </form>
+                            <div x-show="open" x-transition
+                                class="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border py-1 z-20"
+                                style="display:none">
+                                <button type="button"
+                                    @click="open = false; openEdit({
+                                        id: {{ $s->id }},
+                                        name: '{{ addslashes($s->name) }}',
+                                        contact_person: '{{ addslashes($s->contact_person ?? '') }}',
+                                        phone: '{{ addslashes($s->phone ?? '') }}',
+                                        email: '{{ addslashes($s->email ?? '') }}',
+                                        address: '{{ addslashes($s->address ?? '') }}'
+                                    })"
+                                    class="w-full flex items-center gap-2 px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                                </button>
+                                <form method="POST" action="/admin/suppliers/{{ $s->id }}"
+                                    onsubmit="return confirm('Delete {{ addslashes($s->name) }}?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 @empty

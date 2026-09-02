@@ -51,11 +51,23 @@
             <select name="role" class="w-full border rounded px-3 py-2 text-sm" required>
                 <option value="">Select role</option>
                 <option value="admin">Admin</option>
-                <option value="staff">Staff (Mechanic)</option>
+                <option value="staff">Staff (Mechanic / Accountant / Inventory / Front Desk)</option>
                 <option value="coordinator">Coordinator (Progress Check)</option>
                 <option value="corporate">Corporate Client</option>
                 <option value="individual">Individual Customer</option>
             </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Staff Sub-Role <span class="font-normal text-gray-400">(only if role = Staff)</span>
+            </label>
+            <select name="staff_role" class="w-full border rounded px-3 py-2 text-sm">
+                <option value="">— None —</option>
+                @foreach(\App\Models\User::STAFF_ROLES as $key => $label)
+                <option value="{{ $key }}" {{ old('staff_role') === $key ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+            <p class="text-xs text-gray-400 mt-1">Set specific permissions (inventory, pricing, invoicing) from the user's profile page after creating.</p>
         </div>
         <div class="md:col-span-3">
             <button type="submit"
@@ -108,7 +120,7 @@
                 <th class="pb-2 pr-4">Role</th>
                 <th class="pb-2 pr-4">Status</th>
                 <th class="pb-2 pr-4">Joined</th>
-                <th class="pb-2">Action</th>
+                <th class="pb-2 w-12">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -132,6 +144,16 @@
                           'bg-green-100 text-green-700'))) }}">
                         {{ ucfirst($user->role) }}
                     </span>
+                    @if($user->role === 'staff' && $user->staff_role_label)
+                    <p class="text-xs text-gray-400 mt-1">{{ $user->staff_role_label }}</p>
+                    @endif
+                    @if($user->role === 'staff' && !empty($user->permissions))
+                    <div class="flex flex-wrap gap-1 mt-1">
+                        @foreach($user->permissions as $perm)
+                        <span class="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full">{{ \App\Models\User::PERMISSIONS[$perm] ?? $perm }}</span>
+                        @endforeach
+                    </div>
+                    @endif
                 </td>
                 <td class="py-3 pr-4">
                     <span class="px-2 py-1 rounded-full text-xs font-medium
@@ -141,32 +163,45 @@
                 </td>
                 <td class="py-3 pr-4 text-gray-500">{{ $user->created_at->format('d M Y') }}</td>
                 <td class="py-3">
-                    <div class="flex items-center gap-2">
-                        <a href="/admin/users/{{ $user->id }}"
-                            class="text-blue-600 hover:underline text-xs">View</a>
-                        @if($user->role === 'staff')
-                        <button onclick="
-                            const row = document.getElementById('specialty-row-{{ $user->id }}');
-                            row.style.display = row.style.display === 'none' ? 'table-row' : 'none';"
-                            class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">
-                            Skills
+                    <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                        <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
+                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
                         </button>
-                        @endif
-                        @if($user->id !== auth()->id())
-                        <form method="POST" action="/admin/users/{{ $user->id }}/toggle" class="inline">
-                            @csrf @method('PATCH')
-                            <button class="text-xs {{ $user->status === 'active' ? 'text-orange-500 hover:text-orange-700' : 'text-green-600 hover:text-green-800' }}">
-                                {{ $user->status === 'active' ? 'Deactivate' : 'Activate' }}
+                        <div x-show="open" x-transition
+                            class="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border py-1 z-20"
+                            style="display:none">
+                            <a href="/admin/users/{{ $user->id }}"
+                                class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-400"></i> View Profile
+                            </a>
+                            @if($user->role === 'staff')
+                            <button type="button"
+                                @click="open = false; const row = document.getElementById('specialty-row-{{ $user->id }}'); row.style.display = row.style.display === 'none' ? 'table-row' : 'none';"
+                                class="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50">
+                                <i data-lucide="wrench" class="w-3.5 h-3.5"></i> Edit Specialties
                             </button>
-                        </form>
-                        <form method="POST" action="/admin/users/{{ $user->id }}"
-                            onsubmit="return confirm('Delete {{ $user->name }}?')" class="inline">
-                            @csrf @method('DELETE')
-                            <button class="text-red-500 hover:text-red-700 text-xs">Delete</button>
-                        </form>
-                        @else
-                        <span class="text-gray-400 text-xs italic">You</span>
-                        @endif
+                            @endif
+                            @if($user->id !== auth()->id())
+                            <form method="POST" action="/admin/users/{{ $user->id }}/toggle">
+                                @csrf @method('PATCH')
+                                <button type="submit"
+                                    class="w-full flex items-center gap-2 px-4 py-2 text-sm {{ $user->status === 'active' ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50' }}">
+                                    <i data-lucide="{{ $user->status === 'active' ? 'user-x' : 'user-check' }}" class="w-3.5 h-3.5"></i>
+                                    {{ $user->status === 'active' ? 'Deactivate' : 'Activate' }}
+                                </button>
+                            </form>
+                            <form method="POST" action="/admin/users/{{ $user->id }}"
+                                onsubmit="return confirm('Delete {{ addslashes($user->name) }}?')">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                    class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                                </button>
+                            </form>
+                            @else
+                            <p class="px-4 py-2 text-xs text-gray-400 italic border-t">This is you</p>
+                            @endif
+                        </div>
                     </div>
                 </td>
             </tr>

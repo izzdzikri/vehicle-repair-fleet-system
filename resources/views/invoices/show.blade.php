@@ -10,15 +10,28 @@
             'corporate' => '/client', default => '/customer',
         };
     @endphp
-    <div class="flex justify-between items-center no-print">
+    <div class="flex justify-between items-center no-print flex-wrap gap-2">
         <a href="{{ $backPrefix }}/invoices" class="text-sm text-blue-600 hover:underline">← Back to Invoices</a>
-        <button onclick="window.print()" class="flex items-center gap-2 text-sm bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">
-            <i data-lucide="printer" class="w-4 h-4"></i> Print / Save as PDF
-        </button>
+        <div class="flex gap-2">
+            @if(in_array(auth()->user()->role, ['admin','staff']))
+            <form method="POST" action="{{ $backPrefix }}/invoices/{{ $invoice->id }}/resend">
+                @csrf
+                <button type="submit" class="flex items-center gap-2 text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    <i data-lucide="mail" class="w-4 h-4"></i> Email Invoice
+                </button>
+            </form>
+            @endif
+            <button onclick="window.print()" class="flex items-center gap-2 text-sm bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">
+                <i data-lucide="printer" class="w-4 h-4"></i> Print / Save as PDF
+            </button>
+        </div>
     </div>
 
     @if(session('success'))
     <div class="p-3 bg-green-100 text-green-700 rounded text-sm no-print">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+    <div class="p-3 bg-red-100 text-red-700 rounded text-sm no-print">{{ session('error') }}</div>
     @endif
 
     {{-- Invoice Card --}}

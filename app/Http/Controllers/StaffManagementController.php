@@ -1,12 +1,15 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Mail\StaffPerformanceMail;
 use App\Models\LeaveRequest;
 use App\Models\StaffAttendance;
 use App\Models\SalaryPayment;
 use App\Models\User;
 use App\Models\JobCard;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class StaffManagementController extends Controller
 {
@@ -36,7 +39,6 @@ class StaffManagementController extends Controller
             return view('staff-management.attendance', compact('rows', 'date'));
         }
 
-        // Staff: own attendance + clock in/out
         $today = StaffAttendance::where('staff_id', $user->id)
             ->whereDate('date', now()->toDateString())
             ->first();
@@ -60,8 +62,6 @@ class StaffManagementController extends Controller
         if ($record->wasRecentlyCreated) {
             $record->update(['clock_in' => now()->format('H:i:s')]);
         } elseif (!$record->clock_in && !in_array($record->status, ['leave', 'absent'])) {
-            // Only auto-flip to "present" if the day isn't already
-            // marked leave/absent (e.g. an approved leave request).
             $record->update(['clock_in' => now()->format('H:i:s'), 'status' => 'present']);
         }
 
@@ -144,10 +144,10 @@ class StaffManagementController extends Controller
     // Performance
     // ------------------------------------------------------------
 
-    public function performance() {
+    private function buildPerformanceReport() {
         $staff = User::where('role', 'staff')->get();
 
-        $report = $staff->map(function ($s) {
+        return $staff->map(function ($s) {
             $completedJobs = JobCard::where('staff_id', $s->id)->where('current_stage', 'completed');
 
             $total   = (clone $completedJobs)->count();
@@ -175,8 +175,43 @@ class StaffManagementController extends Controller
                 'attendance_rate' => $attendanceRate,
             ];
         });
+    }
 
+    public function performance() {
+        $report = $this->buildPerformanceReport();
         return view('staff-management.performance', compact('report'));
+    }
+
+    /**
+     * Email the report to every admin (acting as HR), and optionally
+     * to each individual staff member with just their own row.
+     */
+    public function emailPerformanceReport(Request $request) {
+        $report      = $this->buildPerformanceReport();
+        $periodLabel = now()->format('F Y');
+
+        $adminEmails = User::where('role', 'admin')->pluck('email');
+        foreach ($adminEmails as $email) {
+            try {
+                Mail::to($email)->send(new StaffPerformanceMail($report, $periodLabel));
+            } catch (\Throwable $e) {
+                Log::warning('Performance report email to admin failed: ' . $e->getMessage());
+            }
+        }
+
+        if ($request->boolean('notify_staff')) {
+            foreach ($report as $r) {
+                if (!$r->staff->email) continue;
+                try {
+                    Mail::to($r->staff->email)->send(new StaffPerformanceMail(collect([$r]), $periodLabel));
+                } catch (\Throwable $e) {
+                    Log::warning('Performance report email to staff failed: ' . $e->getMessage());
+                }
+            }
+        }
+
+        return back()->with('success', 'Performance report emailed to admin/HR'
+            . ($request->boolean('notify_staff') ? ', and to each staff member individually.' : '.'));
     }
 
     // ------------------------------------------------------------

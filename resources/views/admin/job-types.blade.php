@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', 'Job Types')
+@section('page-title', 'Job Types & Pricing')
 
 @section('content')
 
@@ -22,7 +22,7 @@
     {{-- Add Form --}}
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-700 mb-4">Add Job Type</h2>
-        <form method="POST" action="/admin/job-types"
+        <form method="POST" action="/pricing/job-types"
             class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @csrf
             <div>
@@ -85,7 +85,7 @@
                     <th class="px-4 py-3">Category</th>
                     <th class="px-4 py-3">Est. Time</th>
                     <th class="px-4 py-3">Base Price</th>
-                    <th class="px-4 py-3">Action</th>
+                    <th class="px-4 py-3 w-16">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -106,26 +106,35 @@
                     <td class="px-4 py-3 text-gray-500">{{ $hours }}</td>
                     <td class="px-4 py-3 font-medium text-gray-700">RM {{ number_format($jt->base_price, 2) }}</td>
                     <td class="px-4 py-3">
-                        <button
-                            @click="openEdit({
-                                id:                 {{ $jt->id }},
-                                name:               '{{ addslashes($jt->name) }}',
-                                category:           '{{ $jt->category }}',
-                                estimated_minutes:  '{{ $jt->estimated_minutes }}',
-                                base_price:         '{{ $jt->base_price }}',
-                                description:        '{{ addslashes($jt->description ?? '') }}'
-                            })"
-                            class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-200 mr-1">
-                            Edit
-                        </button>
-                        <form method="POST" action="/admin/job-types/{{ $jt->id }}" class="inline"
-                            onsubmit="return confirm('Delete {{ addslashes($jt->name) }}?')">
-                            @csrf @method('DELETE')
-                            <button type="submit"
-                                class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200">
-                                Delete
+                        <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                            <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
+                                <i data-lucide="more-vertical" class="w-4 h-4"></i>
                             </button>
-                        </form>
+                            <div x-show="open" x-transition
+                                class="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border py-1 z-20"
+                                style="display:none">
+                                <button type="button"
+                                    @click="open = false; openEdit({
+                                        id:                 {{ $jt->id }},
+                                        name:               '{{ addslashes($jt->name) }}',
+                                        category:           '{{ $jt->category }}',
+                                        estimated_minutes:  '{{ $jt->estimated_minutes }}',
+                                        base_price:         '{{ $jt->base_price }}',
+                                        description:        '{{ addslashes($jt->description ?? '') }}'
+                                    })"
+                                    class="w-full flex items-center gap-2 px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                                </button>
+                                <form method="POST" action="/pricing/job-types/{{ $jt->id }}"
+                                    onsubmit="return confirm('Delete {{ addslashes($jt->name) }}?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 @empty
@@ -150,7 +159,7 @@
                 </button>
             </div>
 
-            <form method="POST" :action="'/admin/job-types/' + jt.id">
+            <form method="POST" :action="'/pricing/job-types/' + jt.id">
                 @csrf @method('PUT')
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">

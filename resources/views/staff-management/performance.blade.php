@@ -3,12 +3,30 @@
 
 @section('content')
 
+@if(session('success'))
+<div class="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm">{{ session('success') }}</div>
+@endif
+
 <div class="flex gap-2 mb-4 flex-wrap">
     <a href="/admin/staff-management/attendance" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Attendance</a>
     <a href="/admin/staff-management/leave" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Leave Requests</a>
     <a href="/admin/staff-management/performance" class="px-4 py-2 rounded text-sm font-medium bg-blue-600 text-white">Performance</a>
     <a href="/admin/staff-management/salary" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Salary</a>
 </div>
+
+@if(auth()->user()->role === 'admin')
+<form method="POST" action="/admin/staff-management/performance/email"
+    class="bg-white rounded-lg shadow p-4 mb-4 flex items-center gap-4 flex-wrap">
+    @csrf
+    <label class="flex items-center gap-2 text-sm text-gray-600">
+        <input type="checkbox" name="notify_staff" value="1" class="rounded border-gray-300 text-blue-600">
+        Also email each staff member their own results
+    </label>
+    <button type="submit" class="ml-auto bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex items-center gap-2">
+        <i data-lucide="mail" class="w-4 h-4"></i> Email Report to Admin/HR
+    </button>
+</form>
+@endif
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="px-6 py-4 border-b">

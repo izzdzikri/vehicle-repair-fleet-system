@@ -51,13 +51,10 @@ class AdminController extends Controller
         });
     }
 
-    // "All" tab always reflects the true grand total, unaffected by any
-    // currently-applied role/status/search filter.
     $totalUsers = User::count();
 
     $users = $base->with('company')->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
-    // Load all job types (for specialties management)
     $jobTypes = \App\Models\JobType::orderBy('category')->get();
 
     return view('admin.users', compact('users', 'jobTypes', 'search', 'totalUsers'));
@@ -117,13 +114,14 @@ class AdminController extends Controller
 
     public function storeUser(Request $request) {
         $request->validate([
-            'name'       => 'required|string|max:100',
-            'username'   => 'nullable|string|max:50|unique:users',
-            'email'      => 'required|email|unique:users',
-            'password'   => 'required|min:6',
-            'role'       => 'required|in:admin,staff,coordinator,corporate,individual',
-            'contact_no' => 'nullable|string|max:20',
-            'avatar'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'name'          => 'required|string|max:100',
+            'username'      => 'nullable|string|max:50|unique:users',
+            'email'         => 'required|email|unique:users',
+            'password'      => 'required|min:6',
+            'role'          => 'required|in:admin,staff,coordinator,corporate,individual',
+            'contact_no'    => 'nullable|string|max:20',
+            'avatar'        => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'staff_role'    => 'nullable|string|in:mechanic,accountant,inventory_manager,front_desk',
         ]);
 
         $data = [
@@ -134,6 +132,7 @@ class AdminController extends Controller
             'role'       => $request->role,
             'contact_no' => $request->contact_no,
             'status'     => 'active',
+            'staff_role' => $request->role === 'staff' ? $request->staff_role : null,
         ];
 
         if ($request->hasFile('avatar')) {
@@ -141,7 +140,7 @@ class AdminController extends Controller
         }
 
         User::create($data);
-        return back()->with('success','User created successfully.');
+        return back()->with('success','User created successfully. Assign specific permissions from their profile page.');
     }
 
     public function toggleStatus(User $user) {
@@ -231,5 +230,24 @@ class AdminController extends Controller
     $user->update(['specialties' => $request->specialties ?? []]);
 
     return back()->with('success', 'Staff specialties updated.');
-    }   
+    }
+
+    /**
+     * Assign a staff sub-role and specific permissions (e.g. Accountant +
+     * Inventory Manager) independently from the full profile edit form.
+     */
+    public function updateRole(Request $request, User $user) {
+        $request->validate([
+            'staff_role'    => 'nullable|string|in:mechanic,accountant,inventory_manager,front_desk',
+            'permissions'   => 'nullable|array',
+            'permissions.*' => 'string|in:inventory.manage,pricing.manage,invoice.manage',
+        ]);
+
+        $user->update([
+            'staff_role'  => $request->staff_role,
+            'permissions' => $request->permissions ?? [],
+        ]);
+
+        return back()->with('success', 'Role & permissions updated.');
+    }
 }

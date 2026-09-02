@@ -123,7 +123,7 @@
                     {!! $link('/admin/account-requests','user-x',           'Account Requests',  'admin/account-requests*', $sidebarCounts['pending_requests'] ?: null) !!}
 
                     {!! $section('System') !!}
-                    {!! $link('/admin/job-types',       'list-checks',      'Job Types',         'admin/job-types*') !!}
+                    {!! $link('/pricing/job-types',     'list-checks',      'Job Types',         'pricing/job-types*') !!}
                     {!! $link('/admin/reports',         'bar-chart-2',      'Reports',           'admin/reports') !!}
 
                 @elseif(auth()->user()->role === 'staff')
@@ -136,6 +136,9 @@
                     {!! $section('Workshop') !!}
                     {!! $link('/staff/job-cards/schedule', 'list-ordered',  'Job Schedule',      'staff/job-cards/schedule') !!}
                     {!! $link('/staff/inventory',       'package',          'Inventory',         'staff/inventory') !!}
+                    @if(auth()->user()->hasPermission('pricing.manage'))
+                    {!! $link('/pricing/job-types',     'list-checks',      'Job Types',         'pricing/job-types*') !!}
+                    @endif
 
                     {!! $section('Finance') !!}
                     {!! $link('/staff/invoices',        'receipt',          'Invoices',          'staff/invoices*') !!}
@@ -202,7 +205,9 @@
                         class="w-8 h-8 rounded-full object-cover border border-gray-600 shrink-0">
                     <div class="min-w-0 flex-1">
                         <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-gray-400 capitalize">{{ auth()->user()->role }}</p>
+                        <p class="text-xs text-gray-400 capitalize">
+                            {{ auth()->user()->role }}{{ auth()->user()->staff_role_label ? ' · '.auth()->user()->staff_role_label : '' }}
+                        </p>
                     </div>
                     <form method="POST" action="/logout">
                         @csrf
@@ -226,8 +231,9 @@
             @php
                 $crumbLabels = [
                     'admin' => 'Admin', 'staff' => 'Staff', 'coordinator' => 'Coordinator',
-                    'client' => 'Client', 'customer' => 'Customer',
+                    'client' => 'Client', 'customer' => 'Customer', 'pricing' => 'Pricing',
                     'dashboard' => 'Dashboard', 'users' => 'Users', 'specialties' => 'Specialties',
+                    'role' => 'Role & Permissions',
                     'toggle' => 'Toggle Status', 'companies' => 'Companies',
                     'account-requests' => 'Account Requests', 'approve' => 'Approve', 'reject' => 'Reject',
                     'job-types' => 'Job Types', 'appointments' => 'Appointments', 'walkin' => 'Walk-in',
@@ -237,10 +243,10 @@
                     'labour' => 'Labour', 'checkin' => 'Check-in', 'spare-parts' => 'Inventory', 'inventory' => 'Inventory',
                     'vehicles' => 'Vehicles', 'create' => 'Create', 'edit' => 'Edit', 'reports' => 'Reports',
                     'maintenance' => 'Maintenance', 'read' => 'Mark Read', 'invoices' => 'Invoices',
-                    'generate' => 'Generate', 'payments' => 'Payments',
+                    'generate' => 'Generate', 'payments' => 'Payments', 'resend' => 'Resend Email',
                     'staff-management' => 'Staff Management', 'attendance' => 'Attendance',
                     'clock-in' => 'Clock In', 'clock-out' => 'Clock Out', 'leave' => 'Leave Requests',
-                    'performance' => 'Performance', 'salary' => 'Salary', 'suppliers' => 'Suppliers',
+                    'performance' => 'Performance', 'email' => 'Email Report', 'salary' => 'Salary', 'suppliers' => 'Suppliers',
                     'purchase-orders' => 'Purchase Orders', 'order' => 'Order', 'receive' => 'Receive',
                     'company' => 'Company', 'profile' => 'Profile',
                 ];
@@ -298,14 +304,90 @@
                         <p class="text-xs text-gray-400 hidden sm:block">{{ now()->format('l, d F Y') }}</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-3 shrink-0">
-                    <a href="/profile" class="flex items-center gap-2 hover:opacity-80">
-                        <img src="{{ auth()->user()->avatar_url }}"
-                            class="w-8 h-8 rounded-full object-cover border-2 border-blue-400">
-                        <span class="text-sm font-medium text-gray-700 hidden sm:block truncate max-w-32">
-                            {{ auth()->user()->name }}
-                        </span>
-                    </a>
+
+                <div class="flex items-center gap-2 shrink-0">
+
+                    {{-- Notifications bell (admin — surfaces the same counts that badge the sidebar) --}}
+                    @if(auth()->user()->role === 'admin')
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                        <button @click="open = !open" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="Notifications">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            @php $totalAlerts = collect($sidebarCounts ?? [])->sum(); @endphp
+                            @if($totalAlerts > 0)
+                            <span class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] leading-none rounded-full w-4 h-4 flex items-center justify-center font-semibold">
+                                {{ $totalAlerts > 9 ? '9+' : $totalAlerts }}
+                            </span>
+                            @endif
+                        </button>
+                        <div x-show="open" x-transition
+                            class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border py-2 z-30"
+                            style="display:none">
+                            <p class="px-4 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Needs Attention</p>
+                            @if(!empty($sidebarCounts['pending_appts']))
+                            <a href="/admin/appointments?status=pending" class="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <span>Pending appointments</span>
+                                <span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['pending_appts'] }}</span>
+                            </a>
+                            @endif
+                            @if(!empty($sidebarCounts['low_stock']))
+                            <a href="/admin/spare-parts" class="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <span>Low stock parts</span>
+                                <span class="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['low_stock'] }}</span>
+                            </a>
+                            @endif
+                            @if(!empty($sidebarCounts['pending_requests']))
+                            <a href="/admin/account-requests" class="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <span>Account requests</span>
+                                <span class="bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['pending_requests'] }}</span>
+                            </a>
+                            @endif
+                            @if(!empty($sidebarCounts['draft_pos']))
+                            <a href="/admin/purchase-orders" class="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <span>Draft purchase orders</span>
+                                <span class="bg-orange-100 text-orange-600 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['draft_pos'] }}</span>
+                            </a>
+                            @endif
+                            @if(!empty($sidebarCounts['pending_leave']))
+                            <a href="/admin/staff-management/leave" class="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <span>Leave requests</span>
+                                <span class="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['pending_leave'] }}</span>
+                            </a>
+                            @endif
+                            @if($totalAlerts === 0)
+                            <p class="px-4 py-3 text-sm text-gray-400">You're all caught up 🎉</p>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Profile dropdown --}}
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                        <button @click="open = !open" class="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5">
+                            <img src="{{ auth()->user()->avatar_url }}"
+                                class="w-8 h-8 rounded-full object-cover border-2 border-blue-400">
+                            <span class="text-sm font-medium text-gray-700 hidden sm:block truncate max-w-32">
+                                {{ auth()->user()->name }}
+                            </span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
+                        </button>
+                        <div x-show="open" x-transition
+                            class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2 z-30"
+                            style="display:none">
+                            <div class="px-4 py-2 border-b">
+                                <p class="text-sm font-semibold text-gray-800 truncate">{{ auth()->user()->name }}</p>
+                                <p class="text-xs text-gray-400 truncate">{{ auth()->user()->email }}</p>
+                            </div>
+                            <a href="/profile" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <i data-lucide="user" class="w-4 h-4 text-gray-400"></i> My Profile
+                            </a>
+                            <form method="POST" action="/logout">
+                                @csrf
+                                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                    <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </header>
 

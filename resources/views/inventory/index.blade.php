@@ -23,8 +23,8 @@
     }
 }">
 
-    {{-- Add Part Form (admin only) --}}
-    @if(auth()->user()->role === 'admin')
+    {{-- Add Part Form (admin, or any staff granted the inventory.manage permission) --}}
+    @if(auth()->user()->hasPermission('inventory.manage'))
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <button @click="showAdd = !showAdd"
             class="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800">
@@ -33,7 +33,7 @@
         </button>
 
         <div x-show="showAdd" x-transition class="mt-4">
-            <form method="POST" action="/admin/spare-parts"
+            <form method="POST" action="/inventory/spare-parts"
                 class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 @csrf
                 <div>
@@ -133,8 +133,8 @@
                     <th class="px-4 py-3">Part No.</th>
                     <th class="px-4 py-3">Unit Price</th>
                     <th class="px-4 py-3">Stock</th>
-                    @if(auth()->user()->role === 'admin')
-                    <th class="px-4 py-3">Actions</th>
+                    @if(auth()->user()->hasPermission('inventory.manage'))
+                    <th class="px-4 py-3 w-12">Actions</th>
                     @endif
                 </tr>
             </thead>
@@ -164,30 +164,39 @@
                         <span class="ml-1 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Low</span>
                         @endif
                     </td>
-                    @if(auth()->user()->role === 'admin')
+                    @if(auth()->user()->hasPermission('inventory.manage'))
                     <td class="px-4 py-3">
-                        <button
-                            @click="openEdit({
-                                id:           {{ $part->id }},
-                                name:         '{{ addslashes($part->name) }}',
-                                brand:        '{{ addslashes($part->brand ?? '') }}',
-                                part_number:  '{{ addslashes($part->part_number) }}',
-                                category:     '{{ $part->category }}',
-                                unit_price:   '{{ $part->unit_price }}',
-                                stock:        '{{ $part->stock }}',
-                                min_stock:    '{{ $part->min_stock }}'
-                            })"
-                            class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded hover:bg-yellow-200 mr-1">
-                            Edit
-                        </button>
-                        <form method="POST" action="/admin/spare-parts/{{ $part->id }}" class="inline"
-                            onsubmit="return confirm('Delete {{ addslashes($part->name) }}? This cannot be undone.')">
-                            @csrf @method('DELETE')
-                            <button type="submit"
-                                class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200">
-                                Delete
+                        <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                            <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
+                                <i data-lucide="more-vertical" class="w-4 h-4"></i>
                             </button>
-                        </form>
+                            <div x-show="open" x-transition
+                                class="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border py-1 z-20"
+                                style="display:none">
+                                <button type="button"
+                                    @click="open = false; openEdit({
+                                        id:           {{ $part->id }},
+                                        name:         '{{ addslashes($part->name) }}',
+                                        brand:        '{{ addslashes($part->brand ?? '') }}',
+                                        part_number:  '{{ addslashes($part->part_number) }}',
+                                        category:     '{{ $part->category }}',
+                                        unit_price:   '{{ $part->unit_price }}',
+                                        stock:        '{{ $part->stock }}',
+                                        min_stock:    '{{ $part->min_stock }}'
+                                    })"
+                                    class="w-full flex items-center gap-2 px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                                </button>
+                                <form method="POST" action="/inventory/spare-parts/{{ $part->id }}"
+                                    onsubmit="return confirm('Delete {{ addslashes($part->name) }}? This cannot be undone.')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit"
+                                        class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </td>
                     @endif
                 </tr>
@@ -207,7 +216,7 @@
     </div>
 
     {{-- Edit Modal --}}
-    @if(auth()->user()->role === 'admin')
+    @if(auth()->user()->hasPermission('inventory.manage'))
     <div x-show="showEdit"
         x-transition.opacity
         class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
@@ -220,7 +229,7 @@
                 </button>
             </div>
 
-            <form method="POST" :action="'/admin/spare-parts/' + part.id">
+            <form method="POST" :action="'/inventory/spare-parts/' + part.id">
                 @csrf @method('PUT')
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">

@@ -28,6 +28,11 @@
                           'bg-green-100 text-green-700'))) }}">
                         {{ ucfirst($user->role) }}
                     </span>
+                    @if($user->role === 'staff' && $user->staff_role_label)
+                    <span class="px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                        {{ $user->staff_role_label }}
+                    </span>
+                    @endif
                     <span class="px-2 py-1 rounded-full text-xs font-medium
                         {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                         {{ ucfirst($user->status) }}
@@ -125,6 +130,46 @@
             </button>
         </form>
     </div>
+
+    {{-- Role & Permissions (staff only) --}}
+    @if($user->role === 'staff')
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-1">Role & Permissions</h3>
+        <p class="text-xs text-gray-400 mb-4">
+            Assign a sub-role label and specific permissions. A staff member can hold multiple
+            permissions at once — e.g. an Accountant who also handles Inventory checks.
+        </p>
+        <form method="POST" action="/admin/users/{{ $user->id }}/role" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Staff Sub-Role</label>
+                <select name="staff_role" class="w-full md:w-64 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+                    <option value="">— None —</option>
+                    @foreach(\App\Models\User::STAFF_ROLES as $key => $label)
+                    <option value="{{ $key }}" {{ $user->staff_role === $key ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-700 mb-2">Permissions</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    @foreach(\App\Models\User::PERMISSIONS as $key => $label)
+                    <label class="flex items-start gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" name="permissions[]" value="{{ $key }}"
+                            {{ in_array($key, $user->permissions ?? []) ? 'checked' : '' }}
+                            class="mt-0.5 rounded border-gray-300 text-blue-600">
+                        {{ $label }}
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+            <button type="submit"
+                class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 text-sm font-medium">
+                Save Role & Permissions
+            </button>
+        </form>
+    </div>
+    @endif
 
     {{-- Vehicles — customers & corporate --}}
     @if($vehicles !== null)

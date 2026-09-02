@@ -1,10 +1,13 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Mail\AppointmentStatusMail;
 use App\Models\Appointment;
 use App\Models\Vehicle;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class AppointmentController extends Controller
 {
@@ -32,8 +35,6 @@ class AppointmentController extends Controller
             });
         };
 
-        // Status tab counts — computed against the full scope (search applied,
-        // status not), independently of the paginated result set below.
         $countScope = clone $base;
         $applySearch($countScope);
         $statusCounts = [
@@ -64,7 +65,6 @@ class AppointmentController extends Controller
 
     $appointment->load(['vehicle', 'user', 'jobCard']);
 
-    // Set viewed flag so confirm button unlocks
     if ($user->role === 'admin') {
         session(['viewed_appointment_' . $appointment->id => true]);
     }
@@ -76,12 +76,6 @@ class AppointmentController extends Controller
     // Today's Service Queue — Walk-in vs Booked priority
     // ----------------------------------------------------------------
 
-    /**
-     * Priority rule (agreed with supervisor):
-     *   1. Booked (pre-scheduled) appointments take priority over walk-ins,
-     *      ordered by their reserved time slot.
-     *   2. Walk-ins are queued after, ordered by arrival time (created_at).
-     */
     public function queue() {
         $appointments = Appointment::with(['vehicle', 'user', 'jobCard.staff'])
             ->whereDate('date', today())
@@ -186,19 +180,17 @@ class AppointmentController extends Controller
             'date'           => 'required|date',
             'time'           => 'required',
             'notes'          => 'nullable|string',
-            // vehicle: either existing plate or new entry
             'plate_number'   => 'required|string|max:20',
             'brand'          => 'nullable|string|max:60',
             'model'          => 'nullable|string|max:60',
             'year'           => 'nullable|integer|min:1970|max:' . (date('Y') + 1),
         ]);
 
-        // Find existing vehicle by plate, or create a quick-entry one
         $vehicle = Vehicle::where('plate_number', strtoupper(trim($request->plate_number)))->first();
 
         if (!$vehicle) {
             $vehicle = Vehicle::create([
-                'user_id'      => null,   // walk-in vehicle; no registered owner
+                'user_id'      => null,
                 'plate_number' => strtoupper(trim($request->plate_number)),
                 'brand'        => $request->brand,
                 'model'        => $request->model,
@@ -214,7 +206,7 @@ class AppointmentController extends Controller
             'time'           => $request->time,
             'service_type'   => $request->service_type,
             'notes'          => $request->notes,
-            'status'         => 'confirmed',   // walk-ins are auto-confirmed
+            'status'         => 'confirmed',
             'is_walkin'      => true,
             'walkin_name'    => $request->walkin_name,
             'walkin_contact' => $request->walkin_contact,
@@ -225,28 +217,45 @@ class AppointmentController extends Controller
     }
 
     // ----------------------------------------------------------------
-    // Status actions (admin)
+    // Status actions (admin) — each notifies the customer by email
     // ----------------------------------------------------------------
 
     public function confirm(Appointment $appointment) {
         $appointment->update(['status' => 'confirmed']);
+        $this->notifyStatus($appointment, 'Confirmed');
         return back()->with('success', 'Appointment confirmed.');
     }
 
     public function cancel(Appointment $appointment) {
         $appointment->update(['status' => 'cancelled']);
+        $this->notifyStatus($appointment, 'Cancelled');
         return back()->with('success', 'Appointment cancelled.');
     }
 
     public function complete(Appointment $appointment) {
         $appointment->update(['status' => 'completed']);
+        $this->notifyStatus($appointment, 'Completed');
         return back()->with('success', 'Appointment marked as completed.');
     }
 
     /**
-     * Ensure a non-admin user is only viewing an appointment they (or,
-     * for corporate, their company) actually own.
+     * Email the registered customer about a status change. Walk-in
+     * customers (no user account) or users without an email are
+     * silently skipped. Mail failures never break the request.
      */
+    private function notifyStatus(Appointment $appointment, string $label): void {
+        if ($appointment->is_walkin) return;
+
+        $appointment->load(['vehicle', 'user']);
+        if (!$appointment->user || !$appointment->user->email) return;
+
+        try {
+            Mail::to($appointment->user->email)->send(new AppointmentStatusMail($appointment, $label));
+        } catch (\Throwable $e) {
+            Log::warning('Appointment status email failed: ' . $e->getMessage());
+        }
+    }
+
     private function authorizeAppointmentAccess(Appointment $appointment, $user): void {
         if ($user->role === 'corporate') {
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
