@@ -6,10 +6,6 @@
 
     <a href="/coordinator/job-cards" class="text-sm text-blue-600 hover:underline">← Back to Job Cards</a>
 
-    @if(session('success'))
-    <div class="p-3 bg-green-100 text-green-700 rounded text-sm">{{ session('success') }}</div>
-    @endif
-
     {{-- Job Info (read-only) --}}
     <div class="bg-white rounded-lg shadow p-6">
         <div class="flex justify-between items-start mb-4">

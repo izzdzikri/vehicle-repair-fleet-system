@@ -3,13 +3,6 @@
 
 @section('content')
 
-@if(session('success'))
-<div class="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-<div class="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">{{ session('error') }}</div>
-@endif
-
 <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
     ℹ Draft purchase orders are auto-generated whenever a spare part's stock drops to or below its minimum threshold.
     Review, assign a supplier, mark ordered, then mark received once stock arrives.
@@ -31,12 +24,12 @@
                 <th class="px-4 py-3">Unit Cost</th>
                 <th class="px-4 py-3">Status</th>
                 <th class="px-4 py-3">Source</th>
-                <th class="px-4 py-3">Action</th>
+                <th class="px-4 py-3 w-12">Action</th>
             </tr>
         </thead>
         <tbody>
             @forelse($orders as $po)
-            <tr class="border-b hover:bg-gray-50" x-data="{ show: false }">
+            <tr class="border-b hover:bg-gray-50" x-data="{ open: false, show: false }" @click.outside="open = false">
                 <td class="px-4 py-3 font-medium">
                     {{ $po->sparePart->name ?? '—' }}
                     <p class="text-xs text-gray-400">Stock: {{ $po->sparePart->stock ?? '—' }} / min {{ $po->sparePart->min_stock ?? '—' }}</p>
@@ -60,10 +53,37 @@
                     @endif
                 </td>
                 <td class="px-4 py-3">
+                    @if(in_array($po->status, ['draft', 'ordered']))
+                    <div class="relative inline-block text-left">
+                        <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
+                            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                        </button>
+                        <div x-show="open" x-transition
+                            class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border py-1 z-20"
+                            style="display:none">
+                            @if($po->status === 'draft')
+                            <button type="button" @click="open = false; show = true"
+                                class="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-700 hover:bg-blue-50">
+                                <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i> Mark Ordered
+                            </button>
+                            <form method="POST" action="/admin/purchase-orders/{{ $po->id }}/cancel">
+                                @csrf @method('PATCH')
+                                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
+                                    <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Cancel
+                                </button>
+                            </form>
+                            @elseif($po->status === 'ordered')
+                            <form method="POST" action="/admin/purchase-orders/{{ $po->id }}/receive">
+                                @csrf @method('PATCH')
+                                <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50">
+                                    <i data-lucide="package-check" class="w-3.5 h-3.5"></i> Mark Received
+                                </button>
+                            </form>
+                            @endif
+                        </div>
+                    </div>
+
                     @if($po->status === 'draft')
-                    <button @click="show = true" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200">
-                        Mark Ordered
-                    </button>
                     <div x-show="show" x-transition class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display:none">
                         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" @click.outside="show = false">
                             <h3 class="text-lg font-semibold text-gray-700 mb-4">Order {{ $po->sparePart->name ?? '' }}</h3>
@@ -89,15 +109,7 @@
                             </form>
                         </div>
                     </div>
-                    <form method="POST" action="/admin/purchase-orders/{{ $po->id }}/cancel" class="inline">
-                        @csrf @method('PATCH')
-                        <button class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200">Cancel</button>
-                    </form>
-                    @elseif($po->status === 'ordered')
-                    <form method="POST" action="/admin/purchase-orders/{{ $po->id }}/receive">
-                        @csrf @method('PATCH')
-                        <button class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200">Mark Received</button>
-                    </form>
+                    @endif
                     @else
                     <span class="text-xs text-gray-400">—</span>
                     @endif

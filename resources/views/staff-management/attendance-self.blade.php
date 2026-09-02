@@ -3,10 +3,6 @@
 
 @section('content')
 
-@if(session('success'))
-<div class="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm">{{ session('success') }}</div>
-@endif
-
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h2 class="text-lg font-semibold text-gray-700 mb-4">Today — {{ now()->format('d M Y') }}</h2>
     <div class="flex items-center gap-4 flex-wrap">

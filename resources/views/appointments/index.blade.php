@@ -127,71 +127,72 @@
                     </span>
                 </td>
 
-                {{-- ACTION COLUMN – clean version for admin --}}
+                {{-- ACTION COLUMN --}}
                 <td class="px-4 py-3">
                     @if(auth()->user()->role === 'admin')
-                        <div class="flex gap-1 flex-wrap items-center">
-
+                        <div class="flex items-center gap-1">
                             <a href="/admin/appointments/{{ $apt->id }}"
                                 class="text-xs border border-gray-300 text-gray-600 px-2 py-1 rounded hover:bg-gray-50">
                                 View
                             </a>
 
-                            @if($apt->status === 'pending')
-                                @php $hasViewed = session('viewed_appointment_' . $apt->id, false); @endphp
-
-                                @if($hasViewed)
-                                <form method="POST" action="/admin/appointments/{{ $apt->id }}/confirm">
-                                    @csrf @method('PATCH')
-                                    <button class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 font-medium">
-                                        ✓ Confirm
-                                    </button>
-                                </form>
-                                @else
-                                <a href="/admin/appointments/{{ $apt->id }}"
-                                    class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded border border-gray-300 hover:bg-gray-200"
-                                    title="View appointment details first to unlock confirm">
-                                    👁 View to Confirm
-                                </a>
-                                @endif
-
-                                <form method="POST" action="/admin/appointments/{{ $apt->id }}/cancel">
-                                    @csrf @method('PATCH')
-                                    <button class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200">
-                                        Cancel
-                                    </button>
-                                </form>
-
-                            @elseif($apt->status === 'confirmed')
-                                @if(!$apt->jobCard)
-                                <a href="/admin/job-cards/create?appointment_id={{ $apt->id }}"
-                                    class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200">
-                                    + Job Card
-                                </a>
-                                @else
-                                <a href="/admin/job-cards/{{ $apt->jobCard->id }}"
-                                    class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200">
-                                    Job #{{ $apt->jobCard->id }}
-                                </a>
-                                @endif
-
-                                <form method="POST" action="/admin/appointments/{{ $apt->id }}/complete">
-                                    @csrf @method('PATCH')
-                                    <button class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200">
-                                        Complete
-                                    </button>
-                                </form>
-
-                                <form method="POST" action="/admin/appointments/{{ $apt->id }}/cancel">
-                                    @csrf @method('PATCH')
-                                    <button class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded hover:bg-red-200">
-                                        Cancel
-                                    </button>
-                                </form>
-
-                            @elseif($apt->status === 'completed' || $apt->status === 'cancelled')
-                                <span class="text-xs text-gray-400">—</span>
-
+                            @if($apt->status !== 'completed' && $apt->status !== 'cancelled')
+                            <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
+                                <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
+                                    <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                                </button>
+                                <div x-show="open" x-transition
+                                    class="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border py-1 z-20"
+                                    style="display:none">
+                                    @if($apt->status === 'pending')
+                                        @php $hasViewed = session('viewed_appointment_' . $apt->id, false); @endphp
+                                        @if($hasViewed)
+                                        <form method="POST" action="/admin/appointments/{{ $apt->id }}/confirm">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 font-medium">
+                                                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Confirm
+                                            </button>
+                                        </form>
+                                        @else
+                                        <a href="/admin/appointments/{{ $apt->id }}"
+                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-500 hover:bg-gray-50"
+                                            title="View appointment details first to unlock confirm">
+                                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> View to Confirm
+                                        </a>
+                                        @endif
+                                        <form method="POST" action="/admin/appointments/{{ $apt->id }}/cancel">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
+                                                <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Cancel
+                                            </button>
+                                        </form>
+                                    @elseif($apt->status === 'confirmed')
+                                        @if(!$apt->jobCard)
+                                        <a href="/admin/job-cards/create?appointment_id={{ $apt->id }}"
+                                            class="flex items-center gap-2 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50">
+                                            <i data-lucide="clipboard-plus" class="w-3.5 h-3.5"></i> Create Job Card
+                                        </a>
+                                        @else
+                                        <a href="/admin/job-cards/{{ $apt->jobCard->id }}"
+                                            class="flex items-center gap-2 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50">
+                                            <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Job Card #{{ $apt->jobCard->id }}
+                                        </a>
+                                        @endif
+                                        <form method="POST" action="/admin/appointments/{{ $apt->id }}/complete">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-700 hover:bg-green-50">
+                                                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Mark Completed
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="/admin/appointments/{{ $apt->id }}/cancel">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
+                                                <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Cancel
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
                             @endif
                         </div>
                     @else

@@ -27,13 +27,6 @@
         </div>
     </div>
 
-    @if(session('success'))
-    <div class="p-3 bg-green-100 text-green-700 rounded text-sm no-print">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-    <div class="p-3 bg-red-100 text-red-700 rounded text-sm no-print">{{ session('error') }}</div>
-    @endif
-
     {{-- Invoice Card --}}
     <div class="bg-white rounded-lg shadow p-8">
         <div class="flex justify-between items-start mb-8 pb-6 border-b">

@@ -59,6 +59,14 @@ Route::middleware(['auth', 'permission:pricing.manage'])->prefix('pricing')->gro
     Route::delete('/job-types/{jobType}', [AdminController::class, 'deleteJobType'])->name('pricing.job-types.destroy');
 });
 
+// Salary Payments — accountants (or anyone with invoice.manage) can
+// log and review salary without needing full admin access. Same
+// permission as invoicing, since salary is an accounting function.
+Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-management')->group(function () {
+    Route::get('/salary',  [StaffManagementController::class, 'salary'])->name('staff-management.salary');
+    Route::post('/salary', [StaffManagementController::class, 'storeSalaryPayment'])->name('staff-management.salary.store');
+});
+
 // ----------------------------------------------------------------
 // Admin
 // ----------------------------------------------------------------
@@ -123,15 +131,13 @@ Route::middleware(['auth', 'permission:pricing.manage'])->prefix('pricing')->gro
     Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('admin.invoices.payments');
     Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('admin.invoices.resend');
 
-    // Staff Management — attendance, leave, performance, salary
+    // Staff Management — attendance, leave, performance (salary moved to the permission-gated group above)
     Route::get('/staff-management/attendance',            [StaffManagementController::class, 'attendance'])->name('admin.staff-management.attendance');
     Route::get('/staff-management/leave',                 [StaffManagementController::class, 'leave'])->name('admin.staff-management.leave');
     Route::patch('/staff-management/leave/{leaveRequest}/approve', [StaffManagementController::class, 'approveLeave'])->name('admin.staff-management.leave.approve');
     Route::patch('/staff-management/leave/{leaveRequest}/reject',  [StaffManagementController::class, 'rejectLeave'])->name('admin.staff-management.leave.reject');
     Route::get('/staff-management/performance',           [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
     Route::post('/staff-management/performance/email',    [StaffManagementController::class, 'emailPerformanceReport'])->name('admin.staff-management.performance.email');
-    Route::get('/staff-management/salary',                [StaffManagementController::class, 'salary'])->name('admin.staff-management.salary');
-    Route::post('/staff-management/salary',                [StaffManagementController::class, 'storeSalaryPayment'])->name('admin.staff-management.salary.store');
 
     // Suppliers & Purchase Orders
     Route::get('/suppliers',               [SupplierController::class, 'index'])->name('admin.suppliers');

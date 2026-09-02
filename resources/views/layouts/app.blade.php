@@ -142,6 +142,9 @@
 
                     {!! $section('Finance') !!}
                     {!! $link('/staff/invoices',        'receipt',          'Invoices',          'staff/invoices*') !!}
+                    @if(auth()->user()->hasPermission('invoice.manage'))
+                    {!! $link('/staff-management/salary', 'wallet',         'Salary Payments',   'staff-management/salary') !!}
+                    @endif
 
                     {!! $section('My Account') !!}
                     {!! $link('/staff/staff-management/attendance', 'clock-4', 'My Attendance',  'staff/staff-management/attendance') !!}

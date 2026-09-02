@@ -3,18 +3,6 @@
 
 @section('content')
 
-@if(session('success'))
-<div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
-    class="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm border border-green-200">
-    {{ session('success') }}
-</div>
-@endif
-@if(session('error'))
-<div class="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm border border-red-200">
-    {{ session('error') }}
-</div>
-@endif
-
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     {{-- LEFT COLUMN: Company Info + PICs --}}

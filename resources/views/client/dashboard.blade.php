@@ -3,13 +3,6 @@
 
 @section('content')
 
-@if(session('success'))
-<div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
-    class="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm">
-    {{ session('success') }}
-</div>
-@endif
-
 @if(auth()->user()->status === 'inactive')
 <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
     ⚠ Your account is currently <strong>inactive</strong>. Contact the administrator.

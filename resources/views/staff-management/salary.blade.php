@@ -3,23 +3,23 @@
 
 @section('content')
 
-@if(session('success'))
-<div class="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-<div class="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">{{ session('error') }}</div>
-@endif
-
+@if(auth()->user()->role === 'admin')
 <div class="flex gap-2 mb-4 flex-wrap">
     <a href="/admin/staff-management/attendance" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Attendance</a>
     <a href="/admin/staff-management/leave" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Leave Requests</a>
     <a href="/admin/staff-management/performance" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Performance</a>
-    <a href="/admin/staff-management/salary" class="px-4 py-2 rounded text-sm font-medium bg-blue-600 text-white">Salary</a>
+    <a href="/staff-management/salary" class="px-4 py-2 rounded text-sm font-medium bg-blue-600 text-white">Salary</a>
 </div>
+@else
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-gray-700">Salary Payments</h2>
+    <p class="text-xs text-gray-400 mt-1">Log and review staff salary payments.</p>
+</div>
+@endif
 
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h2 class="text-lg font-semibold text-gray-700 mb-4">Log Salary Payment</h2>
-    <form method="POST" action="/admin/staff-management/salary"
+    <form method="POST" action="/staff-management/salary"
         x-data="{
             staffId: '',
             amount: '',

@@ -3,15 +3,11 @@
 
 @section('content')
 
-@if(session('success'))
-<div class="mb-4 p-3 bg-green-100 text-green-700 rounded text-sm">{{ session('success') }}</div>
-@endif
-
 <div class="flex gap-2 mb-4 flex-wrap">
     <a href="/admin/staff-management/attendance" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Attendance</a>
     <a href="/admin/staff-management/leave" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Leave Requests</a>
     <a href="/admin/staff-management/performance" class="px-4 py-2 rounded text-sm font-medium bg-blue-600 text-white">Performance</a>
-    <a href="/admin/staff-management/salary" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Salary</a>
+    <a href="/staff-management/salary" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Salary</a>
 </div>
 
 @if(auth()->user()->role === 'admin')
