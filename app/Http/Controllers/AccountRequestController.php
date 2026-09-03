@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use App\Models\AccountRequest;
 use App\Models\User;
 use App\Models\Company;
+use App\Models\ActivityLog;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -167,12 +169,40 @@ class AccountRequestController extends Controller
         }
 
         $accountRequest->update(['status' => 'approved']);
+
+        ActivityLog::record(
+            'account_request.approved',
+            "Approved {$accountRequest->type} request from ".($accountRequest->requester->name ?? 'unknown'),
+            $accountRequest
+        );
+
+        Notification::send(
+            $accountRequest->requested_by,
+            'Account Request Approved',
+            "Your ".str_replace('_',' ',$accountRequest->type)." request has been approved.",
+            '/client/company'
+        );
+
         return back()->with('success', 'Request approved and processed.');
     }
 
     // Admin rejects
     public function reject(AccountRequest $accountRequest) {
         $accountRequest->update(['status' => 'rejected']);
+
+        ActivityLog::record(
+            'account_request.rejected',
+            "Rejected {$accountRequest->type} request from ".($accountRequest->requester->name ?? 'unknown'),
+            $accountRequest
+        );
+
+        Notification::send(
+            $accountRequest->requested_by,
+            'Account Request Rejected',
+            "Your ".str_replace('_',' ',$accountRequest->type)." request has been rejected.",
+            '/client/company'
+        );
+
         return back()->with('success', 'Request rejected.');
     }
 

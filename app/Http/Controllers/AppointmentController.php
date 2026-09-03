@@ -5,6 +5,8 @@ use App\Mail\AppointmentStatusMail;
 use App\Models\Appointment;
 use App\Models\Vehicle;
 use App\Models\User;
+use App\Models\Setting;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -53,7 +55,9 @@ class AppointmentController extends Controller
 
         $appointments = $query->latest()->paginate($perPage)->withQueryString();
 
-        return view('appointments.index', compact('appointments', 'search', 'statusCounts'));
+        $capacity = $user->role === 'admin' ? (int) Setting::get('daily_appointment_capacity', 20) : null;
+
+        return view('appointments.index', compact('appointments', 'search', 'statusCounts', 'capacity'));
     }
 
     public function show(Appointment $appointment) {
@@ -133,6 +137,17 @@ class AppointmentController extends Controller
             'time'         => 'required',
             'service_type' => 'required|string|max:100',
         ]);
+
+        // Daily booking capacity check — prevents overbooking a given date.
+        $capacity = (int) Setting::get('daily_appointment_capacity', 20);
+        $existingCount = Appointment::whereDate('date', $request->date)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->count();
+
+        if ($existingCount >= $capacity) {
+            return back()->with('error',
+                'Sorry, this date is fully booked. Please choose another date.')->withInput();
+        }
 
         $vehicle = Vehicle::findOrFail($request->vehicle_id);
 
@@ -217,7 +232,21 @@ class AppointmentController extends Controller
     }
 
     // ----------------------------------------------------------------
-    // Status actions (admin) — each notifies the customer by email
+    // Booking capacity (admin only)
+    // ----------------------------------------------------------------
+
+    public function updateCapacity(Request $request) {
+        $request->validate([
+            'daily_appointment_capacity' => 'required|integer|min:1|max:200',
+        ]);
+
+        Setting::set('daily_appointment_capacity', $request->daily_appointment_capacity);
+
+        return back()->with('success', 'Booking capacity updated.');
+    }
+
+    // ----------------------------------------------------------------
+    // Status actions (admin) — each notifies the customer by email + in-app
     // ----------------------------------------------------------------
 
     public function confirm(Appointment $appointment) {
@@ -239,15 +268,26 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Email the registered customer about a status change. Walk-in
-     * customers (no user account) or users without an email are
-     * silently skipped. Mail failures never break the request.
+     * Notify the registered customer (in-app + email) about a status
+     * change. Walk-in customers (no user account) are skipped entirely.
+     * Users without an email still get the in-app notification. Mail
+     * failures never break the request.
      */
     private function notifyStatus(Appointment $appointment, string $label): void {
         if ($appointment->is_walkin) return;
 
         $appointment->load(['vehicle', 'user']);
-        if (!$appointment->user || !$appointment->user->email) return;
+        if (!$appointment->user) return;
+
+        $prefix = $appointment->user->role === 'corporate' ? '/client' : '/customer';
+        Notification::send(
+            $appointment->user_id,
+            "Appointment {$label}",
+            "Your {$appointment->service_type} appointment on ".\Carbon\Carbon::parse($appointment->date)->format('d M Y')." has been {$label}.",
+            "{$prefix}/appointments/{$appointment->id}"
+        );
+
+        if (!$appointment->user->email) return;
 
         try {
             Mail::to($appointment->user->email)->send(new AppointmentStatusMail($appointment, $label));

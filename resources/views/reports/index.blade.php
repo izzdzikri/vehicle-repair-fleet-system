@@ -3,6 +3,14 @@
 
 @section('content')
 
+<div class="flex justify-between items-center mb-4">
+    <h2 class="text-lg font-semibold text-gray-700">Overview</h2>
+    <a href="/admin/reports/export"
+        class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 flex items-center gap-2">
+        <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+    </a>
+</div>
+
 {{-- Top Stats --}}
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4 text-center">

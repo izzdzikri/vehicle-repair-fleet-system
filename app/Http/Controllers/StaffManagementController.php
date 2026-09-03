@@ -7,6 +7,7 @@ use App\Models\StaffAttendance;
 use App\Models\SalaryPayment;
 use App\Models\User;
 use App\Models\JobCard;
+use App\Models\JobFeedback;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -166,6 +167,8 @@ class StaffManagementController extends Controller
             $totalDays   = StaffAttendance::where('staff_id', $s->id)->count();
             $attendanceRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100) : null;
 
+            $avgRating = JobFeedback::whereHas('jobCard', fn($q) => $q->where('staff_id', $s->id))->avg('rating');
+
             return (object) [
                 'staff'           => $s,
                 'total_jobs'      => $total,
@@ -173,6 +176,7 @@ class StaffManagementController extends Controller
                 'overdue'         => $overdue,
                 'avg_hours'       => $avgHours ? round($avgHours, 1) : null,
                 'attendance_rate' => $attendanceRate,
+                'avg_rating'      => $avgRating ? round($avgRating, 1) : null,
             ];
         });
     }
@@ -214,8 +218,37 @@ class StaffManagementController extends Controller
             . ($request->boolean('notify_staff') ? ', and to each staff member individually.' : '.'));
     }
 
+    /**
+     * Streams the performance report as a CSV.
+     */
+    public function exportPerformance() {
+        $report   = $this->buildPerformanceReport();
+        $filename = 'staff_performance_' . now()->format('Ymd_His') . '.csv';
+        $headers  = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        return response()->streamDownload(function () use ($report) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Staff', 'Completed Jobs', 'On-Time', 'Overdue', 'Avg Turnaround (hrs)', 'Attendance Rate (%)', 'Avg Rating']);
+            foreach ($report as $r) {
+                fputcsv($out, [
+                    $r->staff->name,
+                    $r->total_jobs,
+                    $r->on_time,
+                    $r->overdue,
+                    $r->avg_hours ?? '',
+                    $r->attendance_rate ?? '',
+                    $r->avg_rating ?? '',
+                ]);
+            }
+            fclose($out);
+        }, $filename, $headers);
+    }
+
     // ------------------------------------------------------------
-    // Salary payments (admin only)
+    // Salary payments (accountant / admin)
     // ------------------------------------------------------------
 
     public function salary() {

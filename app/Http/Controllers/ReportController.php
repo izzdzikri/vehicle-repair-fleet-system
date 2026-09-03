@@ -63,4 +63,65 @@ class ReportController extends Controller
             'lowStockParts', 'recentCompleted'
         ));
     }
+
+    /**
+     * Streams a CSV covering monthly revenue and recent completed jobs.
+     * No package needed — plain fputcsv against the output stream.
+     */
+    public function export() {
+        $months  = [];
+        $revenue = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date      = now()->subMonths($i);
+            $months[]  = $date->format('M Y');
+            $revenue[] = ServiceHistory::whereYear('service_date', $date->year)
+                ->whereMonth('service_date', $date->month)
+                ->sum('cost');
+        }
+
+        $recentCompleted = JobCard::with(['vehicle', 'staff', 'jobType'])
+            ->where('current_stage', 'completed')
+            ->latest()->take(100)->get();
+
+        $lowStockParts = SparePart::whereColumn('stock', '<=', 'min_stock')->orderBy('stock')->get();
+
+        $filename = 'workshop_report_' . now()->format('Ymd_His') . '.csv';
+        $headers  = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        return response()->streamDownload(function () use ($months, $revenue, $recentCompleted, $lowStockParts) {
+            $out = fopen('php://output', 'w');
+
+            fputcsv($out, ['Monthly Revenue (Last 6 Months)']);
+            fputcsv($out, ['Month', 'Revenue (RM)']);
+            foreach ($months as $i => $m) {
+                fputcsv($out, [$m, number_format($revenue[$i], 2, '.', '')]);
+            }
+            fputcsv($out, []);
+
+            fputcsv($out, ['Low Stock Parts']);
+            fputcsv($out, ['Part Name', 'Brand', 'Stock', 'Min Stock']);
+            foreach ($lowStockParts as $part) {
+                fputcsv($out, [$part->name, $part->brand ?? '-', $part->stock, $part->min_stock]);
+            }
+            fputcsv($out, []);
+
+            fputcsv($out, ['Recent Completed Jobs']);
+            fputcsv($out, ['Job ID', 'Vehicle', 'Job Type', 'Staff', 'Cost (RM)', 'Completed On']);
+            foreach ($recentCompleted as $job) {
+                fputcsv($out, [
+                    $job->id,
+                    $job->vehicle->plate_number ?? '-',
+                    $job->jobType->name ?? '-',
+                    $job->staff->name ?? '-',
+                    number_format($job->total_cost, 2, '.', ''),
+                    $job->updated_at->format('Y-m-d'),
+                ]);
+            }
+
+            fclose($out);
+        }, $filename, $headers);
+    }
 }

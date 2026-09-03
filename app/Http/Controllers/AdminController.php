@@ -8,6 +8,7 @@ use App\Models\Appointment;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\JobType;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -139,7 +140,9 @@ class AdminController extends Controller
             $data['avatar'] = $request->file('avatar')->store('avatars','public');
         }
 
-        User::create($data);
+        $user = User::create($data);
+        ActivityLog::record('user.created', "Created {$user->role} account: {$user->name}", $user);
+
         return back()->with('success','User created successfully. Assign specific permissions from their profile page.');
     }
 
@@ -147,9 +150,10 @@ class AdminController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error','You cannot deactivate your own account.');
         }
-        $user->update([
-            'status' => $user->status === 'active' ? 'inactive' : 'active'
-        ]);
+        $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+        $user->update(['status' => $newStatus]);
+        ActivityLog::record('user.status_changed', "Set {$user->name}'s status to {$newStatus}", $user);
+
         return back()->with('success','User status updated.');
     }
 
@@ -157,6 +161,7 @@ class AdminController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error','You cannot delete your own account.');
         }
+        ActivityLog::record('user.deleted', "Deleted user: {$user->name} ({$user->email})", $user);
         if ($user->avatar) Storage::disk('public')->delete($user->avatar);
         $user->delete();
         return back()->with('success','User deleted.');
@@ -211,7 +216,16 @@ class AdminController extends Controller
         'base_price'         => 'required|numeric|min:0',
     ]);
 
+    $oldPrice = $jobType->base_price;
     $jobType->update($request->only(['name','category','estimated_minutes','base_price','description']));
+
+    if ((float) $oldPrice !== (float) $request->base_price) {
+        ActivityLog::record(
+            'pricing.changed',
+            "Changed price of '{$jobType->name}' from RM".number_format($oldPrice,2)." to RM".number_format($request->base_price,2),
+            $jobType
+        );
+    }
 
     return back()->with('success', 'Job type updated.');
     }
@@ -249,5 +263,11 @@ class AdminController extends Controller
         ]);
 
         return back()->with('success', 'Role & permissions updated.');
+    }
+
+    // Activity Log
+    public function activityLog() {
+        $logs = ActivityLog::with('user')->latest()->paginate(30);
+        return view('admin.activity-log', compact('logs'));
     }
 }

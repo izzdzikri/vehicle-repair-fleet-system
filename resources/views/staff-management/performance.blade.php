@@ -10,25 +10,32 @@
     <a href="/staff-management/salary" class="px-4 py-2 rounded text-sm font-medium bg-white border text-gray-600 hover:bg-gray-50">Salary</a>
 </div>
 
-@if(auth()->user()->role === 'admin')
-<form method="POST" action="/admin/staff-management/performance/email"
-    class="bg-white rounded-lg shadow p-4 mb-4 flex items-center gap-4 flex-wrap">
-    @csrf
-    <label class="flex items-center gap-2 text-sm text-gray-600">
-        <input type="checkbox" name="notify_staff" value="1" class="rounded border-gray-300 text-blue-600">
-        Also email each staff member their own results
-    </label>
-    <button type="submit" class="ml-auto bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex items-center gap-2">
-        <i data-lucide="mail" class="w-4 h-4"></i> Email Report to Admin/HR
-    </button>
-</form>
-@endif
+<div class="flex justify-between items-center gap-4 mb-4 flex-wrap">
+    @if(auth()->user()->role === 'admin')
+    <form method="POST" action="/admin/staff-management/performance/email"
+        class="bg-white rounded-lg shadow p-4 flex items-center gap-4 flex-wrap flex-1">
+        @csrf
+        <label class="flex items-center gap-2 text-sm text-gray-600">
+            <input type="checkbox" name="notify_staff" value="1" class="rounded border-gray-300 text-blue-600">
+            Also email each staff member their own results
+        </label>
+        <button type="submit" class="ml-auto bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex items-center gap-2">
+            <i data-lucide="mail" class="w-4 h-4"></i> Email Report to Admin/HR
+        </button>
+    </form>
+    @endif
+    <a href="/admin/staff-management/performance/export"
+        class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 flex items-center gap-2 shrink-0">
+        <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+    </a>
+</div>
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="px-6 py-4 border-b">
         <h2 class="text-lg font-semibold text-gray-700">Staff Performance Report</h2>
-        <p class="text-xs text-gray-400 mt-1">Based on completed job cards and recorded attendance, all time.</p>
+        <p class="text-xs text-gray-400 mt-1">Based on completed job cards, recorded attendance, and customer ratings, all time.</p>
     </div>
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead class="bg-gray-50">
             <tr class="text-left text-gray-500 border-b">
@@ -38,6 +45,7 @@
                 <th class="px-4 py-3">Overdue</th>
                 <th class="px-4 py-3">Avg Turnaround</th>
                 <th class="px-4 py-3">Attendance Rate</th>
+                <th class="px-4 py-3">Avg Rating</th>
             </tr>
         </thead>
         <tbody>
@@ -59,11 +67,21 @@
                     <span class="text-gray-400 text-xs">No data</span>
                     @endif
                 </td>
+                <td class="px-4 py-3">
+                    @if($r->avg_rating !== null)
+                    <span class="inline-flex items-center gap-1 text-yellow-600 font-medium">
+                        <i data-lucide="star" class="w-3.5 h-3.5"></i> {{ $r->avg_rating }}
+                    </span>
+                    @else
+                    <span class="text-gray-400 text-xs">No ratings</span>
+                    @endif
+                </td>
             </tr>
             @empty
-            <tr><td colspan="6" class="py-8 text-center text-gray-400">No staff found.</td></tr>
+            <tr><td colspan="7" class="py-8 text-center text-gray-400">No staff found.</td></tr>
             @endforelse
         </tbody>
     </table>
+    </div>
 </div>
 @endsection

@@ -104,7 +104,8 @@
                     {!! $link('/admin/vehicles',        'car',              'Vehicles',          'admin/vehicles*') !!}
 
                     {!! $section('Workshop') !!}
-                    {!! $link('/admin/job-cards',       'clipboard-list',   'Job Cards',         'admin/job-cards*', null, 'admin/job-cards/schedule') !!}
+                    {!! $link('/admin/job-cards',       'clipboard-list',   'Job Cards',         'admin/job-cards*', null, ['admin/job-cards/schedule','admin/job-cards/board']) !!}
+                    {!! $link('/admin/job-cards/board', 'layout-grid',      'Job Board',         'admin/job-cards/board') !!}
                     {!! $link('/admin/job-cards/schedule', 'list-ordered',  'Job Schedule',      'admin/job-cards/schedule') !!}
                     {!! $link('/admin/maintenance',     'bell',             'Maintenance',       'admin/maintenance*') !!}
 
@@ -125,6 +126,7 @@
                     {!! $section('System') !!}
                     {!! $link('/pricing/job-types',     'list-checks',      'Job Types',         'pricing/job-types*') !!}
                     {!! $link('/admin/reports',         'bar-chart-2',      'Reports',           'admin/reports') !!}
+                    {!! $link('/admin/activity-log',    'history',          'Activity Log',      'admin/activity-log*') !!}
 
                 @elseif(auth()->user()->role === 'staff')
                     {!! $section('Overview') !!}
@@ -134,6 +136,7 @@
                     {!! $link('/staff/appointments/queue', 'clock',         'Today\'s Queue',    'staff/appointments/queue') !!}
 
                     {!! $section('Workshop') !!}
+                    {!! $link('/staff/job-cards/board',    'layout-grid',   'Job Board',         'staff/job-cards/board') !!}
                     {!! $link('/staff/job-cards/schedule', 'list-ordered',  'Job Schedule',      'staff/job-cards/schedule') !!}
                     {!! $link('/staff/inventory',       'package',          'Inventory',         'staff/inventory') !!}
                     @if(auth()->user()->hasPermission('pricing.manage'))
@@ -242,16 +245,19 @@
                     'job-types' => 'Job Types', 'appointments' => 'Appointments', 'walkin' => 'Walk-in',
                     'queue' => "Today's Queue", 'confirm' => 'Confirm', 'cancel' => 'Cancel',
                     'complete' => 'Complete', 'job-cards' => 'Job Cards', 'schedule' => 'Job Schedule',
+                    'board' => 'Job Board',
                     'stage' => 'Update Stage', 'parts' => 'Parts', 'symptoms' => 'Symptoms',
                     'labour' => 'Labour', 'checkin' => 'Check-in', 'spare-parts' => 'Inventory', 'inventory' => 'Inventory',
                     'vehicles' => 'Vehicles', 'create' => 'Create', 'edit' => 'Edit', 'reports' => 'Reports',
-                    'maintenance' => 'Maintenance', 'read' => 'Mark Read', 'invoices' => 'Invoices',
+                    'export' => 'Export', 'maintenance' => 'Maintenance', 'read' => 'Mark Read', 'invoices' => 'Invoices',
                     'generate' => 'Generate', 'payments' => 'Payments', 'resend' => 'Resend Email',
                     'staff-management' => 'Staff Management', 'attendance' => 'Attendance',
                     'clock-in' => 'Clock In', 'clock-out' => 'Clock Out', 'leave' => 'Leave Requests',
                     'performance' => 'Performance', 'email' => 'Email Report', 'salary' => 'Salary', 'suppliers' => 'Suppliers',
                     'purchase-orders' => 'Purchase Orders', 'order' => 'Order', 'receive' => 'Receive',
-                    'company' => 'Company', 'profile' => 'Profile',
+                    'company' => 'Company', 'profile' => 'Profile', 'activity-log' => 'Activity Log',
+                    'capacity' => 'Booking Capacity', 'feedback' => 'Feedback',
+                    'notifications' => 'Notifications', 'go' => 'Notification', 'read-all' => 'Mark All Read',
                 ];
 
                 $segments = request()->segments();
@@ -359,6 +365,50 @@
                             @if($totalAlerts === 0)
                             <p class="px-4 py-3 text-sm text-gray-400">You're all caught up 🎉</p>
                             @endif
+                        </div>
+                    </div>
+
+                    {{-- Notifications bell — staff / corporate / individual --}}
+                    @elseif(in_array(auth()->user()->role, ['staff','corporate','individual']))
+                    @php
+                        $myNotifications = \App\Models\Notification::where('user_id', auth()->id())->latest()->take(8)->get();
+                        $myUnreadCount   = \App\Models\Notification::where('user_id', auth()->id())->where('is_read', false)->count();
+                    @endphp
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                        <button @click="open = !open" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="Notifications">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            @if($myUnreadCount > 0)
+                            <span class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] leading-none rounded-full w-4 h-4 flex items-center justify-center font-semibold">
+                                {{ $myUnreadCount > 9 ? '9+' : $myUnreadCount }}
+                            </span>
+                            @endif
+                        </button>
+                        <div x-show="open" x-transition
+                            class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border py-2 z-30"
+                            style="display:none">
+                            <div class="flex justify-between items-center px-4 py-1.5">
+                                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Notifications</p>
+                                @if($myUnreadCount > 0)
+                                <form method="POST" action="/notifications/read-all">
+                                    @csrf
+                                    <button class="text-xs text-blue-600 hover:underline">Mark all read</button>
+                                </form>
+                                @endif
+                            </div>
+                            @forelse($myNotifications as $n)
+                            <a href="/notifications/{{ $n->id }}/go" class="block px-4 py-2.5 hover:bg-gray-50 {{ !$n->is_read ? 'bg-blue-50/50' : '' }}">
+                                <div class="flex items-start gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ !$n->is_read ? 'bg-blue-500' : '' }} mt-1.5 shrink-0"></span>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-medium text-gray-800 truncate">{{ $n->title }}</p>
+                                        <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ $n->message }}</p>
+                                        <p class="text-[11px] text-gray-400 mt-1">{{ $n->created_at->diffForHumans() }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                            @empty
+                            <p class="px-4 py-3 text-sm text-gray-400">No notifications yet.</p>
+                            @endforelse
                         </div>
                     </div>
                     @endif

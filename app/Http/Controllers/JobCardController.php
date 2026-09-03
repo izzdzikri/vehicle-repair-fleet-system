@@ -8,6 +8,9 @@ use App\Models\SparePart;
 use App\Models\JobCardPart;
 use App\Models\ServiceHistory;
 use App\Models\JobType;
+use App\Models\ActivityLog;
+use App\Models\Notification;
+use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\LabourCharge;
@@ -87,7 +90,7 @@ class JobCardController extends Controller
             }
         }
 
-        JobCard::create([
+        $jobCard = JobCard::create([
             'appointment_id'       => $appointmentId,
             'vehicle_id'           => $vehicleId,
             'staff_id'             => $request->staff_id,
@@ -96,6 +99,14 @@ class JobCardController extends Controller
             'diagnosis'            => $request->diagnosis,
             'estimated_completion' => $estimatedCompletion,
         ]);
+
+        $vehicle = Vehicle::find($vehicleId);
+        Notification::send(
+            $request->staff_id,
+            'New Job Assigned',
+            "You've been assigned to ".($vehicle->plate_number ?? 'a vehicle')." (".($vehicle->brand ?? '').' '.($vehicle->model ?? '').").",
+            '/staff/job-cards/' . $jobCard->id
+        );
 
         return redirect('/admin/job-cards')->with('success', 'Job card created and assigned.');
     }
@@ -122,6 +133,21 @@ class JobCardController extends Controller
         return view('job-cards.schedule', compact('jobs', 'grouped'));
     }
 
+    // ----------------------------------------------------------------
+    // Kanban board — drag-and-drop stage view
+    // ----------------------------------------------------------------
+
+    public function board() {
+        $jobs = JobCard::with(['vehicle', 'staff', 'jobType'])
+            ->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')
+            ->get();
+
+        $stages  = ['received', 'diagnosing', 'waiting_parts', 'repairing', 'quality_check', 'completed'];
+        $grouped = collect($stages)->mapWithKeys(fn($s) => [$s => $jobs->where('current_stage', $s)->values()]);
+
+        return view('job-cards.board', compact('grouped', 'stages'));
+    }
+
     public function updateStage(Request $request, JobCard $jobCard) {
         $request->validate([
             'current_stage' => 'required|in:received,diagnosing,waiting_parts,repairing,quality_check,completed',
@@ -135,6 +161,12 @@ class JobCardController extends Controller
         ]);
 
         if ($request->current_stage === 'completed') {
+            ActivityLog::record(
+                'job_card.completed',
+                "Completed job card #{$jobCard->id} for ".($jobCard->vehicle->plate_number ?? '—'),
+                $jobCard
+            );
+
             // Mark appointment as completed too
             if ($jobCard->appointment) {
                 $jobCard->appointment->update(['status' => 'completed']);
@@ -152,6 +184,10 @@ class JobCardController extends Controller
                     'cost'         => $jobCard->total_cost,
                 ]
             );
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Stage updated.']);
         }
 
         return back()->with('success', 'Stage updated.');

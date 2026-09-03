@@ -53,6 +53,10 @@ class JobCard extends Model
         return $this->hasMany(JobCardCheckin::class)->latest();
     }
 
+    public function feedback() {
+        return $this->hasOne(JobFeedback::class);
+    }
+
     /**
      * "Stale" = not completed, and hasn't had ANY touch (stage change,
      * parts/labour/notes added) in over 3 hours. Used to nudge the

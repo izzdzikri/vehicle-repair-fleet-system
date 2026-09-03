@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\MaintenanceAlert;
 use App\Models\Vehicle;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class MaintenanceAlertController extends Controller
@@ -44,9 +45,20 @@ class MaintenanceAlertController extends Controller
             'recommendation' => 'required|string|max:500',
         ]);
 
-        MaintenanceAlert::create($request->only([
+        $alert = MaintenanceAlert::create($request->only([
             'vehicle_id', 'alert_type', 'urgency', 'recommendation'
         ]));
+
+        $vehicle = Vehicle::with('owner')->find($request->vehicle_id);
+        if ($vehicle && $vehicle->owner) {
+            $message = "{$vehicle->plate_number}: {$alert->alert_type} — {$alert->recommendation}";
+            if ($vehicle->owner->role === 'corporate' && $vehicle->owner->company_id) {
+                $companyUserIds = User::where('company_id', $vehicle->owner->company_id)->pluck('id');
+                Notification::sendToMany($companyUserIds, 'Maintenance Alert', $message, '/client/maintenance');
+            } elseif ($vehicle->owner->role === 'individual') {
+                Notification::send($vehicle->owner->id, 'Maintenance Alert', $message, '/customer/maintenance');
+            }
+        }
 
         return back()->with('success', 'Maintenance alert created.');
     }

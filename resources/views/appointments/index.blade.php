@@ -28,6 +28,23 @@
     </div>
 </div>
 
+@if(auth()->user()->role === 'admin')
+<div class="bg-white rounded-lg shadow p-4 mb-4 flex items-center gap-4 flex-wrap">
+    <div class="text-sm text-gray-600">
+        <span class="font-semibold">Daily Booking Capacity:</span>
+        <span class="text-blue-600 font-bold">{{ $capacity }}</span> appointments/day
+    </div>
+    <form method="POST" action="/admin/appointments/capacity" class="flex items-center gap-2 ml-auto">
+        @csrf
+        <input type="number" name="daily_appointment_capacity" value="{{ $capacity }}" min="1" max="200"
+            class="w-20 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button type="submit" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">
+            Update
+        </button>
+    </form>
+</div>
+@endif
+
 {{-- Search --}}
 <form method="GET" class="mb-4 flex gap-2">
     @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif

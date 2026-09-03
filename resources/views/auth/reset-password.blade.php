@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><path d='M67 32a1 1 0 0 0 0 6l7 7a1 1 0 0 0 6 0l16-16a26 26 0 0 1-34 34l-30 30a9 9 0 0 1-13-13l30-30a26 26 0 0 1 34-34l-16 16z' fill='white' transform='scale(0.55) translate(18,18)'/></svg>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — Vehicle Repair System</title>
+    <title>Reset Password — Vehicle Repair System</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center"
     style="background: linear-gradient(135deg, #0f1c3f 0%, #1a2f6e 50%, #0d1b4b 100%);">
 
-    {{-- Logo --}}
     <div class="mb-6 text-center">
         <div class="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center mx-auto mb-3 shadow-lg"
             style="box-shadow: 0 0 30px rgba(59,130,246,0.5);">
@@ -24,22 +22,9 @@
         <p class="text-blue-300 text-sm mt-1">Teraju Setia Enterprise</p>
     </div>
 
-    {{-- Card --}}
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8">
-        <h2 class="text-xl font-bold text-gray-800 mb-1">Welcome back</h2>
-        <p class="text-sm text-gray-400 mb-6">Sign in to your account</p>
-
-        @if(session('success'))
-        <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-            {{ session('success') }}
-        </div>
-        @endif
-
-        @if(session('error'))
-        <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-            {{ session('error') }}
-        </div>
-        @endif
+        <h2 class="text-xl font-bold text-gray-800 mb-1">Reset Password</h2>
+        <p class="text-sm text-gray-400 mb-6">Choose a new password for your account.</p>
 
         @if($errors->any())
         <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
@@ -47,41 +32,41 @@
         </div>
         @endif
 
-        <form method="POST" action="/login">
+        <form method="POST" action="/reset-password">
             @csrf
+            <input type="hidden" name="token" value="{{ $token }}">
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" name="email" value="{{ old('email') }}"
-                    placeholder="you@example.com"
+                <input type="email" name="email" value="{{ old('email', $email) }}"
                     class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                            bg-gray-50"
                     required autofocus>
             </div>
-            <div class="mb-2">
-                <div class="flex justify-between items-center mb-1">
-                    <label class="block text-sm font-medium text-gray-700">Password</label>
-                    <a href="/forgot-password" class="text-xs text-blue-600 hover:underline">Forgot password?</a>
-                </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
                 <input type="password" name="password"
-                    placeholder="••••••••"
+                    placeholder="Min 6 characters"
+                    class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                           bg-gray-50"
+                    required>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input type="password" name="password_confirmation"
+                    placeholder="Repeat new password"
                     class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                            bg-gray-50"
                     required>
             </div>
             <button type="submit"
-                class="w-full mt-4 bg-blue-600 text-white py-2.5 rounded-lg font-semibold text-sm
-                       hover:bg-blue-700 transition shadow-md"
-                style="box-shadow: 0 4px 15px rgba(59,130,246,0.4);">
-                Sign In
+                class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold text-sm
+                       hover:bg-blue-700 transition shadow-md">
+                Reset Password
             </button>
         </form>
-
-        <p class="text-center text-sm text-gray-400 mt-5">
-            No account?
-            <a href="/register" class="text-blue-600 font-medium hover:underline">Register here</a>
-        </p>
     </div>
 
     <p class="text-blue-400 text-xs mt-6 opacity-60">© 2026 Teraju Setia Enterprise</p>

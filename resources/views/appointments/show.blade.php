@@ -119,15 +119,55 @@
                         &bull; RM {{ number_format($appointment->jobCard->total_cost, 2) }}
                     </p>
                 </div>
+                @if(auth()->user()->role === 'admin')
                 <a href="/admin/job-cards/{{ $appointment->jobCard->id }}"
                     class="text-sm bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700">
                     View Job Card
                 </a>
+                @endif
             </div>
         </div>
         @endif
 
+        {{-- Feedback (customer/corporate, completed jobs only) --}}
+        @if($appointment->jobCard && $appointment->jobCard->current_stage === 'completed' && in_array(auth()->user()->role, ['individual','corporate']))
+        <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            @php $feedback = $appointment->jobCard->feedback; @endphp
+            @if($feedback)
+            <p class="text-sm font-semibold text-yellow-800 mb-1">Your Rating</p>
+            <div class="flex items-center gap-1 mb-1">
+                @for($i=1;$i<=5;$i++)
+                <i data-lucide="star" class="w-4 h-4 {{ $i <= $feedback->rating ? 'text-yellow-500' : 'text-gray-300' }}"></i>
+                @endfor
+            </div>
+            @if($feedback->comment)
+            <p class="text-sm text-gray-600 italic">"{{ $feedback->comment }}"</p>
+            @endif
+            @else
+            <p class="text-sm font-semibold text-yellow-800 mb-2">How was your service?</p>
+            <form method="POST" action="/feedback/{{ $appointment->jobCard->id }}" x-data="{ rating: 0 }">
+                @csrf
+                <input type="hidden" name="rating" x-model="rating">
+                <div class="flex items-center gap-1 mb-3">
+                    <template x-for="i in 5" :key="i">
+                        <button type="button" @click="rating = i">
+                            <i data-lucide="star" class="w-6 h-6" :class="i <= rating ? 'text-yellow-500' : 'text-gray-300'"></i>
+                        </button>
+                    </template>
+                </div>
+                <textarea name="comment" rows="2" placeholder="Optional comments..."
+                    class="w-full border rounded px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-yellow-500"></textarea>
+                <button type="submit" x-bind:disabled="rating === 0"
+                    class="bg-yellow-500 text-white px-4 py-2 rounded text-sm hover:bg-yellow-600 disabled:opacity-40 disabled:cursor-not-allowed">
+                    Submit Rating
+                </button>
+            </form>
+            @endif
+        </div>
+        @endif
+
         {{-- Actions --}}
+        @if(auth()->user()->role === 'admin')
         <div class="flex gap-3 pt-4 border-t flex-wrap">
             @if($appointment->status === 'pending')
                 @php $hasViewed = session('viewed_appointment_' . $appointment->id, false); @endphp
@@ -175,6 +215,7 @@
             </p>
             @endif
         </div>
+        @endif
     </div>
 
 </div>

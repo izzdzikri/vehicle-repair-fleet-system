@@ -20,6 +20,8 @@
     use App\Http\Controllers\StaffManagementController;
     use App\Http\Controllers\SupplierController;
     use App\Http\Controllers\PurchaseOrderController;
+    use App\Http\Controllers\FeedbackController;
+    use App\Http\Controllers\NotificationController;
 
     Route::get('/', fn() => redirect('/login'));
     Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->name('chatbot.reply');
@@ -31,10 +33,20 @@
     Route::post('/register',[AuthController::class, 'register']);
     Route::post('/logout',  [AuthController::class, 'logout'])->name('logout');
 
-    // Profile (all roles)
+    // Forgot / Reset Password
+    Route::get('/forgot-password',       [AuthController::class, 'showForgotPassword'])->name('password.request');
+    Route::post('/forgot-password',      [AuthController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}',[AuthController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-password',       [AuthController::class, 'resetPassword'])->name('password.update');
+
+    // Profile + Notifications + Feedback (all roles)
     Route::middleware(['auth'])->group(function () {
     Route::get('/profile',  [ProfileController::class, 'show'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/feedback/{jobCard}', [FeedbackController::class, 'store'])->name('feedback.store');
+
+    Route::get('/notifications/{notification}/go', [NotificationController::class, 'go'])->name('notifications.go');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     });
 
 // ----------------------------------------------------------------
@@ -91,11 +103,12 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::patch('/account-requests/{accountRequest}/approve', [AccountRequestController::class, 'approve'])->name('admin.account-requests.approve');
     Route::patch('/account-requests/{accountRequest}/reject',  [AccountRequestController::class, 'reject'])->name('admin.account-requests.reject');
 
-    // Appointments (regular + walk-in + complete)
+    // Appointments (regular + walk-in + complete + capacity)
     Route::get('/appointments',                         [AppointmentController::class, 'index'])->name('admin.appointments');
     Route::get('/appointments/queue',                   [AppointmentController::class, 'queue'])->name('admin.appointments.queue');
     Route::get('/appointments/walkin',                  [AppointmentController::class, 'walkinCreate'])->name('admin.appointments.walkin');
     Route::post('/appointments/walkin',                 [AppointmentController::class, 'walkinStore'])->name('admin.appointments.walkin.store');
+    Route::post('/appointments/capacity',                [AppointmentController::class, 'updateCapacity'])->name('admin.appointments.capacity');
     Route::get('/appointments/{appointment}',           [AppointmentController::class, 'show'])->name('admin.appointments.show');
     Route::patch('/appointments/{appointment}/confirm', [AppointmentController::class, 'confirm'])->name('admin.appointments.confirm');
     Route::patch('/appointments/{appointment}/cancel',  [AppointmentController::class, 'cancel'])->name('admin.appointments.cancel');
@@ -103,6 +116,7 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
 
     // Job Cards
     Route::get('/job-cards/schedule', [JobCardController::class, 'schedule'])->name('admin.job-cards.schedule');
+    Route::get('/job-cards/board',    [JobCardController::class, 'board'])->name('admin.job-cards.board');
     Route::resource('job-cards', JobCardController::class);
     Route::patch('/job-cards/{jobCard}/stage',    [JobCardController::class, 'updateStage'])->name('job-cards.stage');
     Route::post('/job-cards/{jobCard}/parts',     [JobCardController::class, 'addPart'])->name('job-cards.add-part');
@@ -117,7 +131,11 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::resource('vehicles', VehicleController::class);
 
     // Reports
-    Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports');
+    Route::get('/reports',        [ReportController::class, 'index'])->name('admin.reports');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
+
+    // Activity Log
+    Route::get('/activity-log', [AdminController::class, 'activityLog'])->name('admin.activity-log');
 
     // Maintenance
     Route::get('/maintenance',                  [MaintenanceAlertController::class, 'index'])->name('admin.maintenance');
@@ -137,6 +155,7 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::patch('/staff-management/leave/{leaveRequest}/approve', [StaffManagementController::class, 'approveLeave'])->name('admin.staff-management.leave.approve');
     Route::patch('/staff-management/leave/{leaveRequest}/reject',  [StaffManagementController::class, 'rejectLeave'])->name('admin.staff-management.leave.reject');
     Route::get('/staff-management/performance',           [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
+    Route::get('/staff-management/performance/export',    [StaffManagementController::class, 'exportPerformance'])->name('admin.staff-management.performance.export');
     Route::post('/staff-management/performance/email',    [StaffManagementController::class, 'emailPerformanceReport'])->name('admin.staff-management.performance.email');
 
     // Suppliers & Purchase Orders
@@ -163,6 +182,7 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::get('/appointments/queue',                [AppointmentController::class, 'queue'])->name('staff.appointments.queue');
 
     Route::get('/job-cards/schedule',                [JobCardController::class, 'schedule'])->name('staff.job-cards.schedule');
+    Route::get('/job-cards/board',                   [JobCardController::class, 'board'])->name('staff.job-cards.board');
     Route::get('/job-cards/{jobCard}',               [JobCardController::class, 'show'])->name('staff.job-cards.show');
     Route::patch('/job-cards/{jobCard}/stage',       [JobCardController::class, 'updateStage'])->name('staff.job-cards.stage');
     Route::post('/job-cards/{jobCard}/parts',        [JobCardController::class, 'addPart'])->name('staff.job-cards.add-part');

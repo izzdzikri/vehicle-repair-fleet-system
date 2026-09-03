@@ -6,6 +6,8 @@ use App\Models\Invoice;
 use App\Models\JobCard;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\ActivityLog;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -123,6 +125,24 @@ class InvoiceController extends Controller
         $invoice->recalculate();
         $this->sendInvoiceEmail($invoice);
 
+        $ownerId = $jobCard->appointment->user_id ?? null;
+        if ($ownerId) {
+            $owner  = User::find($ownerId);
+            $prefix = ($owner && $owner->role === 'corporate') ? '/client' : '/customer';
+            Notification::send(
+                $ownerId,
+                'New Invoice',
+                "Invoice {$invoice->invoice_number} for RM".number_format($invoice->total,2)." is ready.",
+                "{$prefix}/invoices/{$invoice->id}"
+            );
+        }
+
+        ActivityLog::record(
+            'invoice.generated',
+            "Generated invoice {$invoice->invoice_number} for {$invoice->customer_name} (RM".number_format($invoice->total,2).")",
+            $invoice
+        );
+
         $prefix = auth()->user()->role === 'admin' ? 'admin' : 'staff';
         return redirect("/{$prefix}/invoices/{$invoice->id}")->with('success', 'Invoice generated and emailed to the customer.');
     }
@@ -154,6 +174,12 @@ class InvoiceController extends Controller
 
         $invoice->recalculate();
         $this->sendInvoiceEmail($invoice);
+
+        ActivityLog::record(
+            'invoice.payment',
+            "Recorded RM".number_format($request->amount,2)." payment for invoice {$invoice->invoice_number}",
+            $invoice
+        );
 
         return back()->with('success', 'Payment recorded.');
     }
