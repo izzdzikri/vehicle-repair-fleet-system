@@ -254,7 +254,7 @@ class AdminController extends Controller
         $request->validate([
             'staff_role'    => 'nullable|string|in:mechanic,accountant,inventory_manager,front_desk',
             'permissions'   => 'nullable|array',
-            'permissions.*' => 'string|in:inventory.manage,pricing.manage,invoice.manage',
+            'permissions.*' => 'string|in:inventory.manage,pricing.manage,invoice.manage,job_cards.manage_all',
         ]);
 
         $user->update([

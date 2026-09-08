@@ -76,4 +76,17 @@ class JobCard extends Model
     public function getLastCheckinAttribute() {
         return $this->relationLoaded('checkins') ? $this->checkins->first() : $this->checkins()->first();
     }
+
+    /**
+     * Can this user edit this job card (update stage, add parts/labour,
+     * update diagnosis)? Admins and anyone holding job_cards.manage_all
+     * can edit any job card. A regular mechanic can only edit jobs
+     * assigned to them — they can still VIEW every other job card,
+     * just not change it.
+     */
+    public function canBeEditedBy(User $user): bool {
+        if ($user->role === 'admin') return true;
+        if ($user->hasPermission('job_cards.manage_all')) return true;
+        return $this->staff_id === $user->id;
+    }
 }

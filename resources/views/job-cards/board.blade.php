@@ -5,6 +5,7 @@
 
 @php
     $prefix = auth()->user()->role === 'admin' ? '/admin' : '/staff';
+    $user   = auth()->user();
     $stageLabels = [
         'received' => 'Received', 'diagnosing' => 'Diagnosing', 'waiting_parts' => 'Waiting Parts',
         'repairing' => 'Repairing', 'quality_check' => 'Quality Check', 'completed' => 'Completed',
@@ -17,6 +18,9 @@
 
 <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
     ℹ Drag a job card between columns to update its stage. Changes save automatically.
+    @if($user->role === 'staff' && !$user->hasPermission('job_cards.manage_all'))
+    Cards with a 🔒 lock belong to another mechanic — you can open and view them, but can't drag or edit them.
+    @endif
 </div>
 
 <div class="flex gap-4 overflow-x-auto pb-4" style="min-height: 70vh;">
@@ -32,15 +36,22 @@
             data-stage="{{ $stage }}">
             @foreach($grouped[$stage] as $job)
             @php
-                $overdue = $job->estimated_completion && $job->estimated_completion->isPast() && $stage !== 'completed';
+                $overdue  = $job->estimated_completion && $job->estimated_completion->isPast() && $stage !== 'completed';
+                $canEdit  = $job->canBeEditedBy($user);
             @endphp
-            <div class="kanban-card bg-white border-l-4 {{ $stageColors[$stage] }} rounded-lg shadow-sm p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition"
+            <div class="kanban-card {{ $canEdit ? '' : 'kanban-locked' }} bg-white border-l-4 {{ $stageColors[$stage] }} rounded-lg shadow-sm p-3 transition
+                {{ $canEdit ? 'cursor-grab active:cursor-grabbing hover:shadow-md' : 'opacity-70 cursor-not-allowed' }}"
                 data-id="{{ $job->id }}">
                 <div class="flex justify-between items-start mb-1">
                     <p class="font-semibold text-sm text-gray-800">{{ $job->vehicle->plate_number ?? '—' }}</p>
-                    @if($job->is_stale && $stage !== 'completed')
-                    <span class="text-xs" title="No update in {{ $job->hours_since_update }}h">⏰</span>
-                    @endif
+                    <div class="flex items-center gap-1">
+                        @if(!$canEdit)
+                        <span class="text-xs" title="Assigned to {{ $job->staff->name ?? 'another mechanic' }} — view only">🔒</span>
+                        @endif
+                        @if($job->is_stale && $stage !== 'completed')
+                        <span class="text-xs" title="No update in {{ $job->hours_since_update }}h">⏰</span>
+                        @endif
+                    </div>
                 </div>
                 <p class="text-xs text-gray-500 mb-1">{{ $job->vehicle->brand ?? '' }} {{ $job->vehicle->model ?? '' }}</p>
                 <p class="text-xs text-gray-600 mb-2">{{ $job->jobType->name ?? '—' }}</p>
@@ -52,7 +63,9 @@
                     </span>
                     @endif
                 </div>
-                <a href="{{ $prefix }}/job-cards/{{ $job->id }}" class="block mt-2 text-xs text-blue-600 hover:underline">Open →</a>
+                <a href="{{ $prefix }}/job-cards/{{ $job->id }}" class="block mt-2 text-xs text-blue-600 hover:underline">
+                    {{ $canEdit ? 'Open →' : 'View →' }}
+                </a>
             </div>
             @endforeach
         </div>
@@ -79,6 +92,10 @@ document.addEventListener('DOMContentLoaded', function () {
             group: 'kanban',
             animation: 150,
             ghostClass: 'opacity-40',
+            // Locked cards (assigned to someone else, not editable by the
+            // current user) simply cannot be picked up at all.
+            filter: '.kanban-locked',
+            preventOnFilter: true,
             onEnd: function (evt) {
                 const cardId    = evt.item.dataset.id;
                 const newStage  = evt.to.dataset.stage;
@@ -97,12 +114,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     body: JSON.stringify({ current_stage: newStage }),
                 })
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed');
-                    return res.json();
+                .then(async res => {
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data.message || 'Failed');
+                    return data;
                 })
-                .catch(() => {
-                    alert('Could not update stage. Reverting.');
+                .catch((err) => {
+                    alert(err.message || 'Could not update stage. Reverting.');
                     evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex] || null);
                     syncCounts();
                 });

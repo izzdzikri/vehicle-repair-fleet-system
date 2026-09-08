@@ -12,19 +12,38 @@ class FreshSeeder extends Seeder
     public function run(): void
     {
         // ----------------------------------------------------------------
-        // TRUNCATE ALL (children first)
+        // TRUNCATE ALL
+        //
+        // Expanded to cover every table this seeder OR Psm2FeatureSeeder
+        // touches, so FreshSeeder is self-sufficient — running it alone
+        // never leaves orphaned rows in tables it doesn't itself repopulate
+        // (e.g. staff_attendance, invoices), and running it before
+        // Psm2FeatureSeeder never fails on FK constraints either way.
         // ----------------------------------------------------------------
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('job_card_checkins')->truncate();
+        DB::table('notifications')->truncate();
+        DB::table('job_feedbacks')->truncate();
+        DB::table('activity_logs')->truncate();
+        DB::table('settings')->truncate();
         DB::table('chat_sessions')->truncate();
         DB::table('account_requests')->truncate();
         DB::table('maintenance_alerts')->truncate();
         DB::table('service_history')->truncate();
         DB::table('labour_charges')->truncate();
         DB::table('job_card_parts')->truncate();
+        DB::table('payments')->truncate();
+        DB::table('invoices')->truncate();
+        DB::table('purchase_orders')->truncate();
+        DB::table('salary_payments')->truncate();
+        DB::table('leave_requests')->truncate();
+        DB::table('staff_attendance')->truncate();
         DB::table('job_cards')->truncate();
         DB::table('appointments')->truncate();
         DB::table('spare_parts')->truncate();
         DB::table('job_types')->truncate();
+        DB::table('suppliers')->truncate();
+        DB::table('trip_logs')->truncate();
         DB::table('vehicles')->truncate();
         DB::table('users')->truncate();
         DB::table('companies')->truncate();
@@ -71,7 +90,8 @@ class FreshSeeder extends Seeder
 
         // ----------------------------------------------------------------
         // USERS
-        // 1 admin, 3 staff, 4 corporate (2 share company 1), 4 individual
+        // 1 admin, 3 staff, 1 coordinator, 4 corporate (2 share company 1),
+        // 4 individual
         // ----------------------------------------------------------------
         DB::table('users')->insert([
         // Admin
@@ -88,7 +108,7 @@ class FreshSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
             'pic_role'   => null,
-            'specialties'=> null,                    // <-- added
+            'specialties'=> null,
         ],
         // Staff
         [
@@ -253,6 +273,24 @@ class FreshSeeder extends Seeder
             'role'       => 'individual',
             'status'     => 'inactive',
             'contact_no' => '014-22334455',
+            'company_id' => null,
+            'avatar'     => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+            'pic_role'   => null,
+            'specialties'=> null,
+        ],
+        // Coordinator — read+comment-only progress monitoring role.
+        // Previously unseeded, which is why testing it required manually
+        // creating an account via the admin panel.
+        [
+            'id'         => 13,
+            'name'       => 'Nur Aisyah binti Kamarul',
+            'email'      => 'aisyah@teraju.my',
+            'password'   => Hash::make('password'),
+            'role'       => 'coordinator',
+            'status'     => 'active',
+            'contact_no' => '019-2245566',
             'company_id' => null,
             'avatar'     => null,
             'created_at' => now(),
@@ -621,6 +659,98 @@ class FreshSeeder extends Seeder
                 'notes'          => 'Test request — rejected by admin.',
                 'created_at'     => Carbon::now()->subDays(5),
                 'updated_at'     => Carbon::now()->subDays(4),
+            ],
+        ]);
+
+        // ----------------------------------------------------------------
+        // SETTINGS
+        // ----------------------------------------------------------------
+        DB::table('settings')->insert([
+            ['key' => 'daily_appointment_capacity', 'value' => '20', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // ----------------------------------------------------------------
+        // NOTIFICATIONS — gives the bell dropdown real content on first
+        // login instead of an empty state for every role.
+        // ----------------------------------------------------------------
+        DB::table('notifications')->insert([
+            [
+                'user_id'    => 9,
+                'title'      => 'Appointment Confirmed',
+                'message'    => 'Your Air Conditioning Service appointment on '.Carbon::now()->subDays(2)->format('d M Y').' has been confirmed.',
+                'url'        => '/customer/appointments/10',
+                'is_read'    => false,
+                'created_at' => Carbon::now()->subDays(2),
+                'updated_at' => Carbon::now()->subDays(2),
+            ],
+            [
+                'user_id'    => 10,
+                'title'      => 'New Invoice',
+                'message'    => 'A new invoice is ready to view.',
+                'url'        => '/customer/invoices/2',
+                'is_read'    => false,
+                'created_at' => Carbon::now()->subDays(4),
+                'updated_at' => Carbon::now()->subDays(4),
+            ],
+            [
+                'user_id'    => 2,
+                'title'      => 'New Job Assigned',
+                'message'    => "You've been assigned to JQP 1133 (Isuzu D-Max).",
+                'url'        => '/staff/job-cards/9',
+                'is_read'    => true,
+                'created_at' => Carbon::now()->subDays(3),
+                'updated_at' => Carbon::now()->subDays(3),
+            ],
+            [
+                'user_id'    => 7,
+                'title'      => 'Maintenance Alert',
+                'message'    => 'WXY 2211: Oil Change Due — service interval approaching.',
+                'url'        => '/client/maintenance',
+                'is_read'    => false,
+                'created_at' => Carbon::now()->subDays(1),
+                'updated_at' => Carbon::now()->subDays(1),
+            ],
+        ]);
+
+        // ----------------------------------------------------------------
+        // JOB FEEDBACKS — feeds the "Avg Rating" column on the staff
+        // performance report, which otherwise always showed "No ratings".
+        // ----------------------------------------------------------------
+        DB::table('job_feedbacks')->insert([
+            [
+                'job_card_id' => 1,
+                'rating'      => 5,
+                'comment'     => 'Very satisfied — quick and professional service.',
+                'created_at'  => Carbon::now()->subDays(29),
+                'updated_at'  => Carbon::now()->subDays(29),
+            ],
+            [
+                'job_card_id' => 2,
+                'rating'      => 4,
+                'comment'     => 'Good job overall, slightly longer wait than expected.',
+                'created_at'  => Carbon::now()->subDays(24),
+                'updated_at'  => Carbon::now()->subDays(24),
+            ],
+        ]);
+
+        // ----------------------------------------------------------------
+        // JOB CARD CHECKINS — demo data for the coordinator role, which
+        // previously had no seeded account or check-in history at all.
+        // ----------------------------------------------------------------
+        DB::table('job_card_checkins')->insert([
+            [
+                'job_card_id'    => 9,
+                'coordinator_id' => 13,
+                'note'           => 'Checked with Ridhwan — gasket replacement in progress, on track for today.',
+                'created_at'     => Carbon::now()->subHours(2),
+                'updated_at'     => Carbon::now()->subHours(2),
+            ],
+            [
+                'job_card_id'    => 11,
+                'coordinator_id' => 13,
+                'note'           => 'Waiting on ATF stock — flagged to admin for purchase order follow-up.',
+                'created_at'     => Carbon::now()->subHours(5),
+                'updated_at'     => Carbon::now()->subHours(5),
             ],
         ]);
     }

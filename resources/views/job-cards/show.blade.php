@@ -4,8 +4,16 @@
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
 
-    <a href="{{ auth()->user()->role === 'admin' ? '/admin/job-cards' : '/staff/dashboard' }}"
+    <a href="{{ auth()->user()->role === 'admin' ? '/admin/job-cards' : '/staff/job-cards/board' }}"
         class="text-sm text-blue-600 hover:underline">← Back</a>
+
+    @if(!$canEdit)
+    <div class="p-3 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-600 flex items-center gap-2">
+        <i data-lucide="lock" class="w-4 h-4 shrink-0 text-gray-400"></i>
+        This job card is assigned to <strong>{{ $jobCard->staff->name ?? 'another staff member' }}</strong>.
+        You can view the full details below, but only the assigned mechanic (or a staff member with full job card access) can make changes.
+    </div>
+    @endif
 
     {{-- Job Info --}}
     <div class="bg-white rounded-lg shadow p-6">
@@ -75,6 +83,7 @@
         </div>
 
         {{-- Update Stage --}}
+        @if($canEdit)
         <form method="POST"
             action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $jobCard->id }}/stage"
             class="flex gap-3 items-center">
@@ -92,6 +101,7 @@
                 Update Stage
             </button>
         </form>
+        @endif
     </div>
 
     {{-- --------------------------------------------------------- --}}
@@ -114,6 +124,7 @@
         </div>
         @endif
 
+        @if($canEdit)
         <form method="POST"
             action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $jobCard->id }}/symptoms">
             @csrf
@@ -216,6 +227,29 @@
                 Save Diagnosis & Symptoms
             </button>
         </form>
+        @else
+        {{-- Read-only view for non-owners --}}
+        <div class="mb-4">
+            <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Technician Diagnosis</p>
+            <p class="text-sm text-gray-700">{{ $jobCard->diagnosis ?? 'Not yet recorded.' }}</p>
+        </div>
+        @if($jobCard->symptoms && count($jobCard->symptoms) > 0)
+        <div class="mb-4">
+            <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Recorded Symptoms ({{ count($jobCard->symptoms) }})</p>
+            <div class="flex flex-wrap gap-1">
+                @foreach($jobCard->symptoms as $s)
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ $s }}</span>
+                @endforeach
+            </div>
+        </div>
+        @endif
+        @if($jobCard->technician_notes)
+        <div>
+            <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Technician Notes</p>
+            <p class="text-sm text-gray-600 italic">"{{ $jobCard->technician_notes }}"</p>
+        </div>
+        @endif
+        @endif
     </div>
 
     {{-- --------------------------------------------------------- --}}
@@ -224,6 +258,7 @@
     <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold text-gray-700 mb-4">Spare Parts Used</h3>
 
+        @if($canEdit)
         <form method="POST"
             action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $jobCard->id }}/parts"
             class="flex gap-3 items-end flex-wrap mb-4">
@@ -254,6 +289,7 @@
                 Add Part
             </button>
         </form>
+        @endif
 
         {{-- Parts list --}}
         @forelse($jobCard->parts as $p)
@@ -287,6 +323,7 @@
     <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold text-gray-700 mb-4">Labour Charges</h3>
 
+        @if($canEdit)
         <form method="POST"
             action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $jobCard->id }}/labour"
             class="flex gap-3 items-end flex-wrap mb-4"
@@ -350,6 +387,7 @@
                 Add Labour
             </button>
         </form>
+        @endif
 
         {{-- Labour list (updated to show remark) --}}
         @forelse($jobCard->labourCharges as $labour)
@@ -366,11 +404,13 @@
                 </div>
                 <div class="flex items-center gap-4 shrink-0 ml-4">
                     <span class="font-medium text-gray-700">RM {{ number_format($labour->charge, 2) }}</span>
+                    @if($canEdit)
                     <form method="POST"
                         action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/labour/{{ $labour->id }}">
                         @csrf @method('DELETE')
                         <button class="text-xs text-red-400 hover:text-red-600">Remove</button>
                     </form>
+                    @endif
                 </div>
             </div>
         </div>

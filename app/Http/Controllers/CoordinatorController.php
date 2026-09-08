@@ -4,6 +4,25 @@ namespace App\Http\Controllers;
 use App\Models\JobCard;
 use Illuminate\Http\Request;
 
+/**
+ * Coordinator is a read + comment-only tier, entirely separate from the
+ * staff `job_cards.manage_all` permission. It does not grant edit rights
+ * over stage/parts/labour/diagnosis — those actions aren't even exposed
+ * in the coordinator views. The only write action a coordinator has is
+ * logging a check-in note.
+ *
+ * DESIGN DECISION (unscoped by design): a coordinator can view and check
+ * in on ALL active job cards, with no per-coordinator ownership filter.
+ * This is intentional, not an oversight — coordinators monitor workshop-
+ * wide progress, not a personal queue, so there is no "their" job card
+ * to scope to. Access control here is entirely role-based
+ * (middleware `role:coordinator`); no additional ownership check is
+ * needed on top of it. If a future requirement introduces coordinators
+ * assigned to specific areas/staff, that would need an explicit
+ * ownership column (e.g. `coordinator_id` or an area/zone assignment)
+ * and a check mirroring the staff `job_cards.manage_all` pattern —
+ * do not assume this file already does that.
+ */
 class CoordinatorController extends Controller
 {
     public function dashboard() {
@@ -44,6 +63,10 @@ class CoordinatorController extends Controller
         return view('coordinator.job-cards', compact('jobs', 'totalActive', 'staleTotal', 'overdueTotal'));
     }
 
+    /**
+     * Coordinators can view any job card's detail — see class-level
+     * doc-comment for why this is intentionally unscoped.
+     */
     public function showJobCard(JobCard $jobCard) {
         $jobCard->load([
             'vehicle', 'staff', 'jobType', 'appointment.user',
@@ -53,6 +76,12 @@ class CoordinatorController extends Controller
         return view('coordinator.job-card-show', compact('jobCard'));
     }
 
+    /**
+     * Coordinators can log a check-in on any active job card — see
+     * class-level doc-comment. No ownership check is added here beyond
+     * `auth()->id()` being recorded as the check-in's author, which is
+     * for attribution only, not authorization.
+     */
     public function storeCheckin(Request $request, JobCard $jobCard) {
         $request->validate([
             'note' => 'nullable|string|max:500',

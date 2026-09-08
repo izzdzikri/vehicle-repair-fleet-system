@@ -25,9 +25,10 @@ class User extends Authenticatable
      * Admins implicitly have every permission (see hasPermission()).
      */
     public const PERMISSIONS = [
-        'inventory.manage' => 'Manage Inventory (add/edit/delete parts & stock)',
-        'pricing.manage'   => 'Manage Pricing (job types & part prices)',
-        'invoice.manage'   => 'Generate Invoices & Record Payments',
+        'inventory.manage'      => 'Manage Inventory (add/edit/delete parts & stock)',
+        'pricing.manage'        => 'Manage Pricing (job types & part prices)',
+        'invoice.manage'        => 'Generate Invoices & Record Payments',
+        'job_cards.manage_all'  => 'Edit Any Job Card (not just their own assigned jobs)',
     ];
 
     protected $fillable = [

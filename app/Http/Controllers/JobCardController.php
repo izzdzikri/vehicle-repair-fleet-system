@@ -115,7 +115,8 @@ class JobCardController extends Controller
     $jobCard->load(['vehicle', 'staff', 'parts.sparePart', 'appointment.user', 'jobType', 'labourCharges']);
     $spareParts = SparePart::where('stock', '>', 0)->orderBy('category')->get();
     $jobTypes   = \App\Models\JobType::orderBy('category')->orderBy('name')->get();
-    return view('job-cards.show', compact('jobCard', 'spareParts', 'jobTypes'));
+    $canEdit    = $jobCard->canBeEditedBy(auth()->user());
+    return view('job-cards.show', compact('jobCard', 'spareParts', 'jobTypes', 'canEdit'));
     }
 
     // ----------------------------------------------------------------
@@ -148,7 +149,28 @@ class JobCardController extends Controller
         return view('job-cards.board', compact('grouped', 'stages'));
     }
 
+    /**
+     * Central permission gate for all job-card WRITE actions below.
+     * Viewing (show, board, schedule) stays open to every staff member —
+     * only mutations are restricted to the assigned mechanic, admins, and
+     * anyone holding job_cards.manage_all.
+     */
+    private function assertCanEdit(Request $request, JobCard $jobCard): void {
+        if ($jobCard->canBeEditedBy(auth()->user())) return;
+
+        if ($request->wantsJson()) {
+            abort(response()->json([
+                'success' => false,
+                'message' => 'This job card is assigned to another staff member. You can view it but not make changes.',
+            ], 403));
+        }
+
+        abort(403, 'This job card is assigned to another staff member. You can view it but not make changes.');
+    }
+
     public function updateStage(Request $request, JobCard $jobCard) {
+        $this->assertCanEdit($request, $jobCard);
+
         $request->validate([
             'current_stage' => 'required|in:received,diagnosing,waiting_parts,repairing,quality_check,completed',
         ]);
@@ -197,6 +219,8 @@ class JobCardController extends Controller
      * Save technician-filled symptom checklist + notes.
      */
     public function updateSymptoms(Request $request, JobCard $jobCard) {
+        $this->assertCanEdit($request, $jobCard);
+
         $request->validate([
             'symptoms'         => 'nullable|array',
             'symptoms.*'       => 'string|max:100',
@@ -212,6 +236,8 @@ class JobCardController extends Controller
     }
 
     public function addPart(Request $request, JobCard $jobCard) {
+        $this->assertCanEdit($request, $jobCard);
+
         $request->validate([
             'spare_part_id' => 'required|exists:spare_parts,id',
             'quantity'      => 'required|integer|min:1',
@@ -239,6 +265,8 @@ class JobCardController extends Controller
     }
 
     public function addLabour(Request $request, JobCard $jobCard) {
+    $this->assertCanEdit($request, $jobCard);
+
     $request->validate([
         'description' => 'required|string|max:150',
         'charge'      => 'required|numeric|min:1',
@@ -259,8 +287,10 @@ class JobCardController extends Controller
     return back()->with('success', 'Labour charge added.');
     }   
 
-public function removeLabour(LabourCharge $labourCharge) {
+public function removeLabour(Request $request, LabourCharge $labourCharge) {
     $jobCard = $labourCharge->jobCard;
+    $this->assertCanEdit($request, $jobCard);
+
     $labourCharge->delete();
 
     $partsCost  = $jobCard->parts()->sum(\DB::raw('quantity * unit_price'));
