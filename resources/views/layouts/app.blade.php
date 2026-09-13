@@ -159,12 +159,18 @@
                             return \App\Models\JobCard::where('current_stage','!=','completed')
                                 ->where('updated_at','<', now()->subHours(3))->count();
                         });
+                        $coordLowStock = \Illuminate\Support\Facades\Cache::remember('sidebar_low_stock_coordinator', 30, function () {
+                            return \App\Models\SparePart::whereColumn('stock','<=','min_stock')->count();
+                        });
                     @endphp
                     {!! $section('Overview') !!}
                     {!! $link('/coordinator/dashboard', 'layout-dashboard', 'Dashboard',         'coordinator/dashboard') !!}
 
                     {!! $section('Repair Progress') !!}
                     {!! $link('/coordinator/job-cards', 'clipboard-check',  'Job Cards',         'coordinator/job-cards*', $coordStaleBadge ?: null) !!}
+
+                    {!! $section('Inventory') !!}
+                    {!! $link('/coordinator/inventory', 'package',          'Inventory',         'coordinator/inventory', $coordLowStock ?: null) !!}
 
                 @elseif(auth()->user()->role === 'corporate')
                     {!! $section('Overview') !!}
@@ -564,6 +570,68 @@
             </div>
         </div>
     </div>
+
+    {{-- Global confirm dialog — replaces native confirm() popups with a
+         styled modal. Trigger from any form via:
+         onsubmit="return confirmSubmit(event, {title:'...', message:'...', confirmLabel:'Delete'})" --}}
+    <div x-data
+        x-show="$store.confirmDialog.open"
+        x-transition.opacity
+        class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 no-print"
+        style="display:none">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" @click.outside="$store.confirmDialog.close()">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+                </div>
+                <h3 class="text-base font-semibold text-gray-800" x-text="$store.confirmDialog.title"></h3>
+            </div>
+            <p class="text-sm text-gray-500 mb-5" x-text="$store.confirmDialog.message"></p>
+            <div class="flex gap-3 justify-end">
+                <button type="button" @click="$store.confirmDialog.close()"
+                    class="px-4 py-2 border rounded text-sm text-gray-600 hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button type="button" @click="$store.confirmDialog.confirm()"
+                    class="px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                    x-text="$store.confirmDialog.confirmLabel">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.store('confirmDialog', {
+                open: false,
+                title: 'Are you sure?',
+                message: 'This action cannot be undone.',
+                confirmLabel: 'Confirm',
+                pendingForm: null,
+                request(form, options = {}) {
+                    this.pendingForm  = form;
+                    this.title        = options.title || 'Are you sure?';
+                    this.message      = options.message || 'This action cannot be undone.';
+                    this.confirmLabel = options.confirmLabel || 'Confirm';
+                    this.open = true;
+                },
+                confirm() {
+                    if (this.pendingForm) this.pendingForm.submit();
+                    this.close();
+                },
+                close() {
+                    this.open = false;
+                    this.pendingForm = null;
+                },
+            });
+        });
+
+        function confirmSubmit(event, options = {}) {
+            event.preventDefault();
+            window.Alpine.store('confirmDialog').request(event.target, options);
+            return false;
+        }
+    </script>
 
     <script>lucide.createIcons();</script>
 </body>

@@ -134,9 +134,14 @@ class User extends Authenticatable
     /**
      * Admins implicitly hold every permission. Staff need it explicitly
      * granted via the permissions[] array (set on their profile page).
+     * Coordinators are a separate workshop-assistant role (not a staff
+     * sub-role) and are granted inventory.manage specifically as part of
+     * that role's job — see CoordinatorController's class-level
+     * doc-comment for the full design rationale.
      */
     public function hasPermission(string $permission): bool {
         if ($this->role === 'admin') return true;
+        if ($this->role === 'coordinator' && $permission === 'inventory.manage') return true;
         return in_array($permission, $this->permissions ?? [], true);
     }
 

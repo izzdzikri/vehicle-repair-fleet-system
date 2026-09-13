@@ -3,6 +3,8 @@
 
 @section('content')
 
+@include('partials.greeting')
+
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4 text-center">
         <i data-lucide="clipboard-list" class="w-6 h-6 text-blue-500 mx-auto mb-1"></i>
@@ -77,11 +79,13 @@
                     @endif
                 </td>
                 <td class="px-4 py-3">
-                    <a href="/coordinator/job-cards/{{ $job->id }}" class="text-blue-600 hover:underline text-xs font-medium">Check</a>
+                    <a href="/coordinator/job-cards/{{ $job->id }}" class="text-blue-600 hover:underline text-xs font-medium">Open</a>
                 </td>
             </tr>
             @empty
-            <tr><td colspan="6" class="py-8 text-center text-gray-400">No active jobs right now.</td></tr>
+            <tr><td colspan="6" class="py-2">
+                <x-empty-state icon="check-circle-2" title="No active jobs right now" subtitle="Everything's caught up." />
+            </td></tr>
             @endforelse
         </tbody>
     </table>

@@ -52,8 +52,9 @@
 // ----------------------------------------------------------------
 // Permission-gated actions — available to admin automatically, and to
 // any staff member holding the specific permission (e.g. an accountant
-// or inventory manager sub-role). Kept outside the /admin prefix so
-// non-admin staff with the right permission can also reach it.
+// or inventory manager sub-role), or a coordinator (inventory.manage
+// only — see User::hasPermission()). Kept outside the /admin prefix so
+// non-admin roles with the right permission can also reach it.
 // ----------------------------------------------------------------
 Route::middleware(['auth', 'permission:inventory.manage'])->group(function () {
     Route::post('/inventory/spare-parts',              [SparePartController::class, 'store'])->name('inventory.spare-parts.store');
@@ -209,13 +210,23 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
 });
 
 // ----------------------------------------------------------------
-// Coordinator — read-only repair progress monitoring
+// Coordinator — workshop-assistant role. Same job-card edit surface as
+// a mechanic (stage/symptoms/parts/labour, via the shared JobCardController
+// actions below) plus inventory management, unscoped across all active
+// job cards. See CoordinatorController's class-level doc-comment for the
+// full design rationale.
 // ----------------------------------------------------------------
     Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->group(function () {
-    Route::get('/dashboard',                         [CoordinatorController::class, 'dashboard'])->name('coordinator.dashboard');
-    Route::get('/job-cards',                         [CoordinatorController::class, 'jobCards'])->name('coordinator.job-cards');
-    Route::get('/job-cards/{jobCard}',                [CoordinatorController::class, 'showJobCard'])->name('coordinator.job-cards.show');
+    Route::get('/dashboard',                          [CoordinatorController::class, 'dashboard'])->name('coordinator.dashboard');
+    Route::get('/job-cards',                          [CoordinatorController::class, 'jobCards'])->name('coordinator.job-cards');
+    Route::get('/job-cards/{jobCard}',                [JobCardController::class, 'show'])->name('coordinator.job-cards.show');
+    Route::patch('/job-cards/{jobCard}/stage',        [JobCardController::class, 'updateStage'])->name('coordinator.job-cards.stage');
+    Route::post('/job-cards/{jobCard}/symptoms',      [JobCardController::class, 'updateSymptoms'])->name('coordinator.job-cards.symptoms');
+    Route::post('/job-cards/{jobCard}/parts',         [JobCardController::class, 'addPart'])->name('coordinator.job-cards.add-part');
+    Route::post('/job-cards/{jobCard}/labour',        [JobCardController::class, 'addLabour'])->name('coordinator.job-cards.add-labour');
+    Route::delete('/job-cards/labour/{labourCharge}', [JobCardController::class, 'removeLabour'])->name('coordinator.job-cards.remove-labour');
     Route::post('/job-cards/{jobCard}/checkin',       [CoordinatorController::class, 'storeCheckin'])->name('coordinator.job-cards.checkin');
+    Route::get('/inventory',                          [SparePartController::class, 'index'])->name('coordinator.inventory');
 });
 
 // ----------------------------------------------------------------

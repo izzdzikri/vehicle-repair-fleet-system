@@ -1,10 +1,22 @@
 @extends('layouts.app')
-@section('page-title', 'Job Card #{{ $jobCard->id }}')
+@section('page-title', 'Job Card #' . $jobCard->id)
 
 @section('content')
+@php
+    $prefix = match(auth()->user()->role) {
+        'admin'       => 'admin',
+        'coordinator' => 'coordinator',
+        default       => 'staff',
+    };
+    $backHref = match(auth()->user()->role) {
+        'admin'       => '/admin/job-cards',
+        'coordinator' => '/coordinator/job-cards',
+        default       => '/staff/job-cards/board',
+    };
+@endphp
 <div class="max-w-4xl mx-auto space-y-6">
 
-    <a href="{{ auth()->user()->role === 'admin' ? '/admin/job-cards' : '/staff/job-cards/board' }}"
+    <a href="{{ $backHref }}"
         class="text-sm text-blue-600 hover:underline">← Back</a>
 
     @if(!$canEdit)
@@ -85,7 +97,7 @@
         {{-- Update Stage --}}
         @if($canEdit)
         <form method="POST"
-            action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $jobCard->id }}/stage"
+            action="/{{ $prefix }}/job-cards/{{ $jobCard->id }}/stage"
             class="flex gap-3 items-center">
             @csrf @method('PATCH')
             <select name="current_stage"
@@ -126,7 +138,7 @@
 
         @if($canEdit)
         <form method="POST"
-            action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $jobCard->id }}/symptoms">
+            action="/{{ $prefix }}/job-cards/{{ $jobCard->id }}/symptoms">
             @csrf
 
             {{-- Initial diagnosis text --}}
@@ -260,7 +272,7 @@
 
         @if($canEdit)
         <form method="POST"
-            action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $jobCard->id }}/parts"
+            action="/{{ $prefix }}/job-cards/{{ $jobCard->id }}/parts"
             class="flex gap-3 items-end flex-wrap mb-4">
             @csrf
             <div class="flex-1 min-w-48">
@@ -325,7 +337,7 @@
 
         @if($canEdit)
         <form method="POST"
-            action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/{{ $jobCard->id }}/labour"
+            action="/{{ $prefix }}/job-cards/{{ $jobCard->id }}/labour"
             class="flex gap-3 items-end flex-wrap mb-4"
             x-data="{
                 selected: '',
@@ -406,7 +418,7 @@
                     <span class="font-medium text-gray-700">RM {{ number_format($labour->charge, 2) }}</span>
                     @if($canEdit)
                     <form method="POST"
-                        action="/{{ auth()->user()->role === 'admin' ? 'admin' : 'staff' }}/job-cards/labour/{{ $labour->id }}">
+                        action="/{{ $prefix }}/job-cards/labour/{{ $labour->id }}">
                         @csrf @method('DELETE')
                         <button class="text-xs text-red-400 hover:text-red-600">Remove</button>
                     </form>
@@ -443,6 +455,46 @@
         </div>
         @endif
     </div>
+
+    {{-- --------------------------------------------------------- --}}
+    {{-- Coordinator Check-in Log — coordinator-only, on top of the  --}}
+    {{-- shared mechanic edit surface above.                        --}}
+    {{-- --------------------------------------------------------- --}}
+    @if(auth()->user()->role === 'coordinator')
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Progress Check-ins</h3>
+
+        <form method="POST" action="/coordinator/job-cards/{{ $jobCard->id }}/checkin" class="mb-5">
+            @csrf
+            <label class="block text-sm font-medium text-gray-700 mb-1">Log a check-in</label>
+            <textarea name="note" rows="2" maxlength="500"
+                placeholder="e.g. Confirmed with technician — waiting on brake pad delivery, ETA 2pm."
+                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            <button type="submit"
+                class="mt-2 bg-blue-600 text-white px-5 py-2 rounded text-sm hover:bg-blue-700">
+                Log Check-in
+            </button>
+        </form>
+
+        @forelse($jobCard->checkins as $c)
+        <div class="border-b py-3 text-sm">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="font-medium text-gray-800">{{ $c->coordinator->name ?? '—' }}</p>
+                    @if($c->note)
+                    <p class="text-gray-600 mt-0.5">{{ $c->note }}</p>
+                    @else
+                    <p class="text-gray-400 mt-0.5 italic">Checked in — no additional note.</p>
+                    @endif
+                </div>
+                <span class="text-xs text-gray-400 shrink-0">{{ $c->created_at->diffForHumans() }}</span>
+            </div>
+        </div>
+        @empty
+        <p class="text-gray-400 text-sm">No check-ins logged yet for this job.</p>
+        @endforelse
+    </div>
+    @endif
 
 </div>
 @endsection

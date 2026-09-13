@@ -4,13 +4,13 @@
 @section('content')
 
 <div class="flex gap-2 mb-4 flex-wrap">
-    <a href="/coordinator/job-cards" class="px-4 py-2 rounded text-sm font-medium {{ !request('filter') ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
+    <a href="/coordinator/job-cards?filter=all" class="px-4 py-2 rounded text-sm font-medium {{ (!$activeFilter || $activeFilter === 'all') ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
         All Active ({{ $totalActive }})
     </a>
-    <a href="/coordinator/job-cards?filter=stale" class="px-4 py-2 rounded text-sm font-medium {{ request('filter') === 'stale' ? 'bg-red-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
+    <a href="/coordinator/job-cards?filter=stale" class="px-4 py-2 rounded text-sm font-medium {{ $activeFilter === 'stale' ? 'bg-red-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
         Needs Check-in ({{ $staleTotal }})
     </a>
-    <a href="/coordinator/job-cards?filter=overdue" class="px-4 py-2 rounded text-sm font-medium {{ request('filter') === 'overdue' ? 'bg-orange-500 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
+    <a href="/coordinator/job-cards?filter=overdue" class="px-4 py-2 rounded text-sm font-medium {{ $activeFilter === 'overdue' ? 'bg-orange-500 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
         Overdue ({{ $overdueTotal }})
     </a>
 </div>
@@ -63,11 +63,13 @@
                     @endif
                 </td>
                 <td class="px-4 py-3">
-                    <a href="/coordinator/job-cards/{{ $job->id }}" class="text-blue-600 hover:underline text-xs font-medium">Check</a>
+                    <a href="/coordinator/job-cards/{{ $job->id }}" class="text-blue-600 hover:underline text-xs font-medium">Open</a>
                 </td>
             </tr>
             @empty
-            <tr><td colspan="7" class="py-8 text-center text-gray-400">No job cards match this filter.</td></tr>
+            <tr><td colspan="7" class="py-2">
+                <x-empty-state icon="clipboard-check" title="No job cards match this filter" subtitle="Try a different filter or check back soon." />
+            </td></tr>
             @endforelse
         </tbody>
     </table>

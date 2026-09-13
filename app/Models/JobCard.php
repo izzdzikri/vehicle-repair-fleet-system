@@ -79,13 +79,18 @@ class JobCard extends Model
 
     /**
      * Can this user edit this job card (update stage, add parts/labour,
-     * update diagnosis)? Admins and anyone holding job_cards.manage_all
-     * can edit any job card. A regular mechanic can only edit jobs
-     * assigned to them — they can still VIEW every other job card,
-     * just not change it.
+     * update diagnosis)? Admins and coordinators can edit any job card
+     * unconditionally — coordinators are a workshop-assistant role with
+     * the same edit surface as a mechanic, granted regardless of
+     * ownership since a coordinator has no "own" jobs to scope to (see
+     * CoordinatorController's class-level doc-comment for the full
+     * rationale). Staff holding job_cards.manage_all can also edit any
+     * job card. A regular mechanic can only edit jobs assigned to them —
+     * they can still VIEW every other job card, just not change it.
      */
     public function canBeEditedBy(User $user): bool {
         if ($user->role === 'admin') return true;
+        if ($user->role === 'coordinator') return true;
         if ($user->hasPermission('job_cards.manage_all')) return true;
         return $this->staff_id === $user->id;
     }

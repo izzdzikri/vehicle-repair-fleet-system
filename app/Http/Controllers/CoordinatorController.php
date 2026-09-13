@@ -5,23 +5,32 @@ use App\Models\JobCard;
 use Illuminate\Http\Request;
 
 /**
- * Coordinator is a read + comment-only tier, entirely separate from the
- * staff `job_cards.manage_all` permission. It does not grant edit rights
- * over stage/parts/labour/diagnosis — those actions aren't even exposed
- * in the coordinator views. The only write action a coordinator has is
- * logging a check-in note.
+ * Coordinator is a workshop-assistant / mechanic's-helper role — NOT the
+ * read-only monitoring tier it was originally designed as. Per an explicit
+ * product decision (superseding that earlier design), a coordinator can:
  *
- * DESIGN DECISION (unscoped by design): a coordinator can view and check
- * in on ALL active job cards, with no per-coordinator ownership filter.
- * This is intentional, not an oversight — coordinators monitor workshop-
- * wide progress, not a personal queue, so there is no "their" job card
- * to scope to. Access control here is entirely role-based
- * (middleware `role:coordinator`); no additional ownership check is
- * needed on top of it. If a future requirement introduces coordinators
- * assigned to specific areas/staff, that would need an explicit
- * ownership column (e.g. `coordinator_id` or an area/zone assignment)
- * and a check mirroring the staff `job_cards.manage_all` pattern —
- * do not assume this file already does that.
+ *   - Update job card stage, diagnosis, symptoms, parts, and labour
+ *     charges — the SAME edit surface as a regular mechanic, including
+ *     marking a job fully completed. Enforced via JobCard::canBeEditedBy(),
+ *     which grants coordinators unconditional edit access, same tier as
+ *     admins. These mutations are handled by JobCardController (see the
+ *     coordinator route group in routes/web.php), not duplicated here, so
+ *     mechanic-facing and coordinator-facing edits share one code path.
+ *   - Manage spare parts inventory (add/edit/delete stock), granted via
+ *     User::hasPermission('inventory.manage') returning true for the
+ *     coordinator role specifically.
+ *   - Log check-in notes on any job card — a coordinator-only feature on
+ *     top of the shared mechanic actions, for leaving a status note that
+ *     isn't tied to a specific stage change. This remains the one action
+ *     unique to this controller.
+ *
+ * Scope stays intentionally UNSCOPED: a coordinator can view and act on
+ * ALL active job cards, not just ones "assigned" to her. This is by
+ * design — she exists to pick up whatever menial/admin work a busy
+ * mechanic hasn't had time for, across the whole workshop, not to own a
+ * personal queue. Access control is entirely role-based (middleware
+ * `role:coordinator` + the canBeEditedBy/hasPermission checks above); no
+ * additional per-job ownership check is layered on top.
  */
 class CoordinatorController extends Controller
 {
@@ -43,12 +52,24 @@ class CoordinatorController extends Controller
     }
 
     public function jobCards(Request $request) {
+        // Remember the last-used filter tab across visits, same pattern
+        // as JobCardController/AppointmentController — "All Active"
+        // always passes an explicit filter=all so it can update/clear
+        // the remembered value too.
+        if ($request->has('filter')) {
+            session(['coordinator_filter' => $request->query('filter')]);
+            $activeFilter = $request->query('filter');
+        } else {
+            $activeFilter = session('coordinator_filter', 'all');
+        }
+        if ($activeFilter === 'all') $activeFilter = null;
+
         $query = JobCard::with(['vehicle', 'staff', 'jobType'])
             ->where('current_stage', '!=', 'completed');
 
-        if ($request->filter === 'stale') {
+        if ($activeFilter === 'stale') {
             $query->where('updated_at', '<', now()->subHours(3));
-        } elseif ($request->filter === 'overdue') {
+        } elseif ($activeFilter === 'overdue') {
             $query->whereNotNull('estimated_completion')->where('estimated_completion', '<', now());
         }
 
@@ -60,27 +81,16 @@ class CoordinatorController extends Controller
         $overdueTotal = JobCard::where('current_stage', '!=', 'completed')
             ->whereNotNull('estimated_completion')->where('estimated_completion', '<', now())->count();
 
-        return view('coordinator.job-cards', compact('jobs', 'totalActive', 'staleTotal', 'overdueTotal'));
+        return view('coordinator.job-cards', compact('jobs', 'totalActive', 'staleTotal', 'overdueTotal', 'activeFilter'));
     }
 
     /**
-     * Coordinators can view any job card's detail — see class-level
-     * doc-comment for why this is intentionally unscoped.
-     */
-    public function showJobCard(JobCard $jobCard) {
-        $jobCard->load([
-            'vehicle', 'staff', 'jobType', 'appointment.user',
-            'parts.sparePart', 'labourCharges', 'checkins.coordinator',
-        ]);
-
-        return view('coordinator.job-card-show', compact('jobCard'));
-    }
-
-    /**
-     * Coordinators can log a check-in on any active job card — see
+     * Coordinators can log a check-in note on any active job card — see
      * class-level doc-comment. No ownership check is added here beyond
      * `auth()->id()` being recorded as the check-in's author, which is
-     * for attribution only, not authorization.
+     * for attribution only, not authorization (JobCard::canBeEditedBy
+     * already grants coordinators unconditional access on the routes
+     * this controller doesn't directly handle).
      */
     public function storeCheckin(Request $request, JobCard $jobCard) {
         $request->validate([

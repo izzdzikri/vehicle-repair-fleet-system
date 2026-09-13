@@ -21,6 +21,21 @@ class JobCardController extends Controller
         $search  = trim((string) $request->input('search'));
         $perPage = 15;
 
+        // Remember the last-used stage tab across visits (e.g. via
+        // sidebar navigation, not just browser back) so returning to
+        // this page keeps you on the tab you were last looking at
+        // instead of resetting to "All". The "All" tab always passes an
+        // explicit stage=all so it can update/clear the remembered
+        // value too, rather than being indistinguishable from a fresh
+        // page load.
+        if ($request->has('stage')) {
+            session(['job_cards_filter_stage' => $request->query('stage')]);
+            $activeStage = $request->query('stage');
+        } else {
+            $activeStage = session('job_cards_filter_stage', 'all');
+        }
+        $filterStage = $activeStage === 'all' ? null : $activeStage;
+
         $applySearch = function ($query) use ($search) {
             if ($search === '') return;
             $query->where(function ($q) use ($search) {
@@ -38,14 +53,14 @@ class JobCardController extends Controller
         }
 
         $query = JobCard::with(['vehicle', 'staff', 'appointment', 'jobType']);
-        if ($request->stage) {
-            $query->where('current_stage', $request->stage);
+        if ($filterStage) {
+            $query->where('current_stage', $filterStage);
         }
         $applySearch($query);
 
         $jobs = $query->latest()->paginate($perPage)->withQueryString();
 
-        return view('job-cards.index', compact('jobs', 'search', 'stageCounts'));
+        return view('job-cards.index', compact('jobs', 'search', 'stageCounts', 'activeStage'));
     }
 
     public function create() {
@@ -112,7 +127,7 @@ class JobCardController extends Controller
     }
 
     public function show(JobCard $jobCard) {
-    $jobCard->load(['vehicle', 'staff', 'parts.sparePart', 'appointment.user', 'jobType', 'labourCharges']);
+    $jobCard->load(['vehicle', 'staff', 'parts.sparePart', 'appointment.user', 'jobType', 'labourCharges', 'checkins.coordinator']);
     $spareParts = SparePart::where('stock', '>', 0)->orderBy('category')->get();
     $jobTypes   = \App\Models\JobType::orderBy('category')->orderBy('name')->get();
     $canEdit    = $jobCard->canBeEditedBy(auth()->user());
@@ -152,8 +167,8 @@ class JobCardController extends Controller
     /**
      * Central permission gate for all job-card WRITE actions below.
      * Viewing (show, board, schedule) stays open to every staff member —
-     * only mutations are restricted to the assigned mechanic, admins, and
-     * anyone holding job_cards.manage_all.
+     * only mutations are restricted to the assigned mechanic, admins,
+     * coordinators, and anyone holding job_cards.manage_all.
      */
     private function assertCanEdit(Request $request, JobCard $jobCard): void {
         if ($jobCard->canBeEditedBy(auth()->user())) return;
