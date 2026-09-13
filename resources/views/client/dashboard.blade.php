@@ -3,6 +3,8 @@
 
 @section('content')
 
+@include('partials.greeting')
+
 @if(auth()->user()->status === 'inactive')
 <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
     ⚠ Your account is currently <strong>inactive</strong>. Contact the administrator.
@@ -108,9 +110,10 @@
             </div>
         </a>
         @empty
-        <p class="text-gray-400 text-sm text-center py-4">No vehicles registered.
-            <a href="/client/vehicles/create" class="text-blue-600 hover:underline">Add one →</a>
-        </p>
+        <x-empty-state icon="car" title="No vehicles registered"
+            subtitle="Add your first fleet vehicle to get started."
+            :action-href="!auth()->user()->isSecondaryPic() ? '/client/vehicles/create' : null"
+            :action-label="!auth()->user()->isSecondaryPic() ? '+ Add Vehicle' : null" />
         @endforelse
     </div>
 
@@ -159,7 +162,10 @@
             </div>
         </div>
         @empty
-        <p class="text-gray-400 text-sm text-center py-4">No appointments yet.</p>
+        <x-empty-state icon="calendar" title="No appointments yet"
+            subtitle="{{ (auth()->user()->status === 'active' && !auth()->user()->isSecondaryPic()) ? 'Book your first fleet appointment.' : 'Appointments will appear here once booked.' }}"
+            :action-href="(auth()->user()->status === 'active' && !auth()->user()->isSecondaryPic()) ? '/client/appointments/create' : null"
+            :action-label="(auth()->user()->status === 'active' && !auth()->user()->isSecondaryPic()) ? '+ Book Appointment' : null" />
         @endforelse
     </div>
 

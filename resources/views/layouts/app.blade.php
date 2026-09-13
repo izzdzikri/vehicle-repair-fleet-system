@@ -159,18 +159,12 @@
                             return \App\Models\JobCard::where('current_stage','!=','completed')
                                 ->where('updated_at','<', now()->subHours(3))->count();
                         });
-                        $coordLowStock = \Illuminate\Support\Facades\Cache::remember('sidebar_low_stock_coordinator', 30, function () {
-                            return \App\Models\SparePart::whereColumn('stock','<=','min_stock')->count();
-                        });
                     @endphp
                     {!! $section('Overview') !!}
                     {!! $link('/coordinator/dashboard', 'layout-dashboard', 'Dashboard',         'coordinator/dashboard') !!}
 
                     {!! $section('Repair Progress') !!}
                     {!! $link('/coordinator/job-cards', 'clipboard-check',  'Job Cards',         'coordinator/job-cards*', $coordStaleBadge ?: null) !!}
-
-                    {!! $section('Inventory') !!}
-                    {!! $link('/coordinator/inventory', 'package',          'Inventory',         'coordinator/inventory', $coordLowStock ?: null) !!}
 
                 @elseif(auth()->user()->role === 'corporate')
                     {!! $section('Overview') !!}

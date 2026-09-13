@@ -3,6 +3,8 @@
 
 @section('content')
 
+@include('partials.greeting')
+
 {{-- Stat Cards --}}
 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4 text-center">
@@ -88,7 +90,9 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="py-4 text-center text-gray-400">No job cards yet.</td></tr>
+                <tr><td colspan="5" class="py-2">
+                    <x-empty-state icon="clipboard-list" title="No job cards yet" subtitle="Confirm an appointment, then create a job card from it." />
+                </td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -111,7 +115,7 @@
             </div>
         </div>
         @empty
-        <p class="text-gray-400 text-sm">No staff accounts yet.</p>
+        <x-empty-state icon="user-cog" title="No staff accounts yet" subtitle="Add a staff account to start assigning jobs." action-href="/admin/users" action-label="+ Add User" />
         @endforelse
     </div>
 

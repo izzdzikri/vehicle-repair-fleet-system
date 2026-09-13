@@ -3,6 +3,8 @@
 
 @section('content')
 
+@include('partials.greeting')
+
 {{-- Today summary --}}
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4 text-center">
@@ -110,10 +112,7 @@
             </a>
         </div>
         @empty
-        <div class="text-center py-8">
-            <i data-lucide="inbox" class="w-10 h-10 text-gray-200 mx-auto mb-2"></i>
-            <p class="text-gray-400">No active jobs assigned.</p>
-        </div>
+        <x-empty-state icon="inbox" title="No active jobs assigned" subtitle="New assignments will show up here as they come in." />
         @endforelse
     </div>
 
@@ -164,10 +163,7 @@
             </div>
         </div>
         @empty
-        <div class="text-center py-8">
-            <i data-lucide="calendar-x" class="w-10 h-10 text-gray-200 mx-auto mb-2"></i>
-            <p class="text-gray-400">No appointments today.</p>
-        </div>
+        <x-empty-state icon="calendar-x" title="No appointments today" subtitle="Enjoy the quiet — or add a walk-in if one arrives." />
         @endforelse
     </div>
 
