@@ -142,6 +142,7 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::get('/maintenance',                  [MaintenanceAlertController::class, 'index'])->name('admin.maintenance');
     Route::post('/maintenance',                 [MaintenanceAlertController::class, 'store'])->name('admin.maintenance.store');
     Route::patch('/maintenance/{alert}/read',   [MaintenanceAlertController::class, 'markRead'])->name('admin.maintenance.read');
+    Route::post('/maintenance/predict',         [MaintenanceAlertController::class, 'runPredictions'])->name('admin.maintenance.predict');
 
     // Invoices & Payments
     Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('admin.invoices');
@@ -234,7 +235,10 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
 // ----------------------------------------------------------------
 Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function () {
     Route::get('/dashboard',              [ClientController::class, 'index'])->name('client.dashboard');
-    Route::resource('appointments',       AppointmentController::class);
+    // AppointmentController only implements index/create/store/show — no
+    // edit/update/destroy — so the resource is restricted to those to avoid
+    // registering routes that would 500 on a missing controller method.
+    Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show']);
     Route::resource('vehicles',           VehicleController::class);
     Route::get('/maintenance',            [MaintenanceAlertController::class, 'index'])->name('client.maintenance');
     Route::post('/account-requests', [AccountRequestController::class, 'store'])->name('client.account-requests.store');
@@ -249,7 +253,8 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
 // ----------------------------------------------------------------
     Route::middleware(['auth', 'role:individual'])->prefix('customer')->group(function () {
     Route::get('/dashboard',              [CustomerController::class, 'index'])->name('customer.dashboard');
-    Route::resource('appointments',       AppointmentController::class);
+    // Same AppointmentController method gap as the corporate group above.
+    Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show']);
     Route::resource('vehicles',           VehicleController::class);
     Route::delete('/account/delete', [AccountRequestController::class, 'deleteOwnAccount'])->name('customer.account.delete');
     Route::get('/maintenance',            [MaintenanceAlertController::class, 'index'])->name('customer.maintenance');

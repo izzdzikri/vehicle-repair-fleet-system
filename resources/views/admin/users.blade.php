@@ -129,7 +129,7 @@
                                     </button>
                                 </form>
                                 <form method="POST" action="/admin/users/{{ $user->id }}"
-                                    onsubmit="return confirm('Delete {{ addslashes($user->name) }}?')">
+                                    onsubmit="return confirmSubmit(event, {title:'Delete user?', message:'This will permanently delete {{ addslashes($user->name) }} ({{ addslashes($user->email) }}). This cannot be undone.', confirmLabel:'Delete User'})">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                         class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">

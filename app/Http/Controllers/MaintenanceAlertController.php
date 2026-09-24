@@ -5,7 +5,9 @@ use App\Models\MaintenanceAlert;
 use App\Models\Vehicle;
 use App\Models\User;
 use App\Models\Notification;
+use App\Services\MaintenancePredictionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class MaintenanceAlertController extends Controller
 {
@@ -47,7 +49,7 @@ class MaintenanceAlertController extends Controller
 
         $alert = MaintenanceAlert::create($request->only([
             'vehicle_id', 'alert_type', 'urgency', 'recommendation'
-        ]));
+        ]) + ['source' => 'manual']);
 
         $vehicle = Vehicle::with('owner')->find($request->vehicle_id);
         if ($vehicle && $vehicle->owner) {
@@ -84,5 +86,18 @@ class MaintenanceAlertController extends Controller
 
         $alert->update(['is_read' => true]);
         return back()->with('success', 'Alert marked as read.');
+    }
+
+    /**
+     * Admin-triggered manual re-run of the predictive scan — bypasses
+     * the dashboard's throttle cache so a change (new service history,
+     * updated job type intervals) shows up immediately without waiting
+     * for the next throttled window or scheduled run.
+     */
+    public function runPredictions() {
+        $touched = app(MaintenancePredictionService::class)->runAll();
+        Cache::forget('maintenance_predictions_autorun');
+
+        return back()->with('success', "Predictive scan complete — {$touched} alert(s) created or refreshed.");
     }
 }

@@ -418,7 +418,8 @@
                     <span class="font-medium text-gray-700">RM {{ number_format($labour->charge, 2) }}</span>
                     @if($canEdit)
                     <form method="POST"
-                        action="/{{ $prefix }}/job-cards/labour/{{ $labour->id }}">
+                        action="/{{ $prefix }}/job-cards/labour/{{ $labour->id }}"
+                        onsubmit="return confirmSubmit(event, {title:'Remove labour charge?', message:'This will remove &quot;{{ addslashes($labour->description) }}&quot; (RM {{ number_format($labour->charge, 2) }}) from this job card and recalculate the total cost.', confirmLabel:'Remove'})">
                         @csrf @method('DELETE')
                         <button class="text-xs text-red-400 hover:text-red-600">Remove</button>
                     </form>

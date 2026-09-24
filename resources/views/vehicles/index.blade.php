@@ -77,7 +77,8 @@
                     <a href="{{ $base }}/vehicles/{{ $v->id }}/edit"
                         class="text-gray-500 hover:underline text-xs mr-2">Edit</a>
                     <form method="POST" action="{{ $base }}/vehicles/{{ $v->id }}"
-                        class="inline" onsubmit="return confirm('Delete this vehicle?')">
+                        class="inline"
+                        onsubmit="return confirmSubmit(event, {title:'Delete vehicle?', message:'This will permanently delete {{ addslashes($v->plate_number) }} ({{ addslashes($v->brand) }} {{ addslashes($v->model) }}) and its service history. This cannot be undone.', confirmLabel:'Delete Vehicle'})">
                         @csrf @method('DELETE')
                         <button class="text-red-500 hover:text-red-700 text-xs">Delete</button>
                     </form>

@@ -127,6 +127,42 @@ class User extends Authenticatable
         return $this->isPrimaryPic() || in_array($this->role, ['admin', 'staff']);
     }
 
+    /**
+     * True if removing/deactivating/deleting this corporate user would
+     * leave their company with zero active PICs of any kind. Guards
+     * every action that can take a PIC out of action — account-request
+     * approval, direct admin deactivate, and direct admin delete — so
+     * a company is never silently left with no one on the account.
+     */
+    public function isLastActivePicOfCompany(): bool {
+        if ($this->role !== 'corporate' || !$this->company_id) return false;
+
+        return static::where('company_id', $this->company_id)
+            ->where('role', 'corporate')
+            ->where('id', '!=', $this->id)
+            ->where('status', 'active')
+            ->doesntExist();
+    }
+
+    /**
+     * True if removing/deactivating/deleting this user would leave the
+     * company with zero active Primary PICs, even if Secondary/Viewer
+     * PICs remain. A Viewer-only company is functionally locked out —
+     * see canBook()/canManage() — even though it still has "active"
+     * users, so this case needs its own guard on top of
+     * isLastActivePicOfCompany().
+     */
+    public function isLastActivePrimaryPicOfCompany(): bool {
+        if (!$this->isPrimaryPic() || !$this->company_id) return false;
+
+        return static::where('company_id', $this->company_id)
+            ->where('role', 'corporate')
+            ->where('pic_role', 'primary')
+            ->where('id', '!=', $this->id)
+            ->where('status', 'active')
+            ->doesntExist();
+    }
+
     // ----------------------------------------------------------------
     // Staff sub-role / permission helpers
     // ----------------------------------------------------------------

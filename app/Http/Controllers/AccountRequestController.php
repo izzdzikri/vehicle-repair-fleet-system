@@ -75,6 +75,25 @@ class AccountRequestController extends Controller
             }
         }
 
+        // remove_pic: block up front if this would leave the company with
+        // no active Primary PIC (or no active PIC at all), same guard the
+        // approval step enforces below — catching it at submission time
+        // saves the requester a wasted round trip through admin approval.
+        if ($request->type === 'remove_pic' && $request->target_user_id) {
+            $target = User::find($request->target_user_id);
+
+            if ($target) {
+                if ($target->isLastActivePicOfCompany()) {
+                    return back()->with('error',
+                        'This is the last active PIC for the company — removal request cannot be submitted.')->withInput();
+                }
+                if ($target->isLastActivePrimaryPicOfCompany()) {
+                    return back()->with('error',
+                        'This is the last active Primary PIC for the company. Add a new Primary PIC first before removing this one.')->withInput();
+                }
+            }
+        }
+
         AccountRequest::create([
             'requested_by'   => $user->id,
             'company_id'     => $user->company_id,
@@ -147,15 +166,21 @@ class AccountRequestController extends Controller
                     return back()->with('error', 'Target user no longer exists.');
                 }
 
-                // Never leave a company with zero active PICs.
-                $otherActivePics = \App\Models\User::where('company_id', $target->company_id)
-                    ->where('role', 'corporate')
-                    ->where('id', '!=', $target->id)
-                    ->where('status', 'active')
-                    ->count();
-
-                if ($otherActivePics === 0) {
+                // Never leave a company with zero active PICs at all.
+                if ($target->isLastActivePicOfCompany()) {
                     return back()->with('error', 'Cannot remove — this is the last active PIC for the company.');
+                }
+
+                // Never leave a company with zero active Primary PICs,
+                // even if Secondary/Viewer PICs remain — Secondary PICs
+                // cannot book, manage vehicles, or submit account
+                // requests (see User::canBook()/canManage()), so a
+                // company left with only Viewers is effectively locked
+                // out of self-service even though it still has "active"
+                // users on paper.
+                if ($target->isLastActivePrimaryPicOfCompany()) {
+                    return back()->with('error',
+                        'Cannot remove — this is the last active Primary PIC for the company. Approve an add_pic request for a new Primary before removing this one.');
                 }
 
                 $target->update(['status' => 'inactive']);

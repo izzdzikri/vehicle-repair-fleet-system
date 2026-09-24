@@ -24,6 +24,12 @@
         </button>
     </div>
 
+    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+        ℹ Set a km and/or month interval on a schedule-based service (e.g. Oil Change) to have it automatically
+        predicted on each vehicle's Maintenance Alerts once it's due — see the "Run Predictions Now" button on that page.
+        Leave both blank for wear/fault-triggered services (e.g. Brake Pad Replacement) that aren't on a fixed schedule.
+    </div>
+
     {{-- Job Types Table --}}
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full text-sm">
@@ -33,6 +39,7 @@
                     <th class="px-4 py-3">Category</th>
                     <th class="px-4 py-3">Est. Time</th>
                     <th class="px-4 py-3">Base Price</th>
+                    <th class="px-4 py-3">Predictive Interval</th>
                     <th class="px-4 py-3 w-16">Action</th>
                 </tr>
             </thead>
@@ -54,6 +61,15 @@
                     <td class="px-4 py-3 text-gray-500">{{ $hours }}</td>
                     <td class="px-4 py-3 font-medium text-gray-700">RM {{ number_format($jt->base_price, 2) }}</td>
                     <td class="px-4 py-3">
+                        @if($jt->isIntervalTracked())
+                        <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                            🔮 {{ $jt->interval_label }}
+                        </span>
+                        @else
+                        <span class="text-xs text-gray-400">Not tracked</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3">
                         <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
                             <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
                                 <i data-lucide="more-vertical" class="w-4 h-4"></i>
@@ -68,13 +84,15 @@
                                         category:           '{{ $jt->category }}',
                                         estimated_minutes:  '{{ $jt->estimated_minutes }}',
                                         base_price:         '{{ $jt->base_price }}',
-                                        description:        '{{ addslashes($jt->description ?? '') }}'
+                                        description:        '{{ addslashes($jt->description ?? '') }}',
+                                        interval_km:        '{{ $jt->interval_km }}',
+                                        interval_months:    '{{ $jt->interval_months }}'
                                     })"
                                     class="w-full flex items-center gap-2 px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50">
                                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
                                 </button>
                                 <form method="POST" action="/pricing/job-types/{{ $jt->id }}"
-                                    onsubmit="return confirm('Delete {{ addslashes($jt->name) }}?')">
+                                    onsubmit="return confirmSubmit(event, {title:'Delete job type?', message:'This will permanently delete {{ addslashes($jt->name) }}. Existing job cards referencing it will keep their history, but it will no longer be selectable.', confirmLabel:'Delete Job Type'})">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                         class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
@@ -87,7 +105,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="py-8 text-center text-gray-400">No job types found.</td>
+                    <td colspan="6" class="py-8 text-center text-gray-400">No job types found.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -135,6 +153,22 @@
                     <input type="number" name="base_price" value="{{ old('base_price', 0) }}" min="0" step="0.50"
                         class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Predictive Interval — km <span class="font-normal text-gray-400">(optional)</span>
+                    </label>
+                    <input type="number" name="interval_km" value="{{ old('interval_km') }}" min="1"
+                        placeholder="e.g. 5000"
+                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Predictive Interval — months <span class="font-normal text-gray-400">(optional)</span>
+                    </label>
+                    <input type="number" name="interval_months" value="{{ old('interval_months') }}" min="1"
+                        placeholder="e.g. 6"
+                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
@@ -199,6 +233,20 @@
                         <input type="number" name="base_price" :value="jt.base_price" min="0" step="0.50"
                             class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Interval — km <span class="font-normal text-gray-400">(optional)</span>
+                        </label>
+                        <input type="number" name="interval_km" :value="jt.interval_km" min="1"
+                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Interval — months <span class="font-normal text-gray-400">(optional)</span>
+                        </label>
+                        <input type="number" name="interval_months" :value="jt.interval_months" min="1"
+                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>

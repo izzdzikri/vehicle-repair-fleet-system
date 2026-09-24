@@ -98,7 +98,7 @@
         </p>
 
         <form method="POST" action="/customer/account/delete"
-            onsubmit="return confirm('Are you absolutely sure? This cannot be undone.')">
+            onsubmit="return confirmSubmit(event, {title:'Delete your account?', message:'This will permanently delete your account, vehicles, and appointment history. This cannot be undone.', confirmLabel:'Delete My Account'})">
             @csrf @method('DELETE')
             <div class="flex gap-3 items-end flex-wrap">
                 <div class="flex-1 min-w-48">

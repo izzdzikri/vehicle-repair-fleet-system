@@ -8,10 +8,11 @@
     $prefix   = match($role) { 'admin' => 'admin', 'corporate' => 'client', default => 'customer' };
     $unread   = $alerts->where('is_read', false)->count();
     $highUrge = $alerts->where('urgency', 'high')->where('is_read', false)->count();
+    $predicted = $alerts->where('source', 'predicted')->count();
 @endphp
 
 {{-- Summary bar --}}
-<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4 text-center">
         <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Total Alerts</p>
         <p class="text-3xl font-bold text-gray-700">{{ $alerts->count() }}</p>
@@ -24,12 +25,31 @@
         <p class="text-xs text-gray-500 uppercase font-semibold mb-1">High Urgency</p>
         <p class="text-3xl font-bold text-red-500">{{ $highUrge }}</p>
     </div>
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+        <p class="text-xs text-gray-500 uppercase font-semibold mb-1">🔮 Predicted</p>
+        <p class="text-3xl font-bold text-purple-500">{{ $predicted }}</p>
+    </div>
 </div>
 
-{{-- Admin can create manual alerts --}}
+{{-- Admin can create manual alerts + trigger predictions --}}
 @if($role === 'admin')
 <div class="bg-white rounded-lg shadow p-6 mb-6">
-    <h2 class="text-lg font-semibold text-gray-700 mb-4">Create Manual Alert</h2>
+    <div class="flex justify-between items-start flex-wrap gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-gray-700">Create Manual Alert</h2>
+            <p class="text-xs text-gray-400 mt-1">
+                Predictive alerts (🔮) are generated automatically from service history and job type intervals —
+                set intervals on the <a href="/pricing/job-types" class="text-blue-600 hover:underline">Job Types</a> page.
+            </p>
+        </div>
+        <form method="POST" action="/admin/maintenance/predict" class="shrink-0">
+            @csrf
+            <button type="submit"
+                class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700 flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Run Predictions Now
+            </button>
+        </form>
+    </div>
     <form method="POST" action="/admin/maintenance" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @csrf
         <div>
@@ -133,6 +153,11 @@
             class="px-3 py-1 rounded text-xs font-medium">
             Unread ({{ $unread }})
         </button>
+        <button @click="filter='predicted'"
+            :class="filter==='predicted' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-600'"
+            class="px-3 py-1 rounded text-xs font-medium">
+            🔮 Predicted ({{ $predicted }})
+        </button>
     </div>
 
     @forelse($alerts as $alert)
@@ -148,7 +173,8 @@
             default  => 'bg-green-100 text-green-700',
         };
     @endphp
-    <div class="border-l-4 rounded-lg p-4 mb-3 {{ $urgencyClass }} {{ $alert->is_read ? 'opacity-50' : '' }}">
+    <div class="border-l-4 rounded-lg p-4 mb-3 {{ $urgencyClass }} {{ $alert->is_read ? 'opacity-50' : '' }}"
+        x-show="filter==='all' || filter===$alert->urgency || (filter==='unread' && {{ $alert->is_read ? 'false' : 'true' }}) || (filter==='predicted' && {{ $alert->source === 'predicted' ? 'true' : 'false' }})">
         <div class="flex justify-between items-start gap-3">
             <div class="flex-1">
                 <div class="flex items-center gap-2 flex-wrap mb-1">
@@ -161,6 +187,11 @@
                     <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $badgeClass }}">
                         {{ ucfirst($alert->urgency) }}
                     </span>
+                    @if($alert->source === 'predicted')
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">
+                        🔮 Predicted
+                    </span>
+                    @endif
                     @if($alert->is_read)
                     <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Read</span>
                     @else
@@ -174,6 +205,11 @@
                 </div>
                 <p class="text-sm font-semibold text-gray-700">{{ $alert->alert_type }}</p>
                 <p class="text-sm text-gray-600 mt-0.5">{{ $alert->recommendation }}</p>
+                @if($alert->predicted_due_date)
+                <p class="text-xs text-purple-600 mt-1 font-medium">
+                    Predicted due: {{ $alert->predicted_due_date->format('d M Y') }}
+                </p>
+                @endif
                 <p class="text-xs text-gray-400 mt-1">
                     Created {{ $alert->created_at->diffForHumans() }}
                     &bull; {{ $alert->created_at->format('d M Y') }}

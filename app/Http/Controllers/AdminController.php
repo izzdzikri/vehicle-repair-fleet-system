@@ -9,13 +9,24 @@ use App\Models\User;
 use App\Models\Company;
 use App\Models\JobType;
 use App\Models\ActivityLog;
+use App\Services\MaintenancePredictionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
     public function index() {
+        // Throttled auto-refresh of predictive maintenance alerts — cheap
+        // enough to run inline rather than requiring the scheduler cron
+        // to be set up on Herd, but capped to once per 6 hours so it
+        // doesn't re-scan every vehicle on every dashboard load.
+        Cache::remember('maintenance_predictions_autorun', 21600, function () {
+            app(MaintenancePredictionService::class)->runAll();
+            return true;
+        });
+
         $recentJobs = JobCard::with(['vehicle','staff','appointment'])->latest()->take(5)->get();
 
         $staffWorkload = User::where('role','staff')
@@ -87,6 +98,18 @@ class AdminController extends Controller
         'avatar'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
 
+    // Same PIC-safety guard as the dedicated toggle action: a plain
+    // profile-edit save can also flip status to inactive, so it needs
+    // the same protection as toggleStatus() below.
+    if ($request->status === 'inactive' && $user->status === 'active' && $user->role === 'corporate') {
+        if ($user->isLastActivePicOfCompany()) {
+            return back()->with('error', 'Cannot deactivate — this is the last active PIC for '.($user->company->name ?? 'this company').'.')->withInput();
+        }
+        if ($user->isLastActivePrimaryPicOfCompany()) {
+            return back()->with('error', 'Cannot deactivate — this is the last active Primary PIC for '.($user->company->name ?? 'this company').'. Add a new Primary PIC first.')->withInput();
+        }
+    }
+
     $data = [
         'name'       => $request->name,
         'username'   => $request->username,
@@ -150,7 +173,23 @@ class AdminController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error','You cannot deactivate your own account.');
         }
+
         $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+
+        // Only the active -> inactive direction can strand a company;
+        // reactivating a PIC is always safe. Same guard the
+        // account-request approval flow enforces, so a corporate user
+        // can't be silently deactivated through this direct admin
+        // action and bypass that safety check.
+        if ($newStatus === 'inactive' && $user->role === 'corporate') {
+            if ($user->isLastActivePicOfCompany()) {
+                return back()->with('error', 'Cannot deactivate — this is the last active PIC for '.($user->company->name ?? 'this company').'.');
+            }
+            if ($user->isLastActivePrimaryPicOfCompany()) {
+                return back()->with('error', 'Cannot deactivate — this is the last active Primary PIC for '.($user->company->name ?? 'this company').'. The company would be left with Viewer-only access. Add a new Primary PIC first.');
+            }
+        }
+
         $user->update(['status' => $newStatus]);
         ActivityLog::record('user.status_changed', "Set {$user->name}'s status to {$newStatus}", $user);
 
@@ -161,6 +200,18 @@ class AdminController extends Controller
         if ($user->id === auth()->id()) {
             return back()->with('error','You cannot delete your own account.');
         }
+
+        // Same PIC-safety guard as toggleStatus() — deletion is even
+        // more permanent, so it needs it at least as much.
+        if ($user->role === 'corporate') {
+            if ($user->isLastActivePicOfCompany()) {
+                return back()->with('error', 'Cannot delete — this is the last active PIC for '.($user->company->name ?? 'this company').'.');
+            }
+            if ($user->isLastActivePrimaryPicOfCompany()) {
+                return back()->with('error', 'Cannot delete — this is the last active Primary PIC for '.($user->company->name ?? 'this company').'. Add a new Primary PIC first.');
+            }
+        }
+
         ActivityLog::record('user.deleted', "Deleted user: {$user->name} ({$user->email})", $user);
         if ($user->avatar) Storage::disk('public')->delete($user->avatar);
         $user->delete();
@@ -203,6 +254,8 @@ class AdminController extends Controller
             'category'           => 'required|string',
             'estimated_minutes'  => 'required|integer|min:5',
             'base_price'         => 'required|numeric|min:0',
+            'interval_km'        => 'nullable|integer|min:1',
+            'interval_months'    => 'nullable|integer|min:1',
         ]);
         JobType::create($request->all());
         return back()->with('success','Job type added.');
@@ -214,10 +267,15 @@ class AdminController extends Controller
         'category'           => 'required|string|max:50',
         'estimated_minutes'  => 'required|integer|min:1',
         'base_price'         => 'required|numeric|min:0',
+        'interval_km'        => 'nullable|integer|min:1',
+        'interval_months'    => 'nullable|integer|min:1',
     ]);
 
     $oldPrice = $jobType->base_price;
-    $jobType->update($request->only(['name','category','estimated_minutes','base_price','description']));
+    $jobType->update($request->only([
+        'name','category','estimated_minutes','base_price','description',
+        'interval_km','interval_months',
+    ]));
 
     if ((float) $oldPrice !== (float) $request->base_price) {
         ActivityLog::record(

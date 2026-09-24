@@ -108,7 +108,7 @@
                                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
                                 </button>
                                 <form method="POST" action="/inventory/spare-parts/{{ $part->id }}"
-                                    onsubmit="return confirm('Delete {{ addslashes($part->name) }}? This cannot be undone.')">
+                                    onsubmit="return confirmSubmit(event, {title:'Delete part?', message:'This will permanently delete {{ addslashes($part->name) }} ({{ addslashes($part->part_number) }}) from inventory. This cannot be undone.', confirmLabel:'Delete Part'})">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                         class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">

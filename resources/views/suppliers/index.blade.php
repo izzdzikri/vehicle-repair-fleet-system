@@ -59,7 +59,7 @@
                                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
                                 </button>
                                 <form method="POST" action="/admin/suppliers/{{ $s->id }}"
-                                    onsubmit="return confirm('Delete {{ addslashes($s->name) }}?')">
+                                    onsubmit="return confirmSubmit(event, {title:'Delete supplier?', message:'This will permanently delete {{ addslashes($s->name) }}. This cannot be undone.', confirmLabel:'Delete Supplier'})">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                         class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">

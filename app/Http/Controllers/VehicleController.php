@@ -97,6 +97,10 @@ class VehicleController extends Controller
     public function update(Request $request, Vehicle $vehicle) {
         $this->authorizeVehicleAccess($vehicle);
 
+        if (auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic()) {
+            return back()->with('error', 'Secondary PIC (Viewer) cannot edit vehicles. Contact your Primary PIC.');
+        }
+
         $request->validate([
             'brand'   => 'required',
             'model'   => 'required',
