@@ -6,6 +6,8 @@ use App\Models\JobType;
 use App\Models\ServiceHistory;
 use App\Models\MaintenanceAlert;
 use App\Models\TripLog;
+use App\Models\Notification;
+use App\Models\User;
 use Carbon\Carbon;
 
 /**
@@ -54,7 +56,7 @@ class MaintenancePredictionService
 
         $touched = 0;
 
-        Vehicle::chunk(50, function ($vehicles) use ($intervalTypes, &$touched) {
+        Vehicle::with('owner')->chunk(50, function ($vehicles) use ($intervalTypes, &$touched) {
             foreach ($vehicles as $vehicle) {
                 $dailyRate = $this->estimateDailyKm($vehicle);
 
@@ -74,26 +76,53 @@ class MaintenancePredictionService
      * trip logs (there is no odometer/telematics feed, so trip logs —
      * where present — are the only ground truth for usage rate).
      */
-    private function estimateDailyKm(Vehicle $vehicle): float {
+    public function estimateDailyKm(Vehicle $vehicle): float {
+        return (float) $this->getUsageStats($vehicle)['daily_km'];
+    }
+
+    /**
+     * Get detailed usage statistics for a vehicle based on its trip logs,
+     * including whether the calculation is using the 40 km/day heuristic fallback.
+     */
+    public function getUsageStats(Vehicle $vehicle): array {
         $trips = TripLog::where('vehicle_id', $vehicle->id)
             ->orderByDesc('trip_date')
             ->limit(20)
             ->get();
 
-        if ($trips->count() < 2) {
-            return self::DEFAULT_DAILY_KM;
+        $count = $trips->count();
+        if ($count < 2) {
+            return [
+                'daily_km'        => (float) self::DEFAULT_DAILY_KM,
+                'is_fallback'     => true,
+                'trip_count'      => $count,
+                'total_logged_km' => (float) $trips->sum('distance_km'),
+                'span_days'       => 0,
+            ];
         }
 
         $totalKm  = (float) $trips->sum('distance_km');
         $earliest = Carbon::parse($trips->min('trip_date'));
         $latest   = Carbon::parse($trips->max('trip_date'));
-        $spanDays = $earliest->diffInDays($latest);
+        $spanDays = (int) $earliest->diffInDays($latest);
 
         if ($spanDays < 1 || $totalKm <= 0) {
-            return self::DEFAULT_DAILY_KM;
+            return [
+                'daily_km'        => (float) self::DEFAULT_DAILY_KM,
+                'is_fallback'     => true,
+                'trip_count'      => $count,
+                'total_logged_km' => $totalKm,
+                'span_days'       => $spanDays,
+            ];
         }
 
-        return $totalKm / $spanDays;
+        return [
+            'daily_km'        => round($totalKm / $spanDays, 1),
+            'is_fallback'     => false,
+            'trip_count'      => $count,
+            'total_logged_km' => round($totalKm, 1),
+            'span_days'       => $spanDays,
+        ];
     }
 
     /**
@@ -162,11 +191,16 @@ class MaintenancePredictionService
             ->first();
 
         if ($existing) {
+            $oldUrgency = $existing->urgency;
             $existing->update([
                 'urgency'            => $urgency,
                 'recommendation'     => $recommendation,
                 'predicted_due_date' => $predictedDueDate->toDateString(),
             ]);
+
+            if ($this->shouldNotifyOnEscalation($oldUrgency, $urgency)) {
+                $this->dispatchNotification($vehicle, $jobType, $urgency, $recommendation, true);
+            }
         } else {
             MaintenanceAlert::create([
                 'vehicle_id'         => $vehicle->id,
@@ -178,8 +212,65 @@ class MaintenancePredictionService
                 'predicted_due_date' => $predictedDueDate->toDateString(),
                 'is_read'            => false,
             ]);
+
+            if (in_array($urgency, ['medium', 'high'], true)) {
+                $this->dispatchNotification($vehicle, $jobType, $urgency, $recommendation, false);
+            }
         }
 
         return true;
+    }
+
+    /**
+     * Determines whether an urgency change represents an escalation.
+     */
+    private function shouldNotifyOnEscalation(string $oldUrgency, string $newUrgency): bool {
+        $ranks = ['low' => 1, 'medium' => 2, 'high' => 3];
+        $oldRank = $ranks[$oldUrgency] ?? 0;
+        $newRank = $ranks[$newUrgency] ?? 0;
+
+        return $newRank > $oldRank && $newRank >= 2;
+    }
+
+    /**
+     * Dispatch in-app notification to the vehicle owner (individual) or all active
+     * company PICs (corporate fleet), guarding against duplicate notifications within 7 days.
+     */
+    private function dispatchNotification(Vehicle $vehicle, JobType $jobType, string $urgency, string $recommendation, bool $isEscalation = false): void {
+        if (!$vehicle->relationLoaded('owner')) {
+            $vehicle->load('owner');
+        }
+
+        $owner = $vehicle->owner;
+        if (!$owner) {
+            return;
+        }
+
+        $title = $urgency === 'high' ? '⚠️ Urgent Maintenance Due' : '🔮 Predicted Service Due';
+        $message = "{$vehicle->plate_number}: {$jobType->name} Due — {$recommendation}";
+
+        if ($owner->role === 'corporate' && $owner->company_id) {
+            $targetUserIds = User::where('company_id', $owner->company_id)
+                ->where('status', 'active')
+                ->pluck('id');
+            $url = '/client/maintenance';
+        } elseif ($owner->role === 'individual' && $owner->status === 'active') {
+            $targetUserIds = collect([$owner->id]);
+            $url = '/customer/maintenance';
+        } else {
+            return;
+        }
+
+        foreach ($targetUserIds as $userId) {
+            $recentNotice = Notification::where('user_id', $userId)
+                ->where('url', $url)
+                ->where('message', 'like', "{$vehicle->plate_number}: {$jobType->name} Due%")
+                ->where('created_at', '>=', now()->subDays(7))
+                ->exists();
+
+            if (!$recentNotice || $isEscalation) {
+                Notification::send($userId, $title, $message, $url);
+            }
+        }
     }
 }

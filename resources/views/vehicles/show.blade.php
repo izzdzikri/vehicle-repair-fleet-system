@@ -118,6 +118,123 @@
         @endforelse
     </div>
 
+    {{-- Trip Logs & Daily Usage Rate --}}
+    <div class="bg-white rounded-lg shadow p-6" x-data="{ showForm: false }">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                    <i data-lucide="map-pin" class="w-5 h-5 text-blue-600"></i>
+                    Trip Logs & Mileage Usage
+                    <span class="text-xs px-2.5 py-0.5 rounded-full font-medium {{ $usageStats['is_fallback'] ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800' }}">
+                        {{ $usageStats['daily_km'] }} km/day {{ $usageStats['is_fallback'] ? '(Fallback Heuristic)' : '(Dynamic Usage Rate)' }}
+                    </span>
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">
+                    @if($usageStats['is_fallback'])
+                        Based on default 40 km/day heuristic. Log 2 or more trips across multiple days to personalize.
+                    @else
+                        Calculated from {{ $usageStats['trip_count'] }} recorded journeys ({{ number_format($usageStats['total_logged_km'], 1) }} km over {{ $usageStats['span_days'] }} days).
+                    @endif
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                @if(!$isSecondaryPic)
+                <button type="button" @click="showForm = !showForm"
+                    class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded text-xs font-medium flex items-center gap-1 transition">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span x-text="showForm ? 'Cancel' : 'Log Trip'"></span>
+                </button>
+                @endif
+                <a href="{{ $base }}/trip-logs?vehicle_id={{ $vehicle->id }}"
+                    class="text-xs text-blue-600 hover:underline">
+                    All Trips →
+                </a>
+            </div>
+        </div>
+
+        {{-- Quick Log Form --}}
+        @if(!$isSecondaryPic)
+        <div x-show="showForm" x-transition class="bg-gray-50 border rounded-lg p-4 mb-4" style="display:none">
+            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Record Trip for {{ $vehicle->plate_number }}</h4>
+            <form method="POST" action="{{ $base }}/trip-logs" class="space-y-3">
+                @csrf
+                <input type="hidden" name="vehicle_id" value="{{ $vehicle->id }}">
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Trip Date</label>
+                        <input type="date" name="trip_date" max="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}"
+                            class="w-full border rounded px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Distance (km)</label>
+                        <input type="number" step="0.1" min="0.1" max="5000" name="distance_km" placeholder="e.g. 50"
+                            class="w-full border rounded px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Terrain / Route</label>
+                        <select name="terrain_type" class="w-full border rounded px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <option value="urban">Urban (City / Stop-and-Go)</option>
+                            <option value="highway">Highway (Expressway)</option>
+                            <option value="rural">Rural (Unpaved)</option>
+                            <option value="mountain">Mountain (Steep)</option>
+                            <option value="mixed" selected>Mixed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Notes (Optional)</label>
+                    <input type="text" name="notes" placeholder="e.g. Outstation trip to Melaka"
+                        class="w-full border rounded px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-600">
+                        <input type="checkbox" name="update_mileage" value="1" checked class="rounded text-blue-600">
+                        <span>Advance vehicle odometer</span>
+                    </label>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded text-xs hover:bg-blue-700 font-medium">
+                        Save Trip & Refresh Predictions
+                    </button>
+                </div>
+            </form>
+        </div>
+        @endif
+
+        {{-- Recent Trips List --}}
+        @if($vehicle->tripLogs && $vehicle->tripLogs->count())
+        <div class="divide-y text-sm">
+            @foreach($vehicle->tripLogs as $trip)
+            <div class="py-2.5 flex items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-3">
+                    <span class="font-medium text-gray-800">{{ $trip->trip_date ? $trip->trip_date->format('d M Y') : '—' }}</span>
+                    <span class="font-semibold text-blue-700">{{ number_format($trip->distance_km, 1) }} km</span>
+                    <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 capitalize text-[11px]">{{ $trip->terrain_type }}</span>
+                    @if($trip->notes)
+                    <span class="text-gray-400 truncate max-w-xs hidden sm:inline">{{ $trip->notes }}</span>
+                    @endif
+                </div>
+                <div>
+                    @if(!$isSecondaryPic)
+                    <form method="POST" action="{{ $base }}/trip-logs/{{ $trip->id }}" class="inline"
+                        onsubmit="return confirmSubmit(event, {title: 'Delete Trip Log', message: 'Delete this trip of {{ $trip->distance_km }} km? Predictions will be updated automatically.', confirmLabel: 'Delete'})">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-gray-400 hover:text-red-600 p-1" title="Delete trip">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </form>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @else
+        <p class="text-gray-400 text-xs py-3">No trips recorded for this vehicle yet.</p>
+        @endif
+    </div>
+
     {{-- Maintenance Alerts --}}
     @if($vehicle->maintenanceAlerts->count())
     <div class="bg-white rounded-lg shadow p-6">

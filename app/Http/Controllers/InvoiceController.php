@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Models\ActivityLog;
 use App\Models\Notification;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -71,6 +72,35 @@ class InvoiceController extends Controller
         }
 
         return view('invoices.show', compact('invoice'));
+    }
+
+    /**
+     * Download invoice as a PDF using dompdf.
+     * Applies the same scope/ownership guard as show().
+     */
+    public function downloadPdf(Invoice $invoice) {
+        $user = auth()->user();
+        $invoice->load([
+            'jobCard.vehicle', 'jobCard.appointment.user', 'jobCard.staff',
+            'jobCard.parts.sparePart', 'jobCard.labourCharges', 'payments.recorder',
+            'jobCard.jobType',
+        ]);
+
+        if (!in_array($user->role, ['admin', 'staff'])) {
+            $ownerId = $invoice->jobCard->appointment->user_id ?? null;
+            $allowed = $ownerId === $user->id;
+            if ($user->role === 'corporate' && $ownerId) {
+                $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+                $allowed = $companyUserIds->contains($ownerId);
+            }
+            abort_unless($allowed, 403);
+        }
+
+        $pdf = Pdf::loadView('invoices.pdf', compact('invoice'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'Invoice-' . $invoice->invoice_number . '.pdf';
+        return $pdf->download($filename);
     }
 
     public function generate(Request $request) {

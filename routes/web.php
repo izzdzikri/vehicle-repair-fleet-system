@@ -22,6 +22,7 @@
     use App\Http\Controllers\PurchaseOrderController;
     use App\Http\Controllers\FeedbackController;
     use App\Http\Controllers\NotificationController;
+    use App\Http\Controllers\TripLogController;
 
     Route::get('/', fn() => redirect('/login'));
     Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->name('chatbot.reply');
@@ -128,8 +129,11 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     // Inventory (view only here — add/edit/delete handled by the permission-gated group above)
     Route::get('/spare-parts', [SparePartController::class, 'index'])->name('admin.spare-parts.index');
 
-    // Vehicles
+    // Vehicles & Trip Logs
     Route::resource('vehicles', VehicleController::class);
+    Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('admin.trip-logs.index');
+    Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('admin.trip-logs.store');
+    Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('admin.trip-logs.destroy');
 
     // Reports
     Route::get('/reports',        [ReportController::class, 'index'])->name('admin.reports');
@@ -148,6 +152,7 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('admin.invoices');
     Route::post('/invoices/generate',            [InvoiceController::class, 'generate'])->name('admin.invoices.generate');
     Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('admin.invoices.show');
+    Route::get('/invoices/{invoice}/pdf',        [InvoiceController::class, 'downloadPdf'])->name('admin.invoices.pdf');
     Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('admin.invoices.payments');
     Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('admin.invoices.resend');
 
@@ -199,6 +204,7 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('staff.invoices');
     Route::post('/invoices/generate',            [InvoiceController::class, 'generate'])->name('staff.invoices.generate');
     Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('staff.invoices.show');
+    Route::get('/invoices/{invoice}/pdf',        [InvoiceController::class, 'downloadPdf'])->name('staff.invoices.pdf');
     Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('staff.invoices.payments');
     Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('staff.invoices.resend');
 
@@ -240,12 +246,16 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     // registering routes that would 500 on a missing controller method.
     Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show']);
     Route::resource('vehicles',           VehicleController::class);
+    Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('client.trip-logs.index');
+    Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('client.trip-logs.store');
+    Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('client.trip-logs.destroy');
     Route::get('/maintenance',            [MaintenanceAlertController::class, 'index'])->name('client.maintenance');
     Route::post('/account-requests', [AccountRequestController::class, 'store'])->name('client.account-requests.store');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('client.maintenance.read');
     Route::get('/company', [ClientController::class, 'company'])->name('client.company');
     Route::get('/invoices',           [InvoiceController::class, 'index'])->name('client.invoices');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('client.invoices.show');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('client.invoices.pdf');
 });
 
 // ----------------------------------------------------------------
@@ -256,9 +266,13 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     // Same AppointmentController method gap as the corporate group above.
     Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show']);
     Route::resource('vehicles',           VehicleController::class);
+    Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('customer.trip-logs.index');
+    Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('customer.trip-logs.store');
+    Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('customer.trip-logs.destroy');
     Route::delete('/account/delete', [AccountRequestController::class, 'deleteOwnAccount'])->name('customer.account.delete');
     Route::get('/maintenance',            [MaintenanceAlertController::class, 'index'])->name('customer.maintenance');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('customer.maintenance.read');
     Route::get('/invoices',           [InvoiceController::class, 'index'])->name('customer.invoices');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('customer.invoices.show');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('customer.invoices.pdf');
 });

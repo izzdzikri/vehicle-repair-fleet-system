@@ -41,6 +41,7 @@ class VehicleController extends Controller
             'serviceHistory.jobCard',
             'appointments' => fn($q) => $q->latest()->take(10),
             'maintenanceAlerts' => fn($q) => $q->latest()->take(5),
+            'tripLogs' => fn($q) => $q->latest('trip_date')->latest('id')->take(10),
         ]);
 
         $totalVisits  = $vehicle->serviceHistory->count();
@@ -48,8 +49,11 @@ class VehicleController extends Controller
         $firstService = $vehicle->serviceHistory->last();
         $lastService  = $vehicle->serviceHistory->first();
 
+        $usageStats = app(\App\Services\MaintenancePredictionService::class)->getUsageStats($vehicle);
+        $isSecondaryPic = auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic();
+
         return view('vehicles.show', compact(
-            'vehicle','totalVisits','totalSpent','firstService','lastService'
+            'vehicle','totalVisits','totalSpent','firstService','lastService','usageStats','isSecondaryPic'
         ));
     }
 

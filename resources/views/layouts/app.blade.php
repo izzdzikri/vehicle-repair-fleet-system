@@ -91,6 +91,7 @@
                                 'pending_requests' => \App\Models\AccountRequest::where('status','pending')->count(),
                                 'draft_pos'        => \App\Models\PurchaseOrder::where('status','draft')->count(),
                                 'pending_leave'    => \App\Models\LeaveRequest::where('status','pending')->count(),
+                                'urgent_alerts'    => \App\Models\MaintenanceAlert::where('urgency','high')->where('is_read', false)->count(),
                             ];
                         });
                     @endphp
@@ -102,12 +103,13 @@
                     {!! $link('/admin/appointments',    'calendar',         'Appointments',      'admin/appointments*', $sidebarCounts['pending_appts'] ?: null, 'admin/appointments/queue') !!}
                     {!! $link('/admin/appointments/queue', 'clock',         'Today\'s Queue',    'admin/appointments/queue') !!}
                     {!! $link('/admin/vehicles',        'car',              'Vehicles',          'admin/vehicles*') !!}
+                    {!! $link('/admin/trip-logs',       'map-pin',          'Trip Logs',         'admin/trip-logs*') !!}
 
                     {!! $section('Workshop') !!}
                     {!! $link('/admin/job-cards',       'clipboard-list',   'Job Cards',         'admin/job-cards*', null, ['admin/job-cards/schedule','admin/job-cards/board']) !!}
                     {!! $link('/admin/job-cards/board', 'layout-grid',      'Job Board',         'admin/job-cards/board') !!}
                     {!! $link('/admin/job-cards/schedule', 'list-ordered',  'Job Schedule',      'admin/job-cards/schedule') !!}
-                    {!! $link('/admin/maintenance',     'bell',             'Maintenance',       'admin/maintenance*') !!}
+                    {!! $link('/admin/maintenance',     'bell',             'Maintenance',       'admin/maintenance*', $sidebarCounts['urgent_alerts'] ?: null) !!}
 
                     {!! $section('Inventory') !!}
                     {!! $link('/admin/spare-parts',     'package',          'Inventory',         'admin/spare-parts*', $sidebarCounts['low_stock'] ?: null) !!}
@@ -173,6 +175,7 @@
                     {!! $section('Fleet') !!}
                     {!! $link('/client/appointments',   'calendar',         'Appointments',      'client/appointments*') !!}
                     {!! $link('/client/vehicles',       'car',              'My Fleet',          'client/vehicles*') !!}
+                    {!! $link('/client/trip-logs',      'map-pin',          'Trip Logs',         'client/trip-logs*') !!}
                     {!! $link('/client/maintenance',    'bell',             'Maintenance Alerts','client/maintenance*') !!}
 
                     {!! $section('Finance') !!}
@@ -197,6 +200,7 @@
                     {!! $section('My Vehicles') !!}
                     {!! $link('/customer/appointments', 'calendar',         'Appointments',      'customer/appointments*') !!}
                     {!! $link('/customer/vehicles',     'car',              'My Vehicles',       'customer/vehicles*') !!}
+                    {!! $link('/customer/trip-logs',    'map-pin',          'Trip Logs',         'customer/trip-logs*') !!}
                     {!! $link('/customer/maintenance',  'bell',             'Maintenance Alerts','customer/maintenance*', $myAlertBadge ?: null) !!}
 
                     {!! $section('Finance') !!}
@@ -248,7 +252,7 @@
                     'board' => 'Job Board',
                     'stage' => 'Update Stage', 'parts' => 'Parts', 'symptoms' => 'Symptoms',
                     'labour' => 'Labour', 'checkin' => 'Check-in', 'spare-parts' => 'Inventory', 'inventory' => 'Inventory',
-                    'vehicles' => 'Vehicles', 'create' => 'Create', 'edit' => 'Edit', 'reports' => 'Reports',
+                    'vehicles' => 'Vehicles', 'trip-logs' => 'Trip Logs', 'create' => 'Create', 'edit' => 'Edit', 'reports' => 'Reports',
                     'export' => 'Export', 'maintenance' => 'Maintenance', 'read' => 'Mark Read', 'invoices' => 'Invoices',
                     'generate' => 'Generate', 'payments' => 'Payments', 'resend' => 'Resend Email',
                     'staff-management' => 'Staff Management', 'attendance' => 'Attendance',
@@ -360,6 +364,12 @@
                             <a href="/admin/staff-management/leave" class="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                 <span>Leave requests</span>
                                 <span class="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['pending_leave'] }}</span>
+                            </a>
+                            @endif
+                            @if(!empty($sidebarCounts['urgent_alerts']))
+                            <a href="/admin/maintenance" class="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <span>Urgent maintenance</span>
+                                <span class="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['urgent_alerts'] }}</span>
                             </a>
                             @endif
                             @if($totalAlerts === 0)

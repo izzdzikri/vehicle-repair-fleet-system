@@ -21,11 +21,16 @@
                 </button>
             </form>
             @endif
+            <a href="{{ $backPrefix }}/invoices/{{ $invoice->id }}/pdf"
+                class="flex items-center gap-2 text-sm bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+                <i data-lucide="download" class="w-4 h-4"></i> Download PDF
+            </a>
             <button onclick="window.print()" class="flex items-center gap-2 text-sm bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">
-                <i data-lucide="printer" class="w-4 h-4"></i> Print / Save as PDF
+                <i data-lucide="printer" class="w-4 h-4"></i> Print
             </button>
         </div>
     </div>
+
 
     {{-- Invoice Card --}}
     <div class="bg-white rounded-lg shadow p-8">

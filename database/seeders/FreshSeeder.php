@@ -304,16 +304,16 @@ class FreshSeeder extends Seeder
         // JOB TYPES (10) with realistic base prices
         // ----------------------------------------------------------------
         DB::table('job_types')->insert([
-            ['id'=>1,  'name'=>'Full Engine Service',        'category'=>'Engine',       'estimated_minutes'=>180, 'base_price'=>120.00, 'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>2,  'name'=>'Oil & Filter Change',        'category'=>'Engine',       'estimated_minutes'=>45,  'base_price'=>30.00,  'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>3,  'name'=>'Brake Pad Replacement',      'category'=>'Brakes',       'estimated_minutes'=>90,  'base_price'=>60.00,  'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>4,  'name'=>'Tyre Rotation & Balancing',  'category'=>'Tyres',        'estimated_minutes'=>60,  'base_price'=>40.00,  'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>5,  'name'=>'Battery Replacement',        'category'=>'Electrical',   'estimated_minutes'=>30,  'base_price'=>30.00,  'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>6,  'name'=>'Air Conditioning Service',   'category'=>'Cooling',      'estimated_minutes'=>120, 'base_price'=>80.00,  'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>7,  'name'=>'Suspension Inspection',      'category'=>'Suspension',   'estimated_minutes'=>75,  'base_price'=>60.00,  'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>8,  'name'=>'Transmission Fluid Change',  'category'=>'Transmission', 'estimated_minutes'=>60,  'base_price'=>60.00,  'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>9,  'name'=>'Engine Diagnostics Scan',    'category'=>'Engine',       'estimated_minutes'=>45,  'base_price'=>45.00,  'created_at'=>now(),'updated_at'=>now()],
-            ['id'=>10, 'name'=>'Full Vehicle Inspection',    'category'=>'General',      'estimated_minutes'=>150, 'base_price'=>100.00, 'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>1,  'name'=>'Full Engine Service',        'category'=>'Engine',       'estimated_minutes'=>180, 'base_price'=>120.00, 'interval_km'=>10000, 'interval_months'=>12, 'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>2,  'name'=>'Oil & Filter Change',        'category'=>'Engine',       'estimated_minutes'=>45,  'base_price'=>30.00,  'interval_km'=>5000,  'interval_months'=>6,  'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>3,  'name'=>'Brake Pad Replacement',      'category'=>'Brakes',       'estimated_minutes'=>90,  'base_price'=>60.00,  'interval_km'=>null,  'interval_months'=>null,'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>4,  'name'=>'Tyre Rotation & Balancing',  'category'=>'Tyres',        'estimated_minutes'=>60,  'base_price'=>40.00,  'interval_km'=>10000, 'interval_months'=>6,  'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>5,  'name'=>'Battery Replacement',        'category'=>'Electrical',   'estimated_minutes'=>30,  'base_price'=>30.00,  'interval_km'=>null,  'interval_months'=>null,'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>6,  'name'=>'Air Conditioning Service',   'category'=>'Cooling',      'estimated_minutes'=>120, 'base_price'=>80.00,  'interval_km'=>null,  'interval_months'=>24, 'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>7,  'name'=>'Suspension Inspection',      'category'=>'Suspension',   'estimated_minutes'=>75,  'base_price'=>60.00,  'interval_km'=>20000, 'interval_months'=>24, 'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>8,  'name'=>'Transmission Fluid Change',  'category'=>'Transmission', 'estimated_minutes'=>60,  'base_price'=>60.00,  'interval_km'=>40000, 'interval_months'=>24, 'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>9,  'name'=>'Engine Diagnostics Scan',    'category'=>'Engine',       'estimated_minutes'=>45,  'base_price'=>45.00,  'interval_km'=>null,  'interval_months'=>null,'created_at'=>now(),'updated_at'=>now()],
+            ['id'=>10, 'name'=>'Full Vehicle Inspection',    'category'=>'General',      'estimated_minutes'=>150, 'base_price'=>100.00, 'interval_km'=>null,  'interval_months'=>12, 'created_at'=>now(),'updated_at'=>now()],
         ]);
 
         // ----------------------------------------------------------------
@@ -381,9 +381,9 @@ class FreshSeeder extends Seeder
         // ----------------------------------------------------------------
         DB::table('appointments')->insert([
             // --- COMPLETED ---
-            ['id'=>1,  'user_id'=>9,  'vehicle_id'=>10, 'date'=>Carbon::now()->subDays(30), 'time'=>'09:00', 'service_type'=>'Oil Change',               'status'=>'completed', 'is_walkin'=>false, 'walkin_name'=>null,                    'walkin_contact'=>null,      'notes'=>null,                           'created_at'=>Carbon::now()->subDays(31),'updated_at'=>Carbon::now()->subDays(30)],
+            ['id'=>1,  'user_id'=>9,  'vehicle_id'=>10, 'date'=>Carbon::now()->subDays(170), 'time'=>'09:00', 'service_type'=>'Oil Change',               'status'=>'completed', 'is_walkin'=>false, 'walkin_name'=>null,                    'walkin_contact'=>null,      'notes'=>null,                           'created_at'=>Carbon::now()->subDays(171),'updated_at'=>Carbon::now()->subDays(170)],
             ['id'=>2,  'user_id'=>10, 'vehicle_id'=>12, 'date'=>Carbon::now()->subDays(25), 'time'=>'10:30', 'service_type'=>'Brake Inspection',         'status'=>'completed', 'is_walkin'=>false, 'walkin_name'=>null,                    'walkin_contact'=>null,      'notes'=>'Rear brakes squeaking',        'created_at'=>Carbon::now()->subDays(26),'updated_at'=>Carbon::now()->subDays(25)],
-            ['id'=>3,  'user_id'=>5,  'vehicle_id'=>1,  'date'=>Carbon::now()->subDays(20), 'time'=>'08:30', 'service_type'=>'Full Engine Service',      'status'=>'completed', 'is_walkin'=>false, 'walkin_name'=>null,                    'walkin_contact'=>null,      'notes'=>'Fleet vehicle monthly check',  'created_at'=>Carbon::now()->subDays(21),'updated_at'=>Carbon::now()->subDays(20)],
+            ['id'=>3,  'user_id'=>5,  'vehicle_id'=>1,  'date'=>Carbon::now()->subDays(135), 'time'=>'08:30', 'service_type'=>'Oil & Filter Change',      'status'=>'completed', 'is_walkin'=>false, 'walkin_name'=>null,                    'walkin_contact'=>null,      'notes'=>'Fleet vehicle regular service', 'created_at'=>Carbon::now()->subDays(136),'updated_at'=>Carbon::now()->subDays(135)],
             ['id'=>4,  'user_id'=>7,  'vehicle_id'=>5,  'date'=>Carbon::now()->subDays(18), 'time'=>'11:00', 'service_type'=>'Tyre Rotation',            'status'=>'completed', 'is_walkin'=>false, 'walkin_name'=>null,                    'walkin_contact'=>null,      'notes'=>null,                           'created_at'=>Carbon::now()->subDays(19),'updated_at'=>Carbon::now()->subDays(18)],
             ['id'=>5,  'user_id'=>11, 'vehicle_id'=>13, 'date'=>Carbon::now()->subDays(15), 'time'=>'14:00', 'service_type'=>'Battery Replacement',      'status'=>'completed', 'is_walkin'=>false, 'walkin_name'=>null,                    'walkin_contact'=>null,      'notes'=>'Car not starting',             'created_at'=>Carbon::now()->subDays(16),'updated_at'=>Carbon::now()->subDays(15)],
             ['id'=>6,  'user_id'=>8,  'vehicle_id'=>8,  'date'=>Carbon::now()->subDays(12), 'time'=>'09:30', 'service_type'=>'Engine Diagnostics',       'status'=>'completed', 'is_walkin'=>false, 'walkin_name'=>null,                    'walkin_contact'=>null,      'notes'=>'Check engine light on',        'created_at'=>Carbon::now()->subDays(13),'updated_at'=>Carbon::now()->subDays(12)],
@@ -419,9 +419,9 @@ class FreshSeeder extends Seeder
                 'symptoms'             => json_encode(['Engine warning light on']),
                 'technician_notes'     => 'Castrol 5W-30 replaced. Filter changed. No other issues.',
                 'total_cost'           => 113.50,
-                'estimated_completion' => Carbon::now()->subDays(30)->addHours(1),
-                'created_at'           => Carbon::now()->subDays(30),
-                'updated_at'           => Carbon::now()->subDays(30),
+                'estimated_completion' => Carbon::now()->subDays(170)->addHours(1),
+                'created_at'           => Carbon::now()->subDays(170),
+                'updated_at'           => Carbon::now()->subDays(170),
             ],
             [
                 'id'=>2, 'appointment_id'=>2, 'vehicle_id'=>12, 'staff_id'=>3, 'job_type_id'=>3,
@@ -435,15 +435,15 @@ class FreshSeeder extends Seeder
                 'updated_at'           => Carbon::now()->subDays(25),
             ],
             [
-                'id'=>3, 'appointment_id'=>3, 'vehicle_id'=>1, 'staff_id'=>2, 'job_type_id'=>1,
+                'id'=>3, 'appointment_id'=>3, 'vehicle_id'=>1, 'staff_id'=>2, 'job_type_id'=>2,
                 'current_stage'        => 'completed',
-                'diagnosis'            => 'Full service. Valve cover gasket leaking. Fluids topped up.',
-                'symptoms'             => json_encode(['Unusual engine noise','Oil leak']),
-                'technician_notes'     => 'Gasket replaced. All systems normal post-service.',
-                'total_cost'           => 548.00,
-                'estimated_completion' => Carbon::now()->subDays(20)->addHours(3),
-                'created_at'           => Carbon::now()->subDays(20),
-                'updated_at'           => Carbon::now()->subDays(20),
+                'diagnosis'            => 'Scheduled oil and filter change. Fluids topped up.',
+                'symptoms'             => json_encode(['Oil leak']),
+                'technician_notes'     => 'Oil and filter replaced. All systems normal post-service.',
+                'total_cost'           => 113.50,
+                'estimated_completion' => Carbon::now()->subDays(135)->addHours(2),
+                'created_at'           => Carbon::now()->subDays(135),
+                'updated_at'           => Carbon::now()->subDays(135),
             ],
             [
                 'id'=>4, 'appointment_id'=>4, 'vehicle_id'=>5, 'staff_id'=>4, 'job_type_id'=>4,
@@ -600,9 +600,9 @@ class FreshSeeder extends Seeder
         // SERVICE HISTORY (one per completed job card)
         // ----------------------------------------------------------------
         DB::table('service_history')->insert([
-            ['job_card_id'=>1, 'vehicle_id'=>10, 'service_date'=>Carbon::now()->subDays(30), 'description'=>'Oil & Filter Change',       'cost'=>113.50, 'created_at'=>now(),'updated_at'=>now()],
-            ['job_card_id'=>2, 'vehicle_id'=>12, 'service_date'=>Carbon::now()->subDays(25), 'description'=>'Brake Pad Replacement',     'cost'=>205.00, 'created_at'=>now(),'updated_at'=>now()],
-            ['job_card_id'=>3, 'vehicle_id'=>1,  'service_date'=>Carbon::now()->subDays(20), 'description'=>'Full Engine Service',        'cost'=>548.00, 'created_at'=>now(),'updated_at'=>now()],
+            ['job_card_id'=>1, 'vehicle_id'=>10, 'service_date'=>Carbon::now()->subDays(170), 'description'=>'Oil & Filter Change',       'cost'=>113.50, 'created_at'=>now(),'updated_at'=>now()],
+            ['job_card_id'=>2, 'vehicle_id'=>12, 'service_date'=>Carbon::now()->subDays(25),  'description'=>'Brake Pad Replacement',     'cost'=>205.00, 'created_at'=>now(),'updated_at'=>now()],
+            ['job_card_id'=>3, 'vehicle_id'=>1,  'service_date'=>Carbon::now()->subDays(135), 'description'=>'Oil & Filter Change',       'cost'=>113.50, 'created_at'=>now(),'updated_at'=>now()],
             ['job_card_id'=>4, 'vehicle_id'=>5,  'service_date'=>Carbon::now()->subDays(18), 'description'=>'Tyre Rotation & Balancing', 'cost'=>80.00,  'created_at'=>now(),'updated_at'=>now()],
             ['job_card_id'=>5, 'vehicle_id'=>13, 'service_date'=>Carbon::now()->subDays(15), 'description'=>'Battery Replacement',       'cost'=>350.00, 'created_at'=>now(),'updated_at'=>now()],
             ['job_card_id'=>6, 'vehicle_id'=>8,  'service_date'=>Carbon::now()->subDays(12), 'description'=>'Engine Diagnostics Scan',   'cost'=>117.00, 'created_at'=>now(),'updated_at'=>now()],
@@ -752,6 +752,43 @@ class FreshSeeder extends Seeder
                 'created_at'     => Carbon::now()->subHours(5),
                 'updated_at'     => Carbon::now()->subHours(5),
             ],
+        ]);
+
+        // ----------------------------------------------------------------
+        // TRIP LOGS — feeds MaintenancePredictionService's daily-km usage
+        // estimator with real mileage history across corporate & individual
+        // vehicles, replacing the 40 km/day fallback with calculated rates.
+        // ----------------------------------------------------------------
+        DB::table('trip_logs')->insert([
+            // Vehicle 1: Isuzu D-Max (Mulia Logistik) — heavy logistics use (~34 km/day)
+            ['vehicle_id' => 1, 'trip_date' => Carbon::now()->subDays(18)->toDateString(), 'distance_km' => 120.0, 'terrain_type' => 'highway',  'notes' => 'Senai to Pasir Gudang warehouse distribution', 'created_at' => Carbon::now()->subDays(18), 'updated_at' => Carbon::now()->subDays(18)],
+            ['vehicle_id' => 1, 'trip_date' => Carbon::now()->subDays(14)->toDateString(), 'distance_km' => 85.5,  'terrain_type' => 'urban',    'notes' => 'Johor Bahru city customer deliveries',         'created_at' => Carbon::now()->subDays(14), 'updated_at' => Carbon::now()->subDays(14)],
+            ['vehicle_id' => 1, 'trip_date' => Carbon::now()->subDays(10)->toDateString(), 'distance_km' => 140.0, 'terrain_type' => 'mixed',    'notes' => 'Kulai - Senai cargo transport',                 'created_at' => Carbon::now()->subDays(10), 'updated_at' => Carbon::now()->subDays(10)],
+            ['vehicle_id' => 1, 'trip_date' => Carbon::now()->subDays(6)->toDateString(),  'distance_km' => 95.0,  'terrain_type' => 'highway',  'notes' => 'Expressway logistics run',                      'created_at' => Carbon::now()->subDays(6),  'updated_at' => Carbon::now()->subDays(6)],
+            ['vehicle_id' => 1, 'trip_date' => Carbon::now()->subDays(2)->toDateString(),  'distance_km' => 110.0, 'terrain_type' => 'urban',    'notes' => 'Local pickup and distribution',                 'created_at' => Carbon::now()->subDays(2),  'updated_at' => Carbon::now()->subDays(2)],
+
+            // Vehicle 2: Isuzu D-Max (Mulia Logistik) — outstation routes (~42 km/day)
+            ['vehicle_id' => 2, 'trip_date' => Carbon::now()->subDays(20)->toDateString(), 'distance_km' => 180.0, 'terrain_type' => 'highway',  'notes' => 'Interstate equipment delivery to Melaka',        'created_at' => Carbon::now()->subDays(20), 'updated_at' => Carbon::now()->subDays(20)],
+            ['vehicle_id' => 2, 'trip_date' => Carbon::now()->subDays(15)->toDateString(), 'distance_km' => 220.0, 'terrain_type' => 'highway',  'notes' => 'Return cargo dispatch',                         'created_at' => Carbon::now()->subDays(15), 'updated_at' => Carbon::now()->subDays(15)],
+            ['vehicle_id' => 2, 'trip_date' => Carbon::now()->subDays(8)->toDateString(),  'distance_km' => 195.0, 'terrain_type' => 'mixed',    'notes' => 'Outstation transport',                          'created_at' => Carbon::now()->subDays(8),  'updated_at' => Carbon::now()->subDays(8)],
+            ['vehicle_id' => 2, 'trip_date' => Carbon::now()->subDays(1)->toDateString(),  'distance_km' => 210.0, 'terrain_type' => 'highway',  'notes' => 'Express delivery run',                          'created_at' => Carbon::now()->subDays(1),  'updated_at' => Carbon::now()->subDays(1)],
+
+            // Vehicle 4: Nissan Navara (Mulia Logistik) — supervisor utility (~20 km/day)
+            ['vehicle_id' => 4, 'trip_date' => Carbon::now()->subDays(12)->toDateString(), 'distance_km' => 60.0,  'terrain_type' => 'urban',    'notes' => 'Local supervisor site visits',                  'created_at' => Carbon::now()->subDays(12), 'updated_at' => Carbon::now()->subDays(12)],
+            ['vehicle_id' => 4, 'trip_date' => Carbon::now()->subDays(7)->toDateString(),  'distance_km' => 75.0,  'terrain_type' => 'mixed',    'notes' => 'Branch inspection Senai - JB',                  'created_at' => Carbon::now()->subDays(7),  'updated_at' => Carbon::now()->subDays(7)],
+            ['vehicle_id' => 4, 'trip_date' => Carbon::now()->subDays(2)->toDateString(),  'distance_km' => 65.0,  'terrain_type' => 'urban',    'notes' => 'Office administration errands',                 'created_at' => Carbon::now()->subDays(2),  'updated_at' => Carbon::now()->subDays(2)],
+
+            // Vehicle 10: Perodua Myvi (Ain, Individual) — city commuter (~10 km/day)
+            ['vehicle_id' => 10, 'trip_date' => Carbon::now()->subDays(14)->toDateString(), 'distance_km' => 25.0, 'terrain_type' => 'urban',   'notes' => 'Daily office commute',                          'created_at' => Carbon::now()->subDays(14), 'updated_at' => Carbon::now()->subDays(14)],
+            ['vehicle_id' => 10, 'trip_date' => Carbon::now()->subDays(10)->toDateString(), 'distance_km' => 30.0, 'terrain_type' => 'urban',   'notes' => 'Grocery & town errands',                        'created_at' => Carbon::now()->subDays(10), 'updated_at' => Carbon::now()->subDays(10)],
+            ['vehicle_id' => 10, 'trip_date' => Carbon::now()->subDays(7)->toDateString(),  'distance_km' => 45.0, 'terrain_type' => 'mixed',   'notes' => 'Weekend visit to family in Skudai',             'created_at' => Carbon::now()->subDays(7),  'updated_at' => Carbon::now()->subDays(7)],
+            ['vehicle_id' => 10, 'trip_date' => Carbon::now()->subDays(2)->toDateString(),  'distance_km' => 22.0, 'terrain_type' => 'urban',   'notes' => 'Daily commute',                                 'created_at' => Carbon::now()->subDays(2),  'updated_at' => Carbon::now()->subDays(2)],
+
+            // Vehicle 12: Proton Saga (Faizal, Individual) — mixed commuter (~14 km/day)
+            ['vehicle_id' => 12, 'trip_date' => Carbon::now()->subDays(22)->toDateString(), 'distance_km' => 60.0, 'terrain_type' => 'mixed',   'notes' => 'Daily work commute',                            'created_at' => Carbon::now()->subDays(22), 'updated_at' => Carbon::now()->subDays(22)],
+            ['vehicle_id' => 12, 'trip_date' => Carbon::now()->subDays(16)->toDateString(), 'distance_km' => 80.0, 'terrain_type' => 'highway', 'notes' => 'Outstation trip to Pontian',                   'created_at' => Carbon::now()->subDays(16), 'updated_at' => Carbon::now()->subDays(16)],
+            ['vehicle_id' => 12, 'trip_date' => Carbon::now()->subDays(9)->toDateString(),  'distance_km' => 70.0, 'terrain_type' => 'urban',   'notes' => 'City driving',                                  'created_at' => Carbon::now()->subDays(9),  'updated_at' => Carbon::now()->subDays(9)],
+            ['vehicle_id' => 12, 'trip_date' => Carbon::now()->subDays(2)->toDateString(),  'distance_km' => 65.0, 'terrain_type' => 'mixed',   'notes' => 'Commute and personal errands',                  'created_at' => Carbon::now()->subDays(2),  'updated_at' => Carbon::now()->subDays(2)],
         ]);
     }
 }

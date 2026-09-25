@@ -6,10 +6,21 @@
 <div x-data="{
     showAdd: false,
     showEdit: false,
+    showScanner: false,
+    scanTarget: 'search',
     part: {},
     openEdit(p) {
         this.part = p;
         this.showEdit = true;
+    },
+    openScanner(target) {
+        this.scanTarget = target;
+        this.showScanner = true;
+        this.$nextTick(() => startBarcodeScanner(target));
+    },
+    closeScanner() {
+        this.showScanner = false;
+        stopBarcodeScanner();
     }
 }">
 
@@ -31,12 +42,20 @@
         @endif
     </div>
 
-    {{-- Search --}}
-    <form method="GET" class="mb-4 flex gap-2">
-        <input type="text" name="search" value="{{ $search }}"
-            placeholder="Search by name, part number, or brand..."
-            class="flex-1 max-w-md border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    {{-- Search + Barcode Scan --}}
+    <form method="GET" id="inventory-search-form" class="mb-4 flex gap-2 flex-wrap">
+        <div class="relative flex-1 max-w-md">
+            <input type="text" name="search" id="search-input" value="{{ $search }}"
+                placeholder="Search by name, part number, or brand..."
+                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10">
+        </div>
         <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">Search</button>
+        <button type="button" @click="openScanner('search')"
+            class="flex items-center gap-2 border border-blue-500 text-blue-600 px-3 py-2 rounded text-sm hover:bg-blue-50 transition"
+            title="Scan barcode / QR code">
+            <i data-lucide="scan-barcode" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Scan</span>
+        </button>
         @if($search)
         <a href="{{ url()->current() }}" class="px-4 py-2 rounded text-sm border text-gray-600 hover:bg-gray-50">Clear</a>
         @endif
@@ -163,10 +182,16 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Part Number *</label>
-                    <input type="text" name="part_number" value="{{ old('part_number') }}"
-                        placeholder="e.g. CO-5W30-4L"
-                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        required>
+                    <div class="flex gap-2">
+                        <input type="text" name="part_number" id="add-part-number" value="{{ old('part_number') }}"
+                            placeholder="e.g. CO-5W30-4L"
+                            class="flex-1 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            required>
+                        <button type="button" @click="openScanner('add-part')" title="Scan barcode for part number"
+                            class="border border-blue-400 text-blue-600 px-2.5 rounded hover:bg-blue-50 transition">
+                            <i data-lucide="scan-barcode" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
@@ -288,8 +313,109 @@
             </form>
         </div>
     </div>
-    @endif
+        {{-- Barcode / QR Scanner Modal --}}
+    <div x-show="showScanner" x-transition.opacity
+        class="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4"
+        style="display:none"
+        @keydown.escape.window="closeScanner()">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b">
+                <div>
+                    <h3 class="text-base font-semibold text-gray-800 flex items-center gap-2">
+                        <i data-lucide="scan-barcode" class="w-5 h-5 text-blue-600"></i>
+                        Barcode / QR Scanner
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Point your camera at a barcode or QR code</p>
+                </div>
+                <button @click="closeScanner()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="barcode-scanner-container" class="w-full bg-black" style="height: 280px;"></div>
+            <div class="px-5 py-3 bg-gray-50 border-t">
+                <p class="text-xs text-gray-500 text-center" id="scanner-status">Initialising camera…</p>
+            </div>
+        </div>
+    </div>
 
 </div>
 
-@endsection
+{{-- html5-qrcode CDN --}}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+let _qrScanner = null;
+
+function startBarcodeScanner(target) {
+    const container = document.getElementById('barcode-scanner-container');
+    const status    = document.getElementById('scanner-status');
+
+    if (_qrScanner) {
+        try { _qrScanner.clear(); } catch(e) {}
+        _qrScanner = null;
+    }
+
+    container.innerHTML = '';
+
+    _qrScanner = new Html5Qrcode('barcode-scanner-container');
+
+    Html5Qrcode.getCameras().then(cameras => {
+        if (!cameras || cameras.length === 0) {
+            status.textContent = 'No camera found.';
+            return;
+        }
+
+        const cameraId = cameras[cameras.length - 1].id; // prefer rear camera
+        status.textContent = 'Camera ready — scan your barcode or QR code.';
+
+        _qrScanner.start(
+            cameraId,
+            { fps: 10, qrbox: { width: 240, height: 160 } },
+            (decodedText) => {
+                handleScanResult(decodedText.trim(), target);
+            },
+            () => {} // ignore parse errors
+        ).catch(err => {
+            status.textContent = 'Camera error: ' + err;
+        });
+    }).catch(err => {
+        status.textContent = 'Camera permission denied or unavailable.';
+    });
+}
+
+function stopBarcodeScanner() {
+    if (_qrScanner) {
+        _qrScanner.stop().catch(() => {}).finally(() => {
+            _qrScanner = null;
+        });
+    }
+}
+
+function handleScanResult(value, target) {
+    stopBarcodeScanner();
+
+    // Close modal via Alpine
+    const wrapper = document.querySelector('[x-data]');
+    if (wrapper && wrapper.__x) {
+        wrapper.__x.$data.showScanner = false;
+    } else {
+        // Fallback for Alpine v3
+        const el = document.querySelector('[x-data]');
+        if (el._x_dataStack) el._x_dataStack[0].showScanner = false;
+    }
+
+    if (target === 'search') {
+        // Fill search box and auto-submit
+        const input = document.getElementById('search-input');
+        if (input) {
+            input.value = value;
+            document.getElementById('inventory-search-form').submit();
+        }
+    } else if (target === 'add-part') {
+        // Fill the part number field in the Add modal
+        const pn = document.getElementById('add-part-number');
+        if (pn) pn.value = value;
+    }
+}
+</script>
+
+@endsection
