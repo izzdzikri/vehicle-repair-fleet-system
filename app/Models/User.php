@@ -48,17 +48,30 @@ class User extends Authenticatable
         'hire_date',
     ];
 
+    /**
+     * Deliberately NOT in $fillable: two_factor_secret,
+     * two_factor_recovery_codes, two_factor_confirmed_at. These are
+     * security-sensitive columns only ever written via explicit
+     * forceFill() calls inside TwoFactorSettingsController /
+     * TwoFactorChallengeController — never via mass-assignment from a
+     * generic request array, even by accident.
+     */
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password'          => 'hashed',
-        'specialties'       => 'array',
-        'permissions'       => 'array',
-        'hire_date'         => 'date',
+        'email_verified_at'         => 'datetime',
+        'password'                  => 'hashed',
+        'specialties'                => 'array',
+        'permissions'                => 'array',
+        'hire_date'                  => 'date',
+        'two_factor_secret'          => 'encrypted',
+        'two_factor_recovery_codes'  => 'encrypted:array',
+        'two_factor_confirmed_at'    => 'datetime',
     ];
 
     // ----------------------------------------------------------------
@@ -183,5 +196,18 @@ class User extends Authenticatable
 
     public function getStaffRoleLabelAttribute(): ?string {
         return self::STAFF_ROLES[$this->staff_role] ?? null;
+    }
+
+    // ----------------------------------------------------------------
+    // Two-Factor Authentication
+    // ----------------------------------------------------------------
+
+    /**
+     * True only once setup has been confirmed with a valid code — a
+     * user mid-setup (secret generated but not yet confirmed) does not
+     * count as having 2FA enabled, and login does not challenge them.
+     */
+    public function hasTwoFactorEnabled(): bool {
+        return !is_null($this->two_factor_confirmed_at);
     }
 }

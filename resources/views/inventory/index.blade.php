@@ -313,7 +313,11 @@
             </form>
         </div>
     </div>
-        {{-- Barcode / QR Scanner Modal --}}
+    @endif
+
+    {{-- Barcode / QR Scanner Modal — available to everyone, not just
+         inventory.manage holders, since the "Scan" button next to the
+         search bar (usable by anyone) opens it too. --}}
     <div x-show="showScanner" x-transition.opacity
         class="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4"
         style="display:none"
@@ -418,4 +422,4 @@ function handleScanResult(value, target) {
 }
 </script>
 
-@endsection
+@endsection

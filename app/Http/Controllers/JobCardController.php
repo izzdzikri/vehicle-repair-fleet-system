@@ -13,6 +13,8 @@ use App\Models\Notification;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use App\Models\LabourCharge;
 
 class JobCardController extends Controller
@@ -314,5 +316,54 @@ public function removeLabour(Request $request, LabourCharge $labourCharge) {
 
     return back()->with('success', 'Labour charge removed.');
 }
-    
+
+    // ----------------------------------------------------------------
+    // Inspection photos — technician-uploaded photo documentation,
+    // stored as a JSON array on the job card itself (same pattern the
+    // `symptoms` column already uses). Guarded by the same assertCanEdit()
+    // as every other mutation above.
+    // ----------------------------------------------------------------
+
+    public function uploadPhoto(Request $request, JobCard $jobCard) {
+        $this->assertCanEdit($request, $jobCard);
+
+        $request->validate([
+            'photo'   => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'caption' => 'nullable|string|max:150',
+        ]);
+
+        $path = $request->file('photo')->store('inspection-photos/' . $jobCard->id, 'public');
+
+        $photos = $jobCard->inspection_photos ?? [];
+        $photos[] = [
+            'id'          => (string) Str::uuid(),
+            'path'        => $path,
+            'caption'     => $request->caption,
+            'stage'       => $jobCard->current_stage,
+            'uploaded_by' => auth()->id(),
+            'uploaded_at' => now()->toDateTimeString(),
+        ];
+
+        $jobCard->update(['inspection_photos' => $photos]);
+
+        return back()->with('success', 'Inspection photo uploaded.');
+    }
+
+    public function removePhoto(Request $request, JobCard $jobCard, string $photoId) {
+        $this->assertCanEdit($request, $jobCard);
+
+        $photos = $jobCard->inspection_photos ?? [];
+        $target = collect($photos)->firstWhere('id', $photoId);
+
+        if (!$target) {
+            return back()->with('error', 'Photo not found — it may have already been removed.');
+        }
+
+        Storage::disk('public')->delete($target['path']);
+
+        $photos = collect($photos)->reject(fn($p) => $p['id'] === $photoId)->values()->all();
+        $jobCard->update(['inspection_photos' => $photos]);
+
+        return back()->with('success', 'Inspection photo removed.');
+    }
 }

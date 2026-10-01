@@ -23,6 +23,8 @@
     use App\Http\Controllers\FeedbackController;
     use App\Http\Controllers\NotificationController;
     use App\Http\Controllers\TripLogController;
+    use App\Http\Controllers\TwoFactorChallengeController;
+    use App\Http\Controllers\TwoFactorSettingsController;
 
     Route::get('/', fn() => redirect('/login'));
     Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->name('chatbot.reply');
@@ -40,6 +42,12 @@
     Route::get('/reset-password/{token}',[AuthController::class, 'showResetPassword'])->name('password.reset');
     Route::post('/reset-password',       [AuthController::class, 'resetPassword'])->name('password.update');
 
+    // Two-Factor login challenge — deliberately NOT behind 'auth'
+    // middleware, since the user is not fully authenticated yet at
+    // this point (see AuthController::login()).
+    Route::get('/two-factor-challenge',  [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->name('two-factor.verify');
+
     // Profile + Notifications + Feedback (all roles)
     Route::middleware(['auth'])->group(function () {
     Route::get('/profile',  [ProfileController::class, 'show'])->name('profile');
@@ -48,6 +56,12 @@
 
     Route::get('/notifications/{notification}/go', [NotificationController::class, 'go'])->name('notifications.go');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+
+    // Two-Factor settings — enable/confirm/disable/recovery codes
+    Route::post('/profile/two-factor/enable',         [TwoFactorSettingsController::class, 'enable'])->name('two-factor.enable');
+    Route::post('/profile/two-factor/confirm',        [TwoFactorSettingsController::class, 'confirm'])->name('two-factor.confirm');
+    Route::post('/profile/two-factor/disable',        [TwoFactorSettingsController::class, 'disable'])->name('two-factor.disable');
+    Route::post('/profile/two-factor/recovery-codes', [TwoFactorSettingsController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery-codes');
     });
 
 // ----------------------------------------------------------------
@@ -125,6 +139,8 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::post('/job-cards/{jobCard}/symptoms',  [JobCardController::class, 'updateSymptoms'])->name('job-cards.symptoms');
     Route::post('/job-cards/{jobCard}/labour',              [JobCardController::class, 'addLabour'])->name('job-cards.add-labour');
     Route::delete('/job-cards/labour/{labourCharge}',       [JobCardController::class, 'removeLabour'])->name('job-cards.remove-labour');
+    Route::post('/job-cards/{jobCard}/photos',              [JobCardController::class, 'uploadPhoto'])->name('job-cards.add-photo');
+    Route::delete('/job-cards/{jobCard}/photos/{photoId}',  [JobCardController::class, 'removePhoto'])->name('job-cards.remove-photo');
 
     // Inventory (view only here — add/edit/delete handled by the permission-gated group above)
     Route::get('/spare-parts', [SparePartController::class, 'index'])->name('admin.spare-parts.index');
@@ -199,6 +215,8 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     // Job Cards
     Route::post('/job-cards/{jobCard}/labour',              [JobCardController::class, 'addLabour'])->name('staff.job-cards.add-labour');
     Route::delete('/job-cards/labour/{labourCharge}',       [JobCardController::class, 'removeLabour'])->name('staff.job-cards.remove-labour');
+    Route::post('/job-cards/{jobCard}/photos',              [JobCardController::class, 'uploadPhoto'])->name('staff.job-cards.add-photo');
+    Route::delete('/job-cards/{jobCard}/photos/{photoId}',  [JobCardController::class, 'removePhoto'])->name('staff.job-cards.remove-photo');
 
     // Invoices & Payments
     Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('staff.invoices');
@@ -232,6 +250,8 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::post('/job-cards/{jobCard}/parts',         [JobCardController::class, 'addPart'])->name('coordinator.job-cards.add-part');
     Route::post('/job-cards/{jobCard}/labour',        [JobCardController::class, 'addLabour'])->name('coordinator.job-cards.add-labour');
     Route::delete('/job-cards/labour/{labourCharge}', [JobCardController::class, 'removeLabour'])->name('coordinator.job-cards.remove-labour');
+    Route::post('/job-cards/{jobCard}/photos',              [JobCardController::class, 'uploadPhoto'])->name('coordinator.job-cards.add-photo');
+    Route::delete('/job-cards/{jobCard}/photos/{photoId}',  [JobCardController::class, 'removePhoto'])->name('coordinator.job-cards.remove-photo');
     Route::post('/job-cards/{jobCard}/checkin',       [CoordinatorController::class, 'storeCheckin'])->name('coordinator.job-cards.checkin');
     Route::get('/inventory',                          [SparePartController::class, 'index'])->name('coordinator.inventory');
 });

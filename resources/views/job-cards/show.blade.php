@@ -265,6 +265,91 @@
     </div>
 
     {{-- --------------------------------------------------------- --}}
+    {{-- Inspection Photos                                         --}}
+    {{-- --------------------------------------------------------- --}}
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-700 mb-1">Inspection Photos</h3>
+        <p class="text-xs text-gray-400 mb-4">
+            Photo documentation of the vehicle's condition — captured at whichever stage the job was in at upload time.
+        </p>
+
+        @if($canEdit)
+        <form method="POST"
+            action="/{{ $prefix }}/job-cards/{{ $jobCard->id }}/photos"
+            enctype="multipart/form-data"
+            class="flex gap-3 items-end flex-wrap mb-5">
+            @csrf
+            <div class="flex-1 min-w-48">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                <input type="file" name="photo" accept="image/jpeg,image/png"
+                    class="w-full text-sm text-gray-500 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required>
+                <p class="text-xs text-gray-400 mt-1">JPG or PNG, max 5MB</p>
+            </div>
+            <div class="flex-1 min-w-48">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Caption <span class="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input type="text" name="caption" maxlength="150"
+                    placeholder="e.g. Worn brake pad — front left"
+                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit"
+                class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
+                Upload Photo
+            </button>
+        </form>
+        @if($errors->any())
+        <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+            <ul class="list-disc list-inside space-y-1">
+                @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+            </ul>
+        </div>
+        @endif
+        @endif
+
+        @php $photos = $jobCard->inspection_photos ?? []; @endphp
+
+        @if(count($photos))
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            @foreach($photos as $photo)
+            <div class="border rounded-lg overflow-hidden relative">
+                <a href="{{ asset('storage/' . $photo['path']) }}" target="_blank">
+                    <img src="{{ asset('storage/' . $photo['path']) }}"
+                        alt="{{ $photo['caption'] ?? 'Inspection photo' }}"
+                        class="w-full h-32 object-cover">
+                </a>
+                <div class="p-2">
+                    @if(!empty($photo['caption']))
+                    <p class="text-xs text-gray-700 truncate">{{ $photo['caption'] }}</p>
+                    @endif
+                    <p class="text-xs text-gray-400">
+                        {{ ucfirst(str_replace('_',' ', $photo['stage'] ?? '—')) }}
+                        &bull; {{ \Carbon\Carbon::parse($photo['uploaded_at'])->format('d M Y, H:i') }}
+                    </p>
+                </div>
+                @if($canEdit)
+                <form method="POST"
+                    action="/{{ $prefix }}/job-cards/{{ $jobCard->id }}/photos/{{ $photo['id'] }}"
+                    class="absolute top-1.5 right-1.5"
+                    onsubmit="return confirmSubmit(event, {title:'Delete photo?', message:'This will permanently remove this inspection photo. This cannot be undone.', confirmLabel:'Delete'})">
+                    @csrf @method('DELETE')
+                    <button type="submit"
+                        class="bg-white/90 hover:bg-red-50 text-red-500 rounded-full p-1.5 shadow"
+                        title="Delete photo">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                </form>
+                @endif
+            </div>
+            @endforeach
+        </div>
+        @else
+        <p class="text-gray-400 text-sm">No inspection photos uploaded yet.</p>
+        @endif
+    </div>
+
+    {{-- --------------------------------------------------------- --}}
     {{-- Add Parts                                                 --}}
     {{-- --------------------------------------------------------- --}}
     <div class="bg-white rounded-lg shadow p-6">

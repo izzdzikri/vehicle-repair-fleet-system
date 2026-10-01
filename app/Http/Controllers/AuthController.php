@@ -20,8 +20,10 @@ public function login(Request $request) {
     ]);
 
     if (Auth::attempt($credentials)) {
+        $user = Auth::user();
+
         // Check if account is active
-        if (Auth::user()->status === 'inactive') {
+        if ($user->status === 'inactive') {
             Auth::logout();
             return back()->withErrors([
                 'email' => 'Your account has been deactivated. Please contact the administrator.'
@@ -29,6 +31,16 @@ public function login(Request $request) {
         }
 
         $request->session()->regenerate();
+
+        // Two-factor users don't get a real session yet — stash the
+        // pending user id and sign them back out. The real login only
+        // completes once TwoFactorChallengeController verifies a code.
+        if ($user->hasTwoFactorEnabled()) {
+            $request->session()->put('two_factor.login_id', $user->id);
+            Auth::logout();
+            return redirect('/two-factor-challenge');
+        }
+
         return match(Auth::user()->role) {
             'admin'       => redirect('/admin/dashboard'),
             'staff'       => redirect('/staff/dashboard'),
