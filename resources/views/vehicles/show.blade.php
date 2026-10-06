@@ -130,11 +130,7 @@
                     </span>
                 </h3>
                 <p class="text-xs text-gray-400 mt-1">
-                    @if($usageStats['is_fallback'])
-                        Based on default 40 km/day heuristic. Log 2 or more trips across multiple days to personalize.
-                    @else
-                        Calculated from {{ $usageStats['trip_count'] }} recorded journeys ({{ number_format($usageStats['total_logged_km'], 1) }} km over {{ $usageStats['span_days'] }} days).
-                    @endif
+                    {{ $usageStats['note'] }}
                 </p>
             </div>
             <div class="flex items-center gap-2">

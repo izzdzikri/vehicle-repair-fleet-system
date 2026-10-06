@@ -56,7 +56,7 @@
                     {{ $activeUsageStats['daily_km'] }} <span class="text-sm font-normal text-gray-500">km/day</span>
                 </p>
                 <p class="text-xs {{ $activeUsageStats['is_fallback'] ? 'text-amber-600 font-medium' : 'text-purple-600' }} mt-1">
-                    {{ $activeUsageStats['is_fallback'] ? 'Fallback heuristic (40 km/d)' : 'Custom dynamic rate' }}
+                    {{ $activeUsageStats['label'] }}
                 </p>
             @else
                 <p class="text-2xl font-bold text-purple-700">{{ $vehicles->count() }}</p>
