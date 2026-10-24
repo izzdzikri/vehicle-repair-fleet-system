@@ -700,14 +700,32 @@ class ChatbotController extends Controller
         // 6. Extract Symptoms, Issues & Diagnostic Complaints
         $symptomInfo = $this->extractSymptomsAndIssues($message);
         if (!empty($symptomInfo['symptoms'])) {
-            if (!empty($intake['symptoms'])) {
-                $intake['symptoms'] .= " • " . $symptomInfo['symptoms'];
-            } else {
+            if (empty($intake['symptoms'])) {
                 $intake['symptoms'] = $symptomInfo['symptoms'];
+            } elseif (!str_contains($intake['symptoms'], $symptomInfo['symptoms'])) {
+                $intake['symptoms'] .= " • " . $symptomInfo['symptoms'];
             }
         }
-        if (!empty($symptomInfo['service_type'])) {
+        if (!empty($symptomInfo['service_type']) && empty($intake['service_type'])) {
             $intake['service_type'] = $symptomInfo['service_type'];
+        }
+
+        // If symptoms is still empty, look at recent user turn in history to carry forward discussed issues
+        if (empty($intake['symptoms'])) {
+            $history = session('chatbot_history', []);
+            $recentTurns = array_reverse(array_slice($history, -4));
+            foreach ($recentTurns as $turn) {
+                if (($turn['role'] ?? '') === 'user' && !empty($turn['text'])) {
+                    $pastSymptom = $this->extractSymptomsAndIssues($turn['text']);
+                    if (!empty($pastSymptom['symptoms'])) {
+                        $intake['symptoms'] = $pastSymptom['symptoms'];
+                        if (empty($intake['service_type'])) {
+                            $intake['service_type'] = $pastSymptom['service_type'];
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         // 7. Extract Preferred Date & Time
@@ -1131,6 +1149,11 @@ class ChatbotController extends Controller
 
         $lower = strtolower($text);
 
+        // Separate brand and model if glued together without space (e.g. "hondahrv" -> "honda hrv", "toyotavios" -> "toyota vios")
+        foreach ($brands as $bKey => $bName) {
+            $lower = preg_replace('/\b(' . preg_quote($bKey, '/') . ')([a-z0-9])/i', '$1 $2', $lower);
+        }
+
         foreach ($models as $mKey => $info) {
             if (preg_match('/\b' . preg_quote($mKey, '/') . '\b/i', $lower)) {
                 $result['brand'] = $info['brand'];
@@ -1172,64 +1195,65 @@ class ChatbotController extends Controller
         $symptoms = [];
         $serviceType = null;
 
-        // Brakes
-        if (preg_match('/(brek|brake|decit|berdecit|squeal|pad haus|rotor|disc|pedal lembut|spongy)/i', $lower)) {
-            $symptoms[] = 'Brake system issue (squealing noise, reduced bite, or spongy pedal)';
-            $serviceType = 'Brake Inspection & Replacement';
+        // 1. Battery & Starting Electrical (evaluated first to avoid false collision with AC/engine)
+        if (preg_match('/\b(bateri|battery|tak\s*boleh\s*start|takleh\s*start|tak\s*leh\s*start|susah\s*start|starter\s*motor|starter|alternator|kong|cranking)\b/i', $lower)) {
+            $symptoms[] = 'Masalah kenderaan tidak boleh dihidupkan / bateri kong & pemeriksaan sistem starter (Battery & Starting System Check)';
+            $serviceType = $serviceType ?: 'Battery & Electrical Inspection';
         }
 
-        // Engine & Hesitation / Jerking
-        if (preg_match('/(enjin|engine|semput|senguk|sengguk|tersengguk|jerking|knocking|ketuk|gegar|shaking|vibrat|mati sendiri|stalling|misfire|asap|overheat|panas)/i', $lower)) {
+        // 2. Engine & Hesitation / Jerking
+        if (preg_match('/\b(enjin|engine|semput|senguk|sengguk|tersengguk|jerking|knocking|ketuk|gegar|shaking|vibrat\w*|mati\s*sendiri|stalling|misfire|asap\s*hitam|asap\s*putih|overheat|enjin\s*panas)\b/i', $lower)) {
             $symptoms[] = 'Masalah enjin tersengguk-sengguk / jerking / semput (Engine Diagnostics Scan & Troubleshooting)';
             $serviceType = $serviceType ?: 'Engine Diagnostics & Troubleshooting';
         }
 
-        // Air Conditioning
-        if (preg_match('/(aircond|air-cond|ac|tak sejuk|kurang sejuk|panas|angin je|gas bocor|compressor)/i', $lower)) {
-            $symptoms[] = 'Air conditioning warm / blowing air without cooling / gas pressure check';
+        // 3. Brakes
+        if (preg_match('/\b(brek|brake|decit|berdecit|squeal|squeaking|pad\s*haus|rotor|disc\s*brek|brake\s*disc|pedal\s*lembut|spongy)\b/i', $lower)) {
+            $symptoms[] = 'Sistem brek berbunyi / pad brek haus / pedal lembut (Brake Inspection & Replacement)';
+            $serviceType = $serviceType ?: 'Brake Inspection & Replacement';
+        }
+
+        // 4. Air Conditioning (STRICT word boundaries - NO naked 'ac' to prevent matching 'macam')
+        if (preg_match('/\b(air-?cond?|aircon|a\/c|air\s*conditioning|tak\s*sejuk|kurang\s*sejuk|angin\s*panas|gas\s*bocor|compressor|kompresor)\b/i', $lower)) {
+            $symptoms[] = 'Aircond kereta kurang sejuk / tiada hembusan sejuk (Air Conditioning Servicing)';
             $serviceType = $serviceType ?: 'Air Conditioning Servicing';
         }
 
-        // Suspension & Undercarriage
-        if (preg_match('/(absorber|suspension|hantuk|bunyi ketuk|clunk|gegar bila jalan tak rata|steering gegar|bush)/i', $lower)) {
-            $symptoms[] = 'Suspension knocking noise / steering wobble over road bumps';
+        // 5. Suspension & Undercarriage
+        if (preg_match('/\b(absorber|suspension|hantuk|bunyi\s*ketuk|clunk|gegar\s*jalan\s*tak\s*rata|steering\s*gegar|bush|lower\s*arm)\b/i', $lower)) {
+            $symptoms[] = 'Bunyi ketukan absorber / gegaran undercarriage (Suspension Inspection)';
             $serviceType = $serviceType ?: 'Suspension & Undercarriage Inspection';
         }
 
-        // Tyres & Alignment
-        if (preg_match('/(tayar|tire|tyre|alignment|balancing|makan tepi|haus sebelah)/i', $lower)) {
-            $symptoms[] = 'Tyre wear unevenness / steering alignment pull';
+        // 6. Tyres & Alignment
+        if (preg_match('/\b(tayar|tire|tyre|alignment|balancing|makan\s*tepi|haus\s*sebelah)\b/i', $lower)) {
+            $symptoms[] = 'Tayar makan tepi / alignment steering (Tyre Alignment & Balancing)';
             $serviceType = $serviceType ?: 'Tyre Alignment & Balancing';
         }
 
-        // Battery & Electrical
-        if (preg_match('/(bateri|battery|tak boleh start|susah start|alternator|kong)/i', $lower)) {
-            $symptoms[] = 'Battery cranking weakness / electrical charging inspection';
-            $serviceType = $serviceType ?: 'Battery Replacement & Check';
-        }
-
-        // Routine / Periodic Service
-        if (preg_match('/(servis berkala|periodic service|minyak hitam|tukar minyak|oil change|major service|minor service)/i', $lower)) {
-            $symptoms[] = 'Scheduled preventive maintenance (oil, fluids, and multipoint inspection)';
+        // 7. Routine / Periodic Service
+        if (preg_match('/\b(servis\s*berkala|periodic\s*service|minyak\s*hitam|tukar\s*minyak|oil\s*change|major\s*service|minor\s*service)\b/i', $lower)) {
+            $symptoms[] = 'Penyelenggaraan berkala minyak hitam & penapis (Engine Oil & Filter Service)';
             $serviceType = $serviceType ?: 'Engine Oil & Filter Service';
         }
 
-        // General / Unusual Driving Feel & Diagnostics ("kereta rasa pelik", "pelik", "weird", "strange", "unusual")
-        if (preg_match('/(pelik|weird|strange|unusual|rasa pelik|bunyi pelik|tak sedap|tak kena|driving feel|diagnostic|diagnostik)/i', $lower)) {
-            $symptoms[] = 'Kenderaan terasa luar biasa / uncharacteristic driving feel & unusual vehicle behaviour';
+        // 8. General / Unusual Driving Feel & Diagnostics
+        if (preg_match('/\b(rasa\s*pelik|bunyi\s*pelik|tak\s*sedap|tak\s*kena|driving\s*feel|diagnostic|diagnostik)\b/i', $lower)) {
+            $symptoms[] = 'Kenderaan terasa luar biasa / uncharacteristic driving feel (Diagnostics Scan)';
             $serviceType = $serviceType ?: 'Engine Diagnostics Scan';
         }
 
         // Raw capture if user explained a custom issue
         if (empty($symptoms) && strlen(trim($text)) >= 8 && !preg_match('/^(ya|yes|proceed|confirm|ok|okay|batal|cancel)/i', $lower)) {
-            // If message is descriptive, treat as issue description
-            if (preg_match('/(bunyi|rosak|masalah|pecah|bocor|leaking|longgar|loose|tukar|check|periksa|pelik|gegar)/i', $lower)) {
+            if (preg_match('/\b(bunyi|rosak|masalah|pecah|bocor|leaking|longgar|loose|tukar|check|periksa|pelik|gegar)\b/i', $lower)) {
                 $symptoms[] = trim($text);
             }
         }
 
+        $unique = array_values(array_unique($symptoms));
+
         return [
-            'symptoms'     => !empty($symptoms) ? implode('; ', $symptoms) : null,
+            'symptoms'     => !empty($unique) ? implode('; ', $unique) : null,
             'service_type' => $serviceType,
         ];
     }
@@ -1780,6 +1804,19 @@ class ChatbotController extends Controller
             return false;
         }
 
+        // 4b. Consultative / Advisory / Troubleshooting questions are NOT direct booking intents!
+        // (e.g. "tolong kereta tak boleh start macam mana ye", "kenapa enjin semput?", "how to fix brake squeal?")
+        // The assistant should first diagnose/troubleshoot and ask if they want to book.
+        $isConsultative = (bool) (
+            preg_match('/\b(macam\s*mana|kenapa|mengapa|apa\s*punca|apa\s*sebab|how|why|what\s*should|bila\s*patut|ada\s*tips)\b/i', $lower)
+            || (str_contains($lower, '?') && !preg_match('/\b(book|booking|tempah|tempahan|temujanji|appointment|slot)\b/i', $lower))
+        );
+        $hasExplicitBookingVerb = (bool) preg_match('/\b(nak\s*(book|tempah|booking|hantar|bawa|servis)|mau\s*(book|tempah)|tolong\s*(book|tempah|set\s*slot)|book\s*(an|a)?\s*appointment|tempah\s*slot)\b/i', $lower);
+
+        if ($isConsultative && !$hasExplicitBookingVerb) {
+            return false;
+        }
+
         // 5. Slot selection from interactive calendar widget
         if (preg_match('/(saya\s*pilih\s*tarikh|i\s*select\s*date)/i', $lower)) {
             return true;
@@ -1790,10 +1827,14 @@ class ChatbotController extends Controller
             return true;
         }
 
-        // 5c. Customer expresses vehicle abnormal feeling or breakdown symptoms
-        if (preg_match('/(kereta|keta|kenderaan|car|enjin|engine|brek|brake).*(rasa\s*(pelik|senguk|sengguk)|pelik|senguk|sengguk|tersengguk|jerking|weird|strange|unusual|rosak|masalah|problem|berbunyi|gegar|semput|tak\s*boleh\s*start|tak\s*sejuk)/i', $lower)
-            || preg_match('/\b(senguk|sengguk|tersengguk|jerking|semput)\b/i', $lower)
-            || preg_match('/^(kereta\s*saya\s*rasa\s*pelik|kereta\s*rasa\s*pelik|kereta\s*rosak|my\s*car\s*feels\s*weird|car\s*feels\s*strange)$/i', $lower)) {
+        // 5c. Providing vehicle make/model + plate number together (e.g. "hondahrv, jqa2258")
+        $vehicleSpecs = $this->extractVehicleDetails($msg);
+        if (!empty($vehicleSpecs['brand']) && preg_match('/[A-Z]{1,3}\s*\d{1,4}\s*[A-Z]?/i', $msg)) {
+            return true;
+        }
+
+        // 5d. Customer expresses vehicle abnormal feeling or desire to repair/check
+        if (preg_match('/(nak|mau|hendak|perlu|need|want)\s*(baiki|check|periksa|fix|repair).*(kereta|keta|enjin|engine|brek|brake|bateri)/i', $lower)) {
             return true;
         }
 
@@ -3255,8 +3296,12 @@ ROLE-SPECIFIC ASSISTANCE GUIDELINES:
    - Address their commercial company fleet ({$ctx['company']}).
    - Assist with commercial trucks, vans, and pickups; periodic maintenance schedules; and corporate billing invoices.
 4. For INDIVIDUAL CUSTOMERS & GUESTS:
-   - Be helpful and courteous without repetitive welcoming. Explain mechanical symptoms in clear layman terms.
-   - For vehicle booking, encourage them to click the [📅 Book Service Slot / Tempah Slot] button or state their vehicle details.
+   - Be helpful, empathetic, and courteous without repetitive welcoming. Explain mechanical symptoms in clear layman terms.
+   - When a customer asks for advice or describes a symptom (e.g. 'kereta tak boleh start macam mana ye', 'enjin semput', 'brek berdecit'):
+     * FIRST explain the probable mechanical causes in clear bullet points (e.g. for car not starting: flat battery, faulty starter motor, or alternator).
+     * Suggest 2-3 practical checks they can perform (e.g. clicking sounds on ignition, dim dashboard, jump-starting).
+     * THEN politely ask if they would like to bring their vehicle into Teraju Setia Enterprise in Kluang, and invite them to click [📅 Book Service Slot / Tempah Slot] or reply 'Tolong tempahkan slot'.
+     * NEVER assume the customer is already booking an appointment until they explicitly ask to schedule!
 
 CRITICAL APPOINTMENT BOOKING CONSTRAINTS (NO HALLUCINATIONS):
 1. You do NOT have database write access and CANNOT create, book, modify, or insert appointments into the database.

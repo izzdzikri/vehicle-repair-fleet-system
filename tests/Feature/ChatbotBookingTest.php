@@ -105,4 +105,54 @@ class ChatbotBookingTest extends TestCase
         $this->assertFalse(session()->has('chatbot_intake'));
         $this->assertFalse(session()->has('pending_chatbot_booking'));
     }
+
+    public function test_consultative_troubleshooting_does_not_assume_booking_and_diagnoses_battery_not_ac()
+    {
+        session()->flush();
+
+        // 1. User asks a troubleshooting question
+        $res1 = $this->postJson('/chatbot/reply', [
+            'message' => 'tolong kereta tak boleh start macam mana ye'
+        ]);
+        $res1->assertStatus(200);
+        // Must NOT assume booking right away
+        $this->assertFalse(session()->has('chatbot_intake'));
+        $this->assertFalse(session()->has('pending_chatbot_booking'));
+        $this->assertStringNotContainsString('sila berikan Nombor Plat Pendaftaran', $res1->json('reply'));
+
+        // 2. User then proceeds with vehicle details
+        $res2 = $this->postJson('/chatbot/reply', [
+            'message' => 'hondahrv, jqc8888'
+        ]);
+        $res2->assertStatus(200);
+        $res2->assertSessionHas('chatbot_intake');
+
+        // 3. User provides contact
+        $this->postJson('/chatbot/reply', ['message' => '0137556551']);
+        $this->postJson('/chatbot/reply', ['message' => 'Ramli']);
+
+        // 4. User picks slot
+        $res5 = $this->postJson('/chatbot/reply', [
+            'action'  => 'pick_slot',
+            'date'    => '2026-10-25',
+            'time'    => '09:30:00',
+            'message' => 'Saya pilih tarikh 25/Oct/2026 jam 9:30 AM',
+        ]);
+        $res5->assertStatus(200);
+        $res5->assertJson(['action' => 'confirm_booking']);
+
+        // Verify it diagnosed as Battery & Electrical, NEVER Air Conditioning!
+        $this->assertStringContainsString('Battery & Electrical Inspection', $res5->json('reply'));
+        $this->assertStringNotContainsString('Air Conditioning', $res5->json('reply'));
+
+        // 5. Confirm booking
+        $res6 = $this->postJson('/chatbot/reply', ['message' => 'ok']);
+        $res6->assertStatus(200);
+        $res6->assertJson(['booking_confirmed' => true]);
+
+        $this->assertDatabaseHas('appointments', [
+            'walkin_name'  => 'Ramli',
+            'service_type' => 'Battery & Electrical Inspection',
+        ]);
+    }
 }
