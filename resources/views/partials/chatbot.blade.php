@@ -42,22 +42,28 @@ function chatbotComponent() {
 
         checkTeaserVisibility() {
             try {
-                const lastShown = localStorage.getItem('teraju_chatbot_teaser_last_shown');
-                if (!lastShown) {
-                    // First time ever: display once, and save timestamp so it won't repeatedly show on refresh
+                @if(request()->routeIs('login') || request()->is('login') || !auth()->check())
+                    // On login page / guest landing: persistent bubble so guests notice AI assistant immediately
                     this.showTeaser = true;
-                    localStorage.setItem('teraju_chatbot_teaser_last_shown', Date.now().toString());
                     return;
-                }
-                const time = parseInt(lastShown, 10);
-                const now = Date.now();
-                const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000; // 30 days
-                if (now - time > thirtyDaysMs) {
-                    this.showTeaser = true;
-                    localStorage.setItem('teraju_chatbot_teaser_last_shown', Date.now().toString());
-                } else {
-                    this.showTeaser = false;
-                }
+                @else
+                    // On internal authenticated dashboards: display once every 30 days
+                    const lastShown = localStorage.getItem('teraju_chatbot_teaser_last_shown');
+                    if (!lastShown) {
+                        this.showTeaser = true;
+                        localStorage.setItem('teraju_chatbot_teaser_last_shown', Date.now().toString());
+                        return;
+                    }
+                    const time = parseInt(lastShown, 10);
+                    const now = Date.now();
+                    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000; // 30 days
+                    if (now - time > thirtyDaysMs) {
+                        this.showTeaser = true;
+                        localStorage.setItem('teraju_chatbot_teaser_last_shown', Date.now().toString());
+                    } else {
+                        this.showTeaser = false;
+                    }
+                @endif
             } catch(e) {
                 this.showTeaser = false;
             }
@@ -66,7 +72,9 @@ function chatbotComponent() {
         dismissTeaser() {
             this.showTeaser = false;
             try {
-                localStorage.setItem('teraju_chatbot_teaser_last_shown', Date.now().toString());
+                @auth
+                    localStorage.setItem('teraju_chatbot_teaser_last_shown', Date.now().toString());
+                @endauth
             } catch(e) {}
         },
 
@@ -270,25 +278,38 @@ function chatbotComponent() {
         class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40"
         style="display:none;"></div>
 
-    {{-- Teaser Speech Bubble (Visible once every 30 days, or on first visit only) --}}
+    {{-- Teaser Speech Bubble (Persistent on login page; throttled on internal dashboards) --}}
     <div x-show="!open && showTeaser" x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-2 scale-95"
         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
-        class="absolute bottom-16 right-0 mb-1 w-68 p-3.5 bg-white rounded-2xl shadow-xl border border-gray-200 text-xs text-gray-800 flex items-start gap-2.5"
-        style="box-shadow: 0 12px 30px -5px rgba(15, 23, 42, 0.25); display:none;">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 shrink-0 animate-pulse"></span>
-        <div class="flex-1 cursor-pointer" @click="open = true; dismissTeaser(); $nextTick(() => scrollToBottom())">
-            <p class="font-extrabold text-gray-900 text-xs flex items-center gap-1">
-                <span>Pembantu AI Bengkel Teraju</span>
+        class="absolute bottom-16 right-0 mb-1.5 p-3.5 bg-white rounded-2xl shadow-2xl border border-gray-200 text-xs text-gray-800 flex items-start gap-2.5 select-none"
+        style="width: 290px; max-width: calc(100vw - 2rem); box-shadow: 0 14px 35px -5px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.04); display: none;">
+
+        {{-- Pointer triangle pointing toward the circular toggle button below --}}
+        <div class="absolute -bottom-1.5 right-5 w-3.5 h-3.5 bg-white border-b border-r border-gray-200 transform rotate-45 pointer-events-none"></div>
+
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 shrink-0 animate-pulse relative z-10"></span>
+
+        <div class="flex-1 cursor-pointer relative z-10" @click="open = true; dismissTeaser(); $nextTick(() => scrollToBottom())">
+            <p class="font-extrabold text-gray-900 text-xs flex items-center gap-1.5 leading-tight">
+                <span x-text="lang === 'ms' ? 'Pembantu AI Bengkel Teraju' : 'Teraju Workshop AI Assistant'"></span>
             </p>
-            <p class="text-[11px] text-gray-500 mt-0.5 leading-snug">
-                Tanya kadar upah servis, semak kalendar kekosongan, atau tempah servis kenderaan terus di sini!
+            <p class="text-[11px] text-gray-600 mt-1 leading-snug font-normal"
+                x-text="lang === 'ms'
+                    ? 'Tanya kadar upah servis, semak kalendar kekosongan, atau tempah servis kenderaan terus di sini!'
+                    : 'Ask about repair rates, check schedule availability, or book a service slot directly right here!'">
+            </p>
+            <p class="text-[10px] text-blue-600 font-semibold mt-1.5 flex items-center gap-1">
+                <span x-text="lang === 'ms' ? 'Klik untuk mula sembang &rarr;' : 'Click to start chatting &rarr;'"></span>
             </p>
         </div>
-        <button @click.stop="dismissTeaser()" class="text-gray-400 hover:text-gray-600 -mr-1 -mt-1 p-1 transition" title="Tutup">
+
+        <button type="button" @click.stop="dismissTeaser()"
+            class="text-gray-400 hover:text-gray-700 -mr-1 -mt-1 p-1 rounded-md hover:bg-gray-100 transition relative z-10"
+            :title="lang === 'ms' ? 'Tutup' : 'Close'">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
     </div>
