@@ -5,7 +5,7 @@ function chatbotComponent() {
         open: false,
         showTeaser: false,
         isFullScreen: false,
-        lang: '{{ session('chatbot_lang', 'ms') }}',
+        lang: '{{ session('chatbot_lang', 'en') }}',
         scheduleDays: [],
         calendarLoading: false,
         selectedDay: null,
@@ -15,20 +15,20 @@ function chatbotComponent() {
                 role: 'bot',
                 text: @auth
                     @if(auth()->user()->role === 'staff')
-                        'Hai **{{ auth()->user()->name }}** (Mekanik Bengkel)! 🛠️\n\nSaya sedia bantu semak baki tugasan kerja anda (\'Had job left?\' / \'Kerja saya\'), cari stok alat ganti di stor, atau semak rekod invois pembaikan.'
+                        'Hello **{{ auth()->user()->name }}** (Workshop Technician / Mechanic)! 🛠️\nI can help you review assigned job cards (\'Had job left?\'), check inventory spare parts stock, or search repair invoices.\n\n───────────────\n\nHai **{{ auth()->user()->name }}** (Mekanik Bengkel)! 🛠️\nSaya sedia bantu semak baki tugasan kerja anda (\'Had job left?\' / \'Kerja saya\'), cari stok alat ganti di stor, atau semak rekod invois pembaikan.'
                     @elseif(auth()->user()->role === 'admin')
-                        'Selamat datang **{{ auth()->user()->name }}** (Admin Bengkel)! ⚙️\n\nAnda boleh meminta laporan harian temujanji (\'Status on today appointment\'), semak lantai kerja kenderaan, amaran stok rendah/PO, atau cari rekod invois pelanggan.'
+                        'Welcome **{{ auth()->user()->name }}** (Workshop Administrator)! ⚙️\nAsk me for daily appointment reports (\'Status on today appointment\'), workshop bay tracking, low stock replenishment alerts, or customer invoices.\n\n───────────────\n\nSelamat datang **{{ auth()->user()->name }}** (Admin Bengkel)! ⚙️\nAnda boleh meminta laporan harian temujanji (\'Status on today appointment\'), semak lantai kerja kenderaan, amaran stok rendah/PO, atau cari rekod invois pelanggan.'
                     @elseif(auth()->user()->role === 'coordinator')
-                        'Hai **{{ auth()->user()->name }}** (Penyelaras Servis)! 📋\n\nSaya sedia bantu semak laporan temujanji hari ini (\'Status on today appointment\'), kekosongan slot kalendar bengkel, atau cari invois & rekod pelanggan.'
+                        'Hello **{{ auth()->user()->name }}** (Service Reception Coordinator)! 📋\nI can assist with today\'s appointment arrivals, workshop bay allocations, or searching customer records.\n\n───────────────\n\nHai **{{ auth()->user()->name }}** (Penyelaras Servis)! 📋\nSaya sedia bantu semak laporan temujanji hari ini (\'Status on today appointment\'), kekosongan slot kalendar bengkel, atau cari invois & rekod pelanggan.'
                     @elseif(auth()->user()->role === 'corporate')
-                        'Selamat datang **{{ auth()->user()->name }}** (Pengurus Armada{{ auth()->user()->company ? ' - ' . auth()->user()->company->name : '' }})! 🚛\n\nSaya sedia bantu jadual penyelenggaraan lori/van syarikat anda, semak invois tertunggak, atau tempah servis berkala armada.'
+                        'Welcome **{{ auth()->user()->name }}** (Fleet Manager{{ auth()->user()->company ? ' - ' . auth()->user()->company->name : '' }})! 🚛\nI can help you review commercial fleet maintenance, check outstanding invoices, or schedule recurring fleet servicing.\n\n───────────────\n\nSelamat datang **{{ auth()->user()->name }}** (Pengurus Armada{{ auth()->user()->company ? ' - ' . auth()->user()->company->name : '' }})! 🚛\nSaya sedia bantu jadual penyelenggaraan lori/van syarikat anda, semak invois tertunggak, atau tempah servis berkala armada.'
                     @elseif(auth()->user()->role === 'individual')
-                        'Hai **{{ auth()->user()->name }}**! Selamat datang ke Teraju Setia Enterprise. Anda boleh semak kenderaan berdaftar anda, tanya anggaran harga upah, semak rekod invois, atau tempah temujanji servis terus di sini!'
+                        'Hello **{{ auth()->user()->name }}**! Welcome to Teraju Setia Enterprise. 🚗\nYou can view your registered vehicles, request service quotes, review invoices, or book your next service slot.\n\n───────────────\n\nHai **{{ auth()->user()->name }}**! Selamat datang ke Teraju Setia Enterprise. 🚗\nAnda boleh semak kenderaan berdaftar anda, tanya anggaran harga upah, semak rekod invois, atau tempah temujanji servis terus di sini!'
                     @else
-                        'Hai **{{ auth()->user()->name }}**! Selamat datang ke Teraju Setia Enterprise. Bagaimana saya boleh bantu anda hari ini?'
+                        'Hello **{{ auth()->user()->name }}**! Welcome to Teraju Setia Enterprise. How may I assist you today?\n\n───────────────\n\nHai **{{ auth()->user()->name }}**! Selamat datang ke Teraju Setia Enterprise. Bagaimana saya boleh bantu anda hari ini?'
                     @endif
                 @else
-                    'Hai! Selamat datang ke Teraju Setia Enterprise (Kluang, Johor). Saya pembantu AI bengkel anda.\n\nAnda boleh bertanya tentang kadar upah servis (\'Berapa harga servis minyak hitam & brek?\'), semak stok alat ganti, atau tempah temujanji servis kenderaan terus di sini — tanpa perlu mendaftar!'
+                    'Hello & Welcome to Teraju Setia Enterprise (Kluang, Johor)! 🚗💨\nI am your workshop AI assistant.\n\nYou can ask about service pricing (e.g. *\'How much for oil change & brake service?\'*), check spare parts stock, or book an appointment directly right here — no registration required!\n\n───────────────\n\nHai & Selamat datang ke Teraju Setia Enterprise (Kluang, Johor)! 🚗💨\nSaya pembantu AI bengkel anda.\n\nAnda boleh bertanya tentang kadar upah servis (*\'Berapa harga servis minyak hitam & brek?\'*), semak stok alat ganti, atau tempah temujanji servis kenderaan terus di sini — tanpa perlu mendaftar!'
                 @endauth
             }
         ],
@@ -133,9 +133,7 @@ function chatbotComponent() {
             this.selectedSlot = null;
             this.messages = [{
                 role: 'bot',
-                text: this.lang === 'ms'
-                    ? 'Sesi perbualan telah dimulakan semula. Bagaimana saya boleh bantu kenderaan anda hari ini? Anda boleh tanya mengenai servis, harga alat ganti, atau buat tempahan temujanji.'
-                    : 'Chat session has been reset. How may I assist you with your vehicle today? You can ask about services, spare parts, or schedule an appointment.'
+                text: 'Chat session has been reset. How may I assist you with your vehicle today? You can ask about services, spare parts, or schedule an appointment.\n\n───────────────\n\nSesi perbualan telah dimulakan semula. Bagaimana saya boleh bantu kenderaan anda hari ini? Anda boleh tanya mengenai servis, harga alat ganti, atau buat tempahan temujanji.'
             }];
             this.$nextTick(() => this.scrollToBottom());
         },
@@ -295,15 +293,14 @@ function chatbotComponent() {
 
         <div class="flex-1 cursor-pointer relative z-10" @click="open = true; dismissTeaser(); $nextTick(() => scrollToBottom())">
             <p class="font-extrabold text-gray-900 text-xs flex items-center gap-1.5 leading-tight">
-                <span x-text="lang === 'ms' ? 'Pembantu AI Bengkel Teraju' : 'Teraju Workshop AI Assistant'"></span>
+                <span>Teraju AI Workshop Assistant / Pembantu Bengkel</span>
             </p>
-            <p class="text-[11px] text-gray-600 mt-1 leading-snug font-normal"
-                x-text="lang === 'ms'
-                    ? 'Tanya kadar upah servis, semak kalendar kekosongan, atau tempah servis kenderaan terus di sini!'
-                    : 'Ask about repair rates, check schedule availability, or book a service slot directly right here!'">
+            <p class="text-[11px] text-gray-600 mt-1 leading-snug font-normal">
+                Ask about repair rates, check schedule, or book a service slot right here!
+                <span class="block mt-0.5 text-gray-500 italic">(Tanya kadar upah servis, semak kalendar, atau tempah servis kenderaan terus di sini!)</span>
             </p>
             <p class="text-[10px] text-blue-600 font-semibold mt-1.5 flex items-center gap-1">
-                <span x-text="lang === 'ms' ? 'Klik untuk mula sembang &rarr;' : 'Click to start chatting &rarr;'"></span>
+                <span>Click to start chat / Klik untuk sembang &rarr;</span>
             </p>
         </div>
 
@@ -579,130 +576,130 @@ function chatbotComponent() {
             </div>
         </div>
 
-        {{-- Role-Aware Quick Suggestion Pills (Bilingual & Role-Specific) --}}
+        {{-- Role-Aware Quick Suggestion Pills (Uniform Styling, Bilingual & Dynamic) --}}
         <div class="px-3 py-2 bg-white border-t border-gray-100 flex gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
             <div :class="isFullScreen ? 'max-w-4xl mx-auto w-full flex gap-1.5 overflow-x-auto no-scrollbar' : 'flex gap-1.5 overflow-x-auto no-scrollbar'">
                 @auth
                     @if(auth()->user()->role === 'staff')
                         {{-- Mechanic / Workshop Technician Pills --}}
-                        <button type="button" @click="send('Baki job card saya (had job left?)')"
-                            class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-full px-2.5 py-1 font-semibold transition">
-                            🛠️ Baki Job Card Aktif (Had Job Left?)
+                        <button type="button" @click="send(lang === 'ms' ? 'Baki job card saya (had job left?)' : 'My assigned job cards (had job left?)')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🛠️ Baki Job Card Aktif (Had Job Left?)' : '🛠️ Active Assigned Jobs (Had Job Left?)'"></span>
                         </button>
-                        <button type="button" @click="send('Stok mana yang rendah?')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            🔩 Semak Stok Alat Ganti
+                        <button type="button" @click="send(lang === 'ms' ? 'Stok mana yang rendah?' : 'Which spare parts are low in stock?')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🔩 Semak Stok Alat Ganti' : '🔩 Check Parts Stock'"></span>
                         </button>
-                        <button type="button" @click="send('Cari invois')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            🧾 Cari Invois
+                        <button type="button" @click="send(lang === 'ms' ? 'Cari invois' : 'Search customer invoices')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🧾 Cari Invois' : '🧾 Search Invoices'"></span>
                         </button>
-                        <button type="button" @click="fetchSchedule(); send('Tunjukkan jadual dan kalendar temujanji bengkel');"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 transition">
-                            📅 Kalendar Slot Bengkel
+                        <button type="button" @click="fetchSchedule(); send(lang === 'ms' ? 'Tunjukkan jadual dan kalendar temujanji bengkel' : 'Show workshop appointment schedule and calendar')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📅 Kalendar Slot Bengkel' : '📅 Workshop Slot Calendar'"></span>
                         </button>
 
                     @elseif(auth()->user()->role === 'admin')
                         {{-- Admin Pills --}}
-                        <button type="button" @click="send('Laporan harian status temujanji hari ini')"
-                            class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-full px-2.5 py-1 font-semibold transition">
-                            📊 Laporan & Temujanji Hari Ini
+                        <button type="button" @click="send(lang === 'ms' ? 'Laporan harian status temujanji hari ini' : 'Daily report of today appointments')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📊 Laporan & Temujanji Hari Ini' : '📊 Today\'s Appointments & Report'"></span>
                         </button>
-                        <button type="button" @click="send('Cari invois')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            🧾 Cari Invois Pelanggan
+                        <button type="button" @click="send(lang === 'ms' ? 'Cari invois' : 'Search customer invoices')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🧾 Cari Invois Pelanggan' : '🧾 Search Customer Invoices'"></span>
                         </button>
-                        <button type="button" @click="send('Stok mana yang rendah?')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            ⚠️ Amaran Stok Rendah
+                        <button type="button" @click="send(lang === 'ms' ? 'Stok mana yang rendah?' : 'Check low stock alerts')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '⚠️ Amaran Stok Rendah' : '⚠️ Low Stock Alerts'"></span>
                         </button>
-                        <button type="button" @click="send('Bila last PO topup restock dibuat?')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            📦 Status PO Pesanan
+                        <button type="button" @click="send(lang === 'ms' ? 'Bila last PO topup restock dibuat?' : 'What is the purchase order restock status?')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📦 Status PO Pesanan' : '📦 Purchase Orders Status'"></span>
                         </button>
-                        <button type="button" @click="fetchSchedule(); send('Tunjukkan jadual dan kalendar temujanji bengkel');"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 transition">
-                            📅 Kalendar Slot
+                        <button type="button" @click="fetchSchedule(); send(lang === 'ms' ? 'Tunjukkan jadual dan kalendar temujanji bengkel' : 'Show workshop appointment schedule and calendar')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📅 Kalendar Slot' : '📅 Workshop Calendar'"></span>
                         </button>
 
                     @elseif(auth()->user()->role === 'coordinator')
                         {{-- Coordinator Pills --}}
-                        <button type="button" @click="send('Status temujanji hari ini')"
-                            class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-full px-2.5 py-1 font-semibold transition">
-                            📊 Status Temujanji Hari Ini
+                        <button type="button" @click="send(lang === 'ms' ? 'Status temujanji hari ini' : 'Today appointment arrivals status')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📊 Status Temujanji Hari Ini' : '📊 Today\'s Appointment Status'"></span>
                         </button>
-                        <button type="button" @click="fetchSchedule(); send('Tunjukkan jadual dan kalendar temujanji bengkel');"
-                            class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-full px-2.5 py-1 font-medium transition">
-                            📅 Kalendar Slot Bengkel
+                        <button type="button" @click="fetchSchedule(); send(lang === 'ms' ? 'Tunjukkan jadual dan kalendar temujanji bengkel' : 'Show workshop appointment schedule and calendar')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📅 Kalendar Slot Bengkel' : '📅 Workshop Slot Calendar'"></span>
                         </button>
-                        <button type="button" @click="send('Status lantai bengkel')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            🏭 Status Lantai Bengkel
+                        <button type="button" @click="send(lang === 'ms' ? 'Status lantai bengkel' : 'Workshop service bay status')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🏭 Status Lantai Bengkel' : '🏭 Service Bays Status'"></span>
                         </button>
-                        <button type="button" @click="send('Cari invois')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            🧾 Cari Invois
+                        <button type="button" @click="send(lang === 'ms' ? 'Cari invois' : 'Search customer invoices')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🧾 Cari Invois' : '🧾 Search Invoices'"></span>
                         </button>
 
                     @elseif(auth()->user()->role === 'corporate')
                         {{-- Corporate Fleet Manager Pills --}}
-                        <button type="button" @click="send('Status kenderaan armada syarikat saya')"
-                            class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-full px-2.5 py-1 font-semibold transition">
-                            🚛 Status Armada Syarikat
+                        <button type="button" @click="send(lang === 'ms' ? 'Status kenderaan armada syarikat saya' : 'Status of my company fleet vehicles')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🚛 Status Armada Syarikat' : '🚛 Company Fleet Status'"></span>
                         </button>
-                        <button type="button" @click="send('Invois belum bayar syarikat saya')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            🧾 Invois Tertunggak Syarikat
+                        <button type="button" @click="send(lang === 'ms' ? 'Invois belum bayar syarikat saya' : 'Outstanding invoices for my company')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🧾 Invois Tertunggak Syarikat' : '🧾 Outstanding Fleet Invoices'"></span>
                         </button>
-                        <button type="button" @click="fetchSchedule(); send('Saya nak tempah slot servis lori syarikat');"
-                            class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-full px-2.5 py-1 transition">
-                            📅 Tempah Servis Armada
+                        <button type="button" @click="fetchSchedule(); send(lang === 'ms' ? 'Saya nak tempah slot servis lori syarikat' : 'I want to schedule service for company truck')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📅 Tempah Servis Armada' : '📅 Book Fleet Servicing'"></span>
                         </button>
-                        <button type="button" @click="send('Rekod servis kenderaan syarikat saya')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 transition">
-                            📋 Rekod Penyelenggaraan
+                        <button type="button" @click="send(lang === 'ms' ? 'Rekod servis kenderaan syarikat saya' : 'Maintenance service records for our fleet')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📋 Rekod Penyelenggaraan' : '📋 Fleet Maintenance Records'"></span>
                         </button>
 
                     @else
                         {{-- Individual Car Owner Pills --}}
-                        <button type="button" @click="fetchSchedule(); send('Saya nak tempah slot temujanji servis kenderaan');"
-                            class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-full px-2.5 py-1 font-semibold transition">
-                            📅 Tempah Temujanji Servis
+                        <button type="button" @click="fetchSchedule(); send(lang === 'ms' ? 'Saya nak tempah slot temujanji servis kenderaan' : 'I want to book a vehicle service appointment')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📅 Tempah Temujanji Servis' : '📅 Book Service Slot'"></span>
                         </button>
-                        <button type="button" @click="send('Kenderaan saya yang berdaftar')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                            🚗 Kenderaan Berdaftar Saya
+                        <button type="button" @click="send(lang === 'ms' ? 'Kenderaan saya yang berdaftar' : 'My registered vehicles')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🚗 Kenderaan Berdaftar Saya' : '🚗 My Registered Cars'"></span>
                         </button>
-                        <button type="button" @click="send('Berapa harga servis minyak hitam dan brek?')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 transition">
-                            💰 Sebut Harga Upah & Servis
+                        <button type="button" @click="send(lang === 'ms' ? 'Berapa harga servis minyak hitam dan brek?' : 'How much for engine oil and brake servicing?')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '💰 Sebut Harga Upah & Servis' : '💰 Service & Repair Quotes'"></span>
                         </button>
-                        <button type="button" @click="send('Invois kenderaan saya')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 transition">
-                            🧾 Invois Servis Saya
+                        <button type="button" @click="send(lang === 'ms' ? 'Invois kenderaan saya' : 'My service invoices')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '🧾 Invois Servis Saya' : '🧾 My Invoices'"></span>
                         </button>
-                        <button type="button" @click="send('Tengok temujanji aktif saya')"
-                            class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 transition">
-                            📋 Rekod Temujanji Saya
+                        <button type="button" @click="send(lang === 'ms' ? 'Tengok temujanji aktif saya' : 'Show my upcoming appointments')"
+                            class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                            <span x-text="lang === 'ms' ? '📋 Rekod Temujanji Saya' : '📋 My Appointments'"></span>
                         </button>
                     @endif
                 @else
-                    {{-- Public Guest Visitor Pills --}}
-                    <button type="button" @click="fetchSchedule(); send('Saya nak book appointment servis kenderaan');"
-                        class="shrink-0 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-full px-2.5 py-1 font-semibold transition">
-                        📅 Tempah Slot Servis
+                    {{-- Public Guest Visitor Pills (Uniform styling & bilingual) --}}
+                    <button type="button" @click="fetchSchedule(); send(lang === 'ms' ? 'Saya nak book appointment servis kenderaan' : 'I want to book a vehicle service appointment')"
+                        class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                        <span x-text="lang === 'ms' ? '📅 Tempah Slot Servis' : '📅 Book Service Slot'"></span>
                     </button>
-                    <button type="button" @click="send('Berapa kos servis minyak hitam dan tukar pad brek?')"
-                        class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 font-medium transition">
-                        💰 Kadar Upah Servis
+                    <button type="button" @click="send(lang === 'ms' ? 'Berapa kos servis minyak hitam dan tukar pad brek?' : 'How much for engine oil service and brake pads replacement?')"
+                        class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                        <span x-text="lang === 'ms' ? '💰 Kadar Upah Servis' : '💰 Service & Labour Rates'"></span>
                     </button>
-                    <button type="button" @click="send('Di mana lokasi bengkel dan waktu operasi?')"
-                        class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 transition">
-                        📍 Lokasi & Waktu Operasi
+                    <button type="button" @click="send(lang === 'ms' ? 'Di mana lokasi bengkel dan waktu operasi?' : 'What are the workshop location and opening hours?')"
+                        class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                        <span x-text="lang === 'ms' ? '📍 Lokasi & Waktu Operasi' : '📍 Location & Operating Hours'"></span>
                     </button>
-                    <button type="button" @click="send('Senaraikan alat ganti dan bateri kereta')"
-                        class="shrink-0 bg-slate-50 text-slate-700 border border-gray-200 hover:bg-slate-100 rounded-full px-2.5 py-1 transition">
-                        🔩 Bateri & Alat Ganti
+                    <button type="button" @click="send(lang === 'ms' ? 'Senaraikan alat ganti dan bateri kereta' : 'List available spare parts and car batteries')"
+                        class="shrink-0 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 rounded-full px-3 py-1 font-medium shadow-2xs transition active:scale-95 flex items-center gap-1.5">
+                        <span x-text="lang === 'ms' ? '🔩 Bateri & Alat Ganti' : '🔩 Spare Parts & Batteries'"></span>
                     </button>
                 @endauth
             </div>

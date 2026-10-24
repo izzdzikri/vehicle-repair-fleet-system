@@ -356,8 +356,8 @@ class ChatbotController extends Controller
             return session('chatbot_lang');
         }
 
-        session(['chatbot_lang' => 'ms']);
-        return 'ms';
+        session(['chatbot_lang' => 'en']);
+        return 'en';
     }
 
     // ----------------------------------------------------------------
