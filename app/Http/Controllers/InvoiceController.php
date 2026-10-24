@@ -21,7 +21,7 @@ class InvoiceController extends Controller
         $search  = trim((string) $request->input('search'));
         $perPage = 15;
 
-        if (in_array($user->role, ['admin', 'staff'])) {
+        if (in_array($user->role, ['admin', 'staff', 'coordinator'])) {
             $base = Invoice::query();
         } elseif ($user->role === 'corporate') {
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
@@ -59,7 +59,7 @@ class InvoiceController extends Controller
             'jobCard.parts.sparePart', 'jobCard.labourCharges', 'payments.recorder',
         ]);
 
-        if (!in_array($user->role, ['admin', 'staff'])) {
+        if (!in_array($user->role, ['admin', 'staff', 'coordinator'])) {
             $ownerId = $invoice->jobCard->appointment->user_id ?? null;
             $allowed = $ownerId === $user->id;
 
@@ -86,7 +86,7 @@ class InvoiceController extends Controller
             'jobCard.jobType',
         ]);
 
-        if (!in_array($user->role, ['admin', 'staff'])) {
+        if (!in_array($user->role, ['admin', 'staff', 'coordinator'])) {
             $ownerId = $invoice->jobCard->appointment->user_id ?? null;
             $allowed = $ownerId === $user->id;
             if ($user->role === 'corporate' && $ownerId) {

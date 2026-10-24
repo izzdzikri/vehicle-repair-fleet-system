@@ -24,117 +24,131 @@
     }
 }">
 
-    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
-        <h2 class="text-lg font-semibold text-gray-700">
-            Spare Parts
-            <span class="text-sm font-normal text-gray-400 ml-2">{{ $totalParts }} items</span>
-            @if($lowCount)
-            <span class="text-xs bg-red-100 text-red-600 px-3 py-1 rounded-full font-medium ml-2">
-                ⚠ {{ $lowCount }} low stock
-            </span>
-            @endif
-        </h2>
+    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Spare Parts & Inventory</h2>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                    {{ $totalParts }} cataloged items
+                </span>
+                @if($lowCount)
+                <span class="text-xs font-semibold px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                    {{ $lowCount }} low stock alerts
+                </span>
+                @endif
+            </div>
+            <p class="text-sm text-gray-500 mt-1">Monitor component stock levels, barcodes, and workshop replenishment</p>
+        </div>
         @if(auth()->user()->hasPermission('inventory.manage'))
         <button @click="showAdd = true"
-            class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> Add Part
+            class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 transition shadow-xs flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add New Part
         </button>
         @endif
     </div>
 
     {{-- Search + Barcode Scan --}}
-    <form method="GET" id="inventory-search-form" class="mb-4 flex gap-2 flex-wrap">
+    <form method="GET" id="inventory-search-form" class="mb-5 flex gap-2 flex-wrap items-center">
         <div class="relative flex-1 max-w-md">
+            <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
             <input type="text" name="search" id="search-input" value="{{ $search }}"
                 placeholder="Search by name, part number, or brand..."
-                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10">
+                class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xs">
         </div>
-        <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">Search</button>
+        <button type="submit" class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-800 transition shadow-xs">
+            Search
+        </button>
         <button type="button" @click="openScanner('search')"
-            class="flex items-center gap-2 border border-blue-500 text-blue-600 px-3 py-2 rounded text-sm hover:bg-blue-50 transition"
+            class="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3.5 py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-50 shadow-xs transition"
             title="Scan barcode / QR code">
-            <i data-lucide="scan-barcode" class="w-4 h-4"></i>
-            <span class="hidden sm:inline">Scan</span>
+            <i data-lucide="scan-barcode" class="w-4 h-4 text-blue-600"></i>
+            <span>Scan Barcode</span>
         </button>
         @if($search)
-        <a href="{{ url()->current() }}" class="px-4 py-2 rounded text-sm border text-gray-600 hover:bg-gray-50">Clear</a>
+        <a href="{{ url()->current() }}" class="px-3.5 py-2.5 rounded-xl text-xs font-semibold border border-gray-200 bg-white text-gray-600 hover:bg-gray-50">Clear</a>
         @endif
     </form>
 
     {{-- Parts Table --}}
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr class="text-left text-gray-500 border-b">
-                    <th class="px-4 py-3">Part</th>
-                    <th class="px-4 py-3">Category</th>
-                    <th class="px-4 py-3">Part No.</th>
-                    <th class="px-4 py-3">Unit Price</th>
-                    <th class="px-4 py-3">Stock</th>
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-gray-50/80 text-xs font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-100">
+                    <th class="px-5 py-3.5">Part Specification</th>
+                    <th class="px-5 py-3.5">Category</th>
+                    <th class="px-5 py-3.5">SKU / Part No.</th>
+                    <th class="px-5 py-3.5">Unit Price</th>
+                    <th class="px-5 py-3.5">Stock Level</th>
                     @if(auth()->user()->hasPermission('inventory.manage'))
-                    <th class="px-4 py-3 w-12">Actions</th>
+                    <th class="px-5 py-3.5 text-right">Actions</th>
                     @endif
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-gray-100">
                 @forelse($parts as $part)
                 @php $low = $part->stock <= $part->min_stock; @endphp
-                <tr class="border-b hover:bg-gray-50 {{ $low ? 'bg-red-50' : '' }}">
-                    <td class="px-4 py-3">
-                        <p class="font-medium text-gray-800">{{ $part->name }}</p>
+                <tr class="hover:bg-gray-50/60 transition {{ $low ? 'bg-rose-50/30' : '' }}">
+                    <td class="px-5 py-4">
+                        <p class="font-bold text-sm text-gray-900">{{ $part->name }}</p>
                         @if($part->brand)
-                        <p class="text-xs text-gray-400">{{ $part->brand }}</p>
+                        <p class="text-xs font-medium text-gray-500 mt-0.5">{{ $part->brand }}</p>
                         @endif
                     </td>
-                    <td class="px-4 py-3">
-                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    <td class="px-5 py-4">
+                        <span class="text-xs font-semibold bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md border border-gray-200">
                             {{ $part->category }}
                         </span>
                     </td>
-                    <td class="px-4 py-3 text-gray-500 font-mono text-xs">{{ $part->part_number }}</td>
-                    <td class="px-4 py-3 font-medium">RM {{ number_format($part->unit_price, 2) }}</td>
-                    <td class="px-4 py-3">
-                        <span class="font-bold {{ $low ? 'text-red-600' : 'text-gray-700' }}">
-                            {{ $part->stock }}
+                    <td class="px-5 py-4">
+                        <span class="font-mono text-xs font-bold text-gray-800 bg-gray-50 px-2.5 py-1 rounded border border-gray-200">
+                            {{ $part->part_number }}
                         </span>
-                        <span class="text-xs text-gray-400">/ min {{ $part->min_stock }}</span>
-                        @if($low)
-                        <span class="ml-1 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Low</span>
-                        @endif
+                    </td>
+                    <td class="px-5 py-4 font-bold text-sm text-gray-900">
+                        RM {{ number_format($part->unit_price, 2) }}
+                    </td>
+                    <td class="px-5 py-4">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm {{ $low ? 'text-rose-600' : 'text-gray-900' }}">
+                                {{ $part->stock }}
+                            </span>
+                            <span class="text-xs text-gray-400 font-medium">/ min {{ $part->min_stock }}</span>
+                            @if($low)
+                            <span class="inline-flex items-center gap-1 text-[11px] font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded">
+                                Low Stock
+                            </span>
+                            @endif
+                        </div>
                     </td>
                     @if(auth()->user()->hasPermission('inventory.manage'))
-                    <td class="px-4 py-3">
-                        <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
-                            <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
-                                <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                    <td class="px-5 py-4 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button type="button"
+                                @click="openEdit({
+                                    id:           {{ $part->id }},
+                                    name:         '{{ addslashes($part->name) }}',
+                                    brand:        '{{ addslashes($part->brand ?? '') }}',
+                                    part_number:  '{{ addslashes($part->part_number) }}',
+                                    category:     '{{ $part->category }}',
+                                    unit_price:   '{{ $part->unit_price }}',
+                                    stock:        '{{ $part->stock }}',
+                                    min_stock:    '{{ $part->min_stock }}'
+                                })"
+                                class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5 text-gray-400"></i>
+                                <span>Edit</span>
                             </button>
-                            <div x-show="open" x-transition
-                                class="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border py-1 z-20"
-                                style="display:none">
-                                <button type="button"
-                                    @click="open = false; openEdit({
-                                        id:           {{ $part->id }},
-                                        name:         '{{ addslashes($part->name) }}',
-                                        brand:        '{{ addslashes($part->brand ?? '') }}',
-                                        part_number:  '{{ addslashes($part->part_number) }}',
-                                        category:     '{{ $part->category }}',
-                                        unit_price:   '{{ $part->unit_price }}',
-                                        stock:        '{{ $part->stock }}',
-                                        min_stock:    '{{ $part->min_stock }}'
-                                    })"
-                                    class="w-full flex items-center gap-2 px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50">
-                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                            <form method="POST" action="/inventory/spare-parts/{{ $part->id }}" class="inline"
+                                onsubmit="return confirmSubmit(event, {title:'Delete part?', message:'This will permanently delete {{ addslashes($part->name) }} ({{ addslashes($part->part_number) }}) from inventory. This cannot be undone.', confirmLabel:'Delete Part'})">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                    class="text-xs font-semibold bg-white border border-gray-200 text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-500"></i>
+                                    <span>Delete</span>
                                 </button>
-                                <form method="POST" action="/inventory/spare-parts/{{ $part->id }}"
-                                    onsubmit="return confirmSubmit(event, {title:'Delete part?', message:'This will permanently delete {{ addslashes($part->name) }} ({{ addslashes($part->part_number) }}) from inventory. This cannot be undone.', confirmLabel:'Delete Part'})">
-                                    @csrf @method('DELETE')
-                                    <button type="submit"
-                                        class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
-                                    </button>
-                                </form>
-                            </div>
+                            </form>
                         </div>
                     </td>
                     @endif
@@ -336,8 +350,18 @@
                 </button>
             </div>
             <div id="barcode-scanner-container" class="w-full bg-black" style="height: 280px;"></div>
-            <div class="px-5 py-3 bg-gray-50 border-t">
+            <div class="px-5 py-3 bg-gray-50 border-t space-y-2">
                 <p class="text-xs text-gray-500 text-center" id="scanner-status">Initialising camera…</p>
+                <div class="flex gap-2 pt-1 border-t">
+                    <input type="text" id="inventory-laser-input"
+                        placeholder="Or scan with USB laser scanner..."
+                        class="flex-1 border rounded px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onkeydown="if(event.key==='Enter'){ event.preventDefault(); handleScanResult(this.value.trim(), window._currentScanTarget || 'search'); }">
+                    <button type="button" onclick="handleScanResult(document.getElementById('inventory-laser-input').value.trim(), window._currentScanTarget || 'search')"
+                        class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-700">
+                        Select
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -348,10 +372,32 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 let _qrScanner = null;
+window._currentScanTarget = 'search';
+
+function playInventoryBeep() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+    } catch(e) {}
+}
 
 function startBarcodeScanner(target) {
+    window._currentScanTarget = target;
     const container = document.getElementById('barcode-scanner-container');
     const status    = document.getElementById('scanner-status');
+    const laserInput = document.getElementById('inventory-laser-input');
+    if (laserInput) {
+        laserInput.value = '';
+        setTimeout(() => laserInput.focus(), 250);
+    }
 
     if (_qrScanner) {
         try { _qrScanner.clear(); } catch(e) {}
@@ -360,11 +406,16 @@ function startBarcodeScanner(target) {
 
     container.innerHTML = '';
 
+    if (typeof Html5Qrcode === 'undefined') {
+        status.textContent = 'Scanner library loading. You can use handheld input below.';
+        return;
+    }
+
     _qrScanner = new Html5Qrcode('barcode-scanner-container');
 
     Html5Qrcode.getCameras().then(cameras => {
         if (!cameras || cameras.length === 0) {
-            status.textContent = 'No camera found.';
+            status.textContent = 'No camera found. You can use handheld input below.';
             return;
         }
 
@@ -379,10 +430,10 @@ function startBarcodeScanner(target) {
             },
             () => {} // ignore parse errors
         ).catch(err => {
-            status.textContent = 'Camera error: ' + err;
+            status.textContent = 'Camera unavailable. Use handheld scanner below.';
         });
     }).catch(err => {
-        status.textContent = 'Camera permission denied or unavailable.';
+        status.textContent = 'Camera permission denied or unavailable. Use handheld scanner below.';
     });
 }
 
@@ -395,6 +446,8 @@ function stopBarcodeScanner() {
 }
 
 function handleScanResult(value, target) {
+    if (!value) return;
+    playInventoryBeep();
     stopBarcodeScanner();
 
     // Close modal via Alpine
@@ -404,7 +457,7 @@ function handleScanResult(value, target) {
     } else {
         // Fallback for Alpine v3
         const el = document.querySelector('[x-data]');
-        if (el._x_dataStack) el._x_dataStack[0].showScanner = false;
+        if (el && el._x_dataStack) el._x_dataStack[0].showScanner = false;
     }
 
     if (target === 'search') {

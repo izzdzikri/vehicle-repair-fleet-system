@@ -8,69 +8,80 @@
     {{-- LEFT COLUMN: Company Info + PICs --}}
     <div class="space-y-6">
 
-        {{-- Company Info --}}
-        <div class="bg-white rounded-lg shadow p-6">
+        {{-- Company Info Card --}}
+        <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6">
             <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                    <i data-lucide="building-2" class="w-6 h-6 text-blue-600"></i>
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                    <i data-lucide="building-2" class="w-6 h-6"></i>
                 </div>
                 <div class="min-w-0">
-                    <h2 class="text-base font-bold text-gray-800">{{ $company->name ?? '—' }}</h2>
-                    <p class="text-xs text-gray-500 mt-0.5">Reg No: {{ $company->registration_no ?? '—' }}</p>
-                    <p class="text-xs text-gray-500">{{ $company->address ?? '—' }}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{ $company->contact_email ?? '—' }}</p>
-                    <p class="text-xs text-gray-400">{{ $company->contact_phone ?? '—' }}</p>
+                    <h2 class="text-lg font-bold text-gray-900 truncate">{{ $company->name ?? '—' }}</h2>
+                    <p class="text-xs font-semibold text-gray-500 mt-0.5">Reg No: {{ $company->registration_no ?? '—' }}</p>
+                    <p class="text-xs text-gray-600 mt-2 flex items-start gap-1.5">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5"></i>
+                        <span>{{ $company->address ?? 'No physical address specified' }}</span>
+                    </p>
+                    <div class="mt-3 pt-3 border-t border-gray-100 space-y-1">
+                        <p class="text-xs text-gray-600 flex items-center gap-1.5">
+                            <i data-lucide="mail" class="w-3.5 h-3.5 text-gray-400 shrink-0"></i>
+                            <span>{{ $company->contact_email ?? '—' }}</span>
+                        </p>
+                        <p class="text-xs text-gray-600 flex items-center gap-1.5">
+                            <i data-lucide="phone" class="w-3.5 h-3.5 text-gray-400 shrink-0"></i>
+                            <span class="font-mono">{{ $company->contact_phone ?? '—' }}</span>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
 
         {{-- PICs List --}}
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
-                <h2 class="text-base font-semibold text-gray-700">Persons In Charge</h2>
-                <div class="flex gap-1 text-xs flex-wrap">
-                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+        <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6">
+            <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h2 class="text-base font-bold text-gray-900">Persons In Charge</h2>
+                    <p class="text-xs font-medium text-gray-500">Authorized corporate accounts</p>
+                </div>
+                <div class="flex gap-1.5 text-xs flex-wrap">
+                    <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md font-bold">
                         Primary: {{ $pics->where('pic_role','primary')->count() }}/2
                     </span>
-                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    <span class="bg-gray-100 text-gray-700 border border-gray-200 px-2 py-0.5 rounded-md font-bold">
                         Viewer: {{ $pics->where('pic_role','secondary')->count() }}/10
-                    </span>
-                    <span class="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">
-                        Total: {{ $pics->count() }}/12
                     </span>
                 </div>
             </div>
 
             <div class="space-y-3">
                 @foreach($pics->sortBy(fn($p) => $p->pic_role === 'primary' ? 0 : 1) as $pic)
-                <div class="flex items-center gap-3 p-3 border rounded-lg
-                    {{ $pic->id === auth()->id() ? 'border-blue-300 bg-blue-50' : 'border-gray-200' }}">
+                <div class="flex items-center gap-3 p-3.5 border rounded-xl transition
+                    {{ $pic->id === auth()->id() ? 'border-blue-300 bg-blue-50/40' : 'border-gray-200/80 hover:bg-gray-50/50' }}">
                     <img src="{{ $pic->avatar_url }}"
                         class="w-10 h-10 rounded-full object-cover shrink-0 border-2
                         {{ $pic->pic_role === 'primary' ? 'border-blue-400' : 'border-gray-200' }}">
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-1 flex-wrap">
-                            <p class="text-sm font-medium text-gray-800">{{ $pic->name }}</p>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <p class="text-sm font-bold text-gray-900">{{ $pic->name }}</p>
                             @if($pic->id === auth()->id())
-                            <span class="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full">You</span>
+                            <span class="text-xs bg-blue-600 text-white font-bold px-1.5 py-0.2 rounded">You</span>
                             @endif
                         </div>
-                        <p class="text-xs text-gray-400">{{ $pic->email }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ $pic->email }}</p>
                         @if($pic->contact_no)
-                        <p class="text-xs text-gray-400">{{ $pic->contact_no }}</p>
+                        <p class="text-xs text-gray-400 font-mono mt-0.5">{{ $pic->contact_no }}</p>
                         @endif
                     </div>
                     <div class="flex flex-col items-end gap-1 shrink-0">
-                        <span class="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap
+                        <span class="text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap
                             {{ $pic->pic_role === 'primary'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-500' }}">
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-gray-100 text-gray-600 border border-gray-200' }}">
                             {{ $pic->pic_role === 'primary' ? '★ Primary' : '◎ Viewer' }}
                         </span>
-                        <span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap
+                        <span class="text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap
                             {{ $pic->status === 'active'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-700' }}">
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-rose-50 text-rose-700' }}">
                             {{ ucfirst($pic->status) }}
                         </span>
                     </div>
@@ -79,16 +90,15 @@
             </div>
 
             {{-- Role explanation --}}
-            <div class="mt-4 p-3 bg-gray-50 rounded-lg border text-xs text-gray-500 space-y-1.5">
+            <div class="mt-5 p-3.5 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-600 space-y-2">
                 <p>
-                    <span class="font-semibold text-blue-600">★ Primary (max 2)</span>
-                    — Full access. Can book appointments, add vehicles, and submit account requests.
+                    <span class="font-bold text-blue-700">★ Primary (Max 2):</span>
+                    Full access to book appointments, manage fleet vehicles, and submit requests.
                 </p>
                 <p>
-                    <span class="font-semibold text-gray-500">◎ Viewer / Secondary (max 10)</span>
-                    — Read-only. Can view fleet, appointments, alerts, and service history. Cannot book or submit changes.
+                    <span class="font-bold text-gray-700">◎ Viewer / Secondary (Max 10):</span>
+                    Read-only monitoring access to fleet statistics, schedules, and alerts.
                 </p>
-                <p class="text-gray-400">Maximum 12 PICs per company. Admin approval required for changes.</p>
             </div>
         </div>
 
@@ -98,29 +108,30 @@
     <div class="lg:col-span-1">
 
         @if(auth()->user()->isPrimaryPic())
-        <div class="bg-white rounded-lg shadow p-6" x-data="{ tab: 'add' }">
-            <h2 class="text-base font-semibold text-gray-700 mb-4">Account Management</h2>
+        <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6" x-data="{ tab: 'add' }">
+            <h2 class="text-base font-bold text-gray-900 mb-1">Account Management</h2>
+            <p class="text-xs font-medium text-gray-500 mb-4">Submit requests for administrator approval</p>
 
             {{-- Tabs --}}
-            <div class="flex gap-2 mb-5 flex-wrap">
+            <div class="flex gap-1.5 mb-5 p-1 bg-gray-100 rounded-lg">
                 <button @click="tab='add'"
-                    :class="tab==='add' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
-                    class="px-4 py-1.5 rounded text-sm font-medium">
-                    Add New PIC
+                    :class="tab==='add' ? 'bg-white text-gray-900 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                    class="flex-1 py-1.5 rounded-md text-xs transition text-center">
+                    Add PIC
                 </button>
                 <button @click="tab='remove'"
-                    :class="tab==='remove' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'"
-                    class="px-4 py-1.5 rounded text-sm font-medium">
+                    :class="tab==='remove' ? 'bg-white text-amber-900 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                    class="flex-1 py-1.5 rounded-md text-xs transition text-center">
                     Remove PIC
                 </button>
                 <button @click="tab='close'"
-                    :class="tab==='close' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600'"
-                    class="px-4 py-1.5 rounded text-sm font-medium">
+                    :class="tab==='close' ? 'bg-white text-rose-900 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                    class="flex-1 py-1.5 rounded-md text-xs transition text-center">
                     Close Account
                 </button>
             </div>
 
-            {{-- Add PIC --}}
+            {{-- Add PIC Form --}}
             <div x-show="tab==='add'">
                 @php
                     $primaryCount   = $pics->where('pic_role','primary')->count();
@@ -128,99 +139,95 @@
                 @endphp
 
                 @if($pics->count() >= 12)
-                <div class="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
-                    Maximum 12 PICs reached. Remove someone before adding.
+                <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-sm font-medium text-rose-700">
+                    Maximum limit of 12 Persons In Charge reached. You must remove an existing member before adding a new one.
                 </div>
                 @else
-                <p class="text-xs text-gray-400 mb-3">
-                    Submit a request to add a new person under {{ $company->name ?? 'your company' }}.
-                    Admin will approve before the account is created.
+                <p class="text-xs text-gray-500 mb-4">
+                    Submit a request to add a new person under <strong class="text-gray-800">{{ $company->name ?? 'your company' }}</strong>. An administrator will verify and approve the account.
                 </p>
-                <form method="POST" action="/client/account-requests" class="space-y-3">
+                <form method="POST" action="/client/account-requests" class="space-y-3.5">
                     @csrf
                     <input type="hidden" name="type" value="add_pic">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Full Name *</label>
                         <input type="text" name="target_name"
                             placeholder="e.g. Encik Farouk bin Aziz"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Email Address *</label>
                         <input type="email" name="target_email"
                             placeholder="farouk@company.com"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Phone Number</label>
                         <input type="text" name="target_phone"
                             placeholder="011-12345678"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Access Role *</label>
                         <select name="pic_role"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             required>
                             @if($primaryCount < 2)
-                            <option value="primary">★ Primary — Full access ({{ $primaryCount }}/2 used)</option>
+                            <option value="primary">★ Primary — Full access ({{ $primaryCount }}/2 assigned)</option>
                             @endif
                             @if($secondaryCount < 10)
-                            <option value="secondary">◎ Viewer — View only ({{ $secondaryCount }}/10 used)</option>
+                            <option value="secondary">◎ Viewer — View only ({{ $secondaryCount }}/10 assigned)</option>
                             @endif
                         </select>
-                        <p class="text-xs text-gray-400 mt-1">Primary can book and manage. Viewer can only see fleet data.</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Remarks (Optional)</label>
                         <input type="text" name="notes"
-                            placeholder="e.g. New fleet manager"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            placeholder="e.g. Appointed new logistics manager"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                     <button type="submit"
-                        class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 text-sm font-medium">
-                        Submit Request
+                        class="w-full bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-xs mt-2">
+                        Submit PIC Request
                     </button>
                 </form>
                 @endif
             </div>
 
-            {{-- Remove PIC --}}
+            {{-- Remove PIC Form --}}
             <div x-show="tab==='remove'" style="display:none">
-                <p class="text-xs text-gray-400 mb-3">
-                    Request to remove a person in charge. Admin must approve.
+                <p class="text-xs text-gray-500 mb-4">
+                    Select an authorized PIC to remove from {{ $company->name ?? 'your company' }}. Requires administrative confirmation.
                 </p>
                 @if($pics->where('id', '!=', auth()->id())->count() === 0)
-                <p class="text-sm text-gray-400 italic">No other PICs to remove.</p>
+                <p class="text-sm font-medium text-gray-500 italic py-4">No other PIC accounts available to remove.</p>
                 @else
-                <form method="POST" action="/client/account-requests" class="space-y-3">
+                <form method="POST" action="/client/account-requests" class="space-y-3.5">
                     @csrf
                     <input type="hidden" name="type" value="remove_pic">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Select PIC to Remove *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Select PIC to Remove *</label>
                         <select name="target_user_id"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             required>
-                            <option value="">Select person</option>
+                            <option value="">Select individual...</option>
                             @foreach($pics->where('id', '!=', auth()->id()) as $pic)
                             <option value="{{ $pic->id }}">
-                                {{ $pic->name }}
-                                ({{ $pic->pic_role === 'primary' ? '★ Primary' : '◎ Viewer' }})
-                                — {{ $pic->email }}
+                                {{ $pic->name }} ({{ $pic->pic_role === 'primary' ? 'Primary' : 'Viewer' }}) — {{ $pic->email }}
                             </option>
                             @endforeach
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Reason for Removal (Optional)</label>
                         <input type="text" name="notes"
-                            placeholder="e.g. Staff has left the company"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            placeholder="e.g. Personnel no longer with organization"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                     <button type="submit"
-                        class="bg-orange-500 text-white px-5 py-2 rounded hover:bg-orange-600 text-sm font-medium">
+                        class="w-full bg-amber-600 text-white px-5 py-2.5 rounded-lg hover:bg-amber-700 text-sm font-semibold shadow-xs mt-2">
                         Submit Removal Request
                     </button>
                 </form>
@@ -229,26 +236,27 @@
 
             {{-- Close Account --}}
             <div x-show="tab==='close'" style="display:none">
-                <div class="p-4 bg-red-50 border border-red-200 rounded mb-4">
-                    <p class="text-sm font-semibold text-red-700">⚠ Warning</p>
-                    <p class="text-sm text-red-600 mt-1">
-                        This will deactivate all {{ $pics->count() }} user(s) under
-                        {{ $company->name ?? 'your company' }}. Requires admin approval.
+                <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl mb-4">
+                    <p class="text-sm font-bold text-rose-800 flex items-center gap-1.5">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i> Account Closure Warning
+                    </p>
+                    <p class="text-xs text-rose-700 mt-1">
+                        Submitting this request will deactivate access for all {{ $pics->count() }} corporate member(s) under {{ $company->name ?? 'your organization' }}.
                     </p>
                 </div>
-                <form method="POST" action="/client/account-requests" class="space-y-3">
+                <form method="POST" action="/client/account-requests" class="space-y-3.5">
                     @csrf
                     <input type="hidden" name="type" value="close_account">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Reason *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">Reason for Closure *</label>
                         <textarea name="notes" rows="3"
-                            placeholder="Please provide a reason for closing the account..."
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            placeholder="Please provide justification for closing corporate fleet account..."
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             required></textarea>
                     </div>
                     <button type="submit"
-                        class="bg-red-600 text-white px-5 py-2 rounded hover:bg-red-700 text-sm font-medium">
-                        Submit Close Account Request
+                        class="w-full bg-rose-600 text-white px-5 py-2.5 rounded-lg hover:bg-rose-700 text-sm font-semibold shadow-xs">
+                        Confirm Account Closure Request
                     </button>
                 </form>
             </div>
@@ -256,17 +264,18 @@
 
         @else
         {{-- Secondary/Viewer sees read-only notice --}}
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-base font-semibold text-gray-700 mb-3">Account Management</h2>
-            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500">
-                <p class="font-medium text-gray-600 mb-1">◎ You are a Viewer (Secondary PIC)</p>
-                <p>Account management requests can only be submitted by a Primary PIC.</p>
+        <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6">
+            <h2 class="text-base font-bold text-gray-900 mb-2">Account Management</h2>
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600">
+                <p class="font-bold text-gray-900 mb-1">◎ Read-Only Access (Viewer PIC)</p>
+                <p class="text-xs text-gray-500">Corporate account modifications and PIC requests can only be performed by a designated Primary PIC.</p>
                 @php $primary = $pics->where('pic_role','primary')->first(); @endphp
                 @if($primary)
-                <p class="mt-2 text-xs text-gray-400">
-                    Primary PIC: <span class="font-medium text-gray-600">{{ $primary->name }}</span>
-                    — {{ $primary->email }}
-                </p>
+                <div class="mt-3 pt-3 border-t border-gray-200 text-xs">
+                    <span class="text-gray-500">Primary Contact:</span>
+                    <span class="font-bold text-gray-800 ml-1">{{ $primary->name }}</span>
+                    <span class="text-gray-500 font-mono block mt-0.5">{{ $primary->email }}</span>
+                </div>
                 @endif
             </div>
         </div>
@@ -276,14 +285,17 @@
 
     {{-- RIGHT COLUMN: Request History --}}
     <div>
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-base font-semibold text-gray-700 mb-4">
-                Request History
-                <span class="text-sm font-normal text-gray-400 ml-1">{{ $requests->count() }} total</span>
-            </h2>
+        <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-base font-bold text-gray-900">Request History</h2>
+                <span class="text-xs font-semibold px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md">{{ $requests->count() }} total</span>
+            </div>
 
             @if($requests->isEmpty())
-            <p class="text-sm text-gray-400 text-center py-6">No requests submitted yet.</p>
+            <div class="text-center py-8">
+                <i data-lucide="history" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
+                <p class="text-sm font-medium text-gray-500">No account requests submitted yet.</p>
+            </div>
             @else
             <div class="space-y-3">
                 @foreach($requests as $req)
@@ -296,59 +308,63 @@
                         default          => ucfirst($req->type),
                     };
                     $typeColor = match($req->type) {
-                        'add_pic'        => 'bg-green-100 text-green-700',
-                        'remove_pic'     => 'bg-orange-100 text-orange-700',
-                        'close_account'  => 'bg-red-100 text-red-700',
-                        default          => 'bg-gray-100 text-gray-600',
+                        'add_pic'        => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                        'remove_pic'     => 'bg-amber-50 text-amber-700 border border-amber-200',
+                        'close_account'  => 'bg-rose-50 text-rose-700 border border-rose-200',
+                        default          => 'bg-gray-100 text-gray-700 border border-gray-200',
                     };
                     $statusColor = match($req->status) {
-                        'pending'  => 'bg-yellow-100 text-yellow-700',
-                        'approved' => 'bg-green-100 text-green-700',
-                        'rejected' => 'bg-red-100 text-red-700',
-                        default    => 'bg-gray-100 text-gray-600',
+                        'pending'  => 'bg-amber-50 text-amber-700 border border-amber-200',
+                        'approved' => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                        'rejected' => 'bg-rose-50 text-rose-700 border border-rose-200',
+                        default    => 'bg-gray-100 text-gray-700 border border-gray-200',
                     };
                 @endphp
-                <div class="border rounded-lg p-3
-                    {{ $req->status === 'pending' ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200' }}">
-                    <div class="flex items-start justify-between gap-2 flex-wrap mb-1">
-                        <div class="flex gap-1 flex-wrap">
-                            <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $typeColor }}">
+                <div class="border rounded-xl p-3.5 transition
+                    {{ $req->status === 'pending' ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200/80 bg-white' }}">
+                    <div class="flex items-start justify-between gap-2 flex-wrap mb-1.5">
+                        <div class="flex gap-1.5 flex-wrap">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-bold {{ $typeColor }}">
                                 {{ $typeLabel }}
                             </span>
-                            <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $statusColor }}">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-bold {{ $statusColor }}">
                                 {{ ucfirst($req->status) }}
                             </span>
                         </div>
-                        <span class="text-xs text-gray-400 whitespace-nowrap">
+                        <span class="text-xs font-medium text-gray-400 whitespace-nowrap">
                             {{ $req->created_at->format('d M Y') }}
                         </span>
                     </div>
                     <p class="text-xs text-gray-600 mt-1">
-                        By: <span class="font-medium">{{ $req->requester->name ?? '—' }}</span>
+                        Requested by: <span class="font-bold text-gray-800">{{ $req->requester->name ?? '—' }}</span>
                     </p>
                     @if($req->target_name)
                     <p class="text-xs text-gray-600">
-                        For: <span class="font-medium">{{ $req->target_name }}</span>
+                        Target: <span class="font-bold text-gray-800">{{ $req->target_name }}</span>
                         @if($req->target_email)
-                        <span class="text-gray-400">({{ $req->target_email }})</span>
+                        <span class="text-gray-500">({{ $req->target_email }})</span>
                         @endif
                     </p>
                     @endif
                     @if($req->targetUser)
-                    <p class="text-xs text-red-600">
-                        Remove: {{ $req->targetUser->name }}
+                    <p class="text-xs text-rose-700 font-medium">
+                        Removal Target: {{ $req->targetUser->name }}
                     </p>
                     @endif
                     @if($req->notes)
-                    <p class="text-xs text-gray-400 mt-1 italic">{{ $req->notes }}</p>
+                    <p class="text-xs text-gray-500 mt-1 italic bg-gray-50 p-1.5 rounded border border-gray-100">
+                        "{{ $req->notes }}"
+                    </p>
                     @endif
                     @if($req->status === 'pending')
-                    <p class="text-xs text-yellow-600 font-medium mt-1">Awaiting admin approval</p>
+                    <p class="text-xs text-amber-700 font-bold mt-2 flex items-center gap-1">
+                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> Awaiting administrator approval
+                    </p>
                     @endif
                     @if($req->status === 'approved' && $req->type === 'add_pic')
-                    <p class="text-xs text-green-600 mt-1">
-                        ✓ Account created. Temp password: <span class="font-mono">password123</span>
-                    </p>
+                    <div class="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800">
+                        ✓ Account provisioned. Temporary password: <span class="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-emerald-300">password123</span>
+                    </div>
                     @endif
                 </div>
                 @endforeach

@@ -28,6 +28,8 @@
 
     Route::get('/', fn() => redirect('/login'));
     Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->name('chatbot.reply');
+    Route::get('/chatbot/schedule-availability', [ChatbotController::class, 'scheduleAvailability'])->name('chatbot.schedule-availability');
+    Route::post('/chatbot/reset-session', [ChatbotController::class, 'resetSession'])->name('chatbot.reset-session');
 
     // Auth
     Route::get('/login',    [AuthController::class, 'showLogin'])->name('login');
@@ -95,6 +97,9 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::post('/salary', [StaffManagementController::class, 'storeSalaryPayment'])->name('staff-management.salary.store');
 });
 
+// Printable Payslip Voucher (Admin, Accountant, or the Employee themselves)
+Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/payslip', [StaffManagementController::class, 'payslip'])->name('staff-management.salary.payslip');
+
 // ----------------------------------------------------------------
 // Admin
 // ----------------------------------------------------------------
@@ -158,11 +163,18 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     // Activity Log
     Route::get('/activity-log', [AdminController::class, 'activityLog'])->name('admin.activity-log');
 
-    // Maintenance
+    // Gemini AI Diagnostic
+    Route::get('/gemini/status', [ChatbotController::class, 'geminiStatus'])->name('admin.gemini.status');
+
+    // Maintenance & Prediction Proofreading
     Route::get('/maintenance',                  [MaintenanceAlertController::class, 'index'])->name('admin.maintenance');
     Route::post('/maintenance',                 [MaintenanceAlertController::class, 'store'])->name('admin.maintenance.store');
     Route::patch('/maintenance/{alert}/read',   [MaintenanceAlertController::class, 'markRead'])->name('admin.maintenance.read');
     Route::post('/maintenance/predict',         [MaintenanceAlertController::class, 'runPredictions'])->name('admin.maintenance.predict');
+    Route::get('/predictions/proofread',        [AdminController::class, 'proofreadPredictions'])->name('admin.predictions.proofread');
+    Route::post('/predictions/{alert}/verify',  [AdminController::class, 'verifyPrediction'])->name('admin.predictions.verify');
+    Route::post('/predictions/{alert}/adjust',  [AdminController::class, 'adjustPrediction'])->name('admin.predictions.adjust');
+    Route::post('/predictions/draft-po',        [AdminController::class, 'draftForecastPurchaseOrder'])->name('admin.predictions.draft-po');
 
     // Invoices & Payments
     Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('admin.invoices');
@@ -172,14 +184,17 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('admin.invoices.payments');
     Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('admin.invoices.resend');
 
-    // Staff Management — attendance, leave, performance (salary moved to the permission-gated group above)
-    Route::get('/staff-management/attendance',            [StaffManagementController::class, 'attendance'])->name('admin.staff-management.attendance');
-    Route::get('/staff-management/leave',                 [StaffManagementController::class, 'leave'])->name('admin.staff-management.leave');
+    // Staff Management — roster directory, attendance, leave, performance (salary in permission group + admin)
+    Route::get('/staff-management/roster',                       [StaffManagementController::class, 'roster'])->name('admin.staff-management.roster');
+    Route::get('/staff-management/attendance',                   [StaffManagementController::class, 'attendance'])->name('admin.staff-management.attendance');
+    Route::post('/staff-management/attendance/record',           [StaffManagementController::class, 'recordAttendance'])->name('admin.staff-management.attendance.record');
+    Route::get('/staff-management/attendance/export',            [StaffManagementController::class, 'exportAttendance'])->name('admin.staff-management.attendance.export');
+    Route::get('/staff-management/leave',                        [StaffManagementController::class, 'leave'])->name('admin.staff-management.leave');
     Route::patch('/staff-management/leave/{leaveRequest}/approve', [StaffManagementController::class, 'approveLeave'])->name('admin.staff-management.leave.approve');
     Route::patch('/staff-management/leave/{leaveRequest}/reject',  [StaffManagementController::class, 'rejectLeave'])->name('admin.staff-management.leave.reject');
-    Route::get('/staff-management/performance',           [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
-    Route::get('/staff-management/performance/export',    [StaffManagementController::class, 'exportPerformance'])->name('admin.staff-management.performance.export');
-    Route::post('/staff-management/performance/email',    [StaffManagementController::class, 'emailPerformanceReport'])->name('admin.staff-management.performance.email');
+    Route::get('/staff-management/performance',                  [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
+    Route::get('/staff-management/performance/export',           [StaffManagementController::class, 'exportPerformance'])->name('admin.staff-management.performance.export');
+    Route::post('/staff-management/performance/email',           [StaffManagementController::class, 'emailPerformanceReport'])->name('admin.staff-management.performance.email');
 
     // Suppliers & Purchase Orders
     Route::get('/suppliers',               [SupplierController::class, 'index'])->name('admin.suppliers');
@@ -191,6 +206,8 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::patch('/purchase-orders/{purchaseOrder}/order', [PurchaseOrderController::class, 'markOrdered'])->name('admin.purchase-orders.order');
     Route::patch('/purchase-orders/{purchaseOrder}/receive',[PurchaseOrderController::class, 'markReceived'])->name('admin.purchase-orders.receive');
     Route::patch('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('admin.purchase-orders.cancel');
+    Route::get('/purchase-orders/{purchaseOrder}/invoice',  [PurchaseOrderController::class, 'invoice'])->name('admin.purchase-orders.invoice');
+    Route::get('/purchase-orders/{purchaseOrder}/pdf',      [PurchaseOrderController::class, 'downloadPdf'])->name('admin.purchase-orders.pdf');
 });
 
 // ----------------------------------------------------------------
@@ -226,12 +243,13 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('staff.invoices.payments');
     Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('staff.invoices.resend');
 
-    // Staff Management — own attendance + leave
+    // Staff Management — own attendance, leave & salary payslips
     Route::get('/staff-management/attendance',              [StaffManagementController::class, 'attendance'])->name('staff.staff-management.attendance');
     Route::post('/staff-management/attendance/clock-in',    [StaffManagementController::class, 'clockIn'])->name('staff.staff-management.clock-in');
     Route::post('/staff-management/attendance/clock-out',   [StaffManagementController::class, 'clockOut'])->name('staff.staff-management.clock-out');
     Route::get('/staff-management/leave',                   [StaffManagementController::class, 'leave'])->name('staff.staff-management.leave');
     Route::post('/staff-management/leave',                  [StaffManagementController::class, 'storeLeave'])->name('staff.staff-management.leave.store');
+    Route::get('/staff-management/salary',                 [StaffManagementController::class, 'selfSalary'])->name('staff.staff-management.salary');
 });
 
 // ----------------------------------------------------------------
@@ -243,6 +261,14 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
 // ----------------------------------------------------------------
     Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->group(function () {
     Route::get('/dashboard',                          [CoordinatorController::class, 'dashboard'])->name('coordinator.dashboard');
+
+    // Appointments & Walk-in & Queue
+    Route::get('/appointments',                         [AppointmentController::class, 'index'])->name('coordinator.appointments');
+    Route::get('/appointments/queue',                   [AppointmentController::class, 'queue'])->name('coordinator.appointments.queue');
+    Route::get('/appointments/walkin',                  [AppointmentController::class, 'walkinCreate'])->name('coordinator.appointments.walkin');
+    Route::post('/appointments/walkin',                 [AppointmentController::class, 'walkinStore'])->name('coordinator.appointments.walkin.store');
+    Route::get('/appointments/{appointment}',           [AppointmentController::class, 'show'])->name('coordinator.appointments.show');
+
     Route::get('/job-cards',                          [CoordinatorController::class, 'jobCards'])->name('coordinator.job-cards');
     Route::get('/job-cards/{jobCard}',                [JobCardController::class, 'show'])->name('coordinator.job-cards.show');
     Route::patch('/job-cards/{jobCard}/stage',        [JobCardController::class, 'updateStage'])->name('coordinator.job-cards.stage');
@@ -254,6 +280,19 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
     Route::delete('/job-cards/{jobCard}/photos/{photoId}',  [JobCardController::class, 'removePhoto'])->name('coordinator.job-cards.remove-photo');
     Route::post('/job-cards/{jobCard}/checkin',       [CoordinatorController::class, 'storeCheckin'])->name('coordinator.job-cards.checkin');
     Route::get('/inventory',                          [SparePartController::class, 'index'])->name('coordinator.inventory');
+
+    // Invoices & Billing
+    Route::get('/invoices',                           [InvoiceController::class, 'index'])->name('coordinator.invoices');
+    Route::get('/invoices/{invoice}',                 [InvoiceController::class, 'show'])->name('coordinator.invoices.show');
+    Route::get('/invoices/{invoice}/pdf',             [InvoiceController::class, 'downloadPdf'])->name('coordinator.invoices.pdf');
+
+    // Staff Management — own attendance, leave & salary payslips
+    Route::get('/staff-management/attendance',              [StaffManagementController::class, 'attendance'])->name('coordinator.staff-management.attendance');
+    Route::post('/staff-management/attendance/clock-in',    [StaffManagementController::class, 'clockIn'])->name('coordinator.staff-management.clock-in');
+    Route::post('/staff-management/attendance/clock-out',   [StaffManagementController::class, 'clockOut'])->name('coordinator.staff-management.clock-out');
+    Route::get('/staff-management/leave',                   [StaffManagementController::class, 'leave'])->name('coordinator.staff-management.leave');
+    Route::post('/staff-management/leave',                  [StaffManagementController::class, 'storeLeave'])->name('coordinator.staff-management.leave.store');
+    Route::get('/staff-management/salary',                 [StaffManagementController::class, 'selfSalary'])->name('coordinator.staff-management.salary');
 });
 
 // ----------------------------------------------------------------

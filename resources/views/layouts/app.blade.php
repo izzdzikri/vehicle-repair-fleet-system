@@ -5,17 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('page-title', 'Vehicle Repair System')</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         @media print {
-            aside, header, .no-print { display: none !important; }
-            main { padding: 0 !important; overflow: visible !important; }
-            body { background: white !important; }
-            .flex.h-screen { display: block !important; height: auto !important; }
+            @page {
+                size: A4 portrait;
+                margin: 8mm 10mm;
+            }
+            aside, header, nav, .no-print, [no-print] { display: none !important; }
+            html, body {
+                background: #ffffff !important;
+                color: #111827 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .flex.h-screen { display: block !important; height: auto !important; overflow: visible !important; }
+            .flex-1.flex.flex-col { display: block !important; height: auto !important; overflow: visible !important; }
+            main { padding: 0 !important; margin: 0 !important; overflow: visible !important; max-width: 100% !important; }
         }
     </style>
 </head>
@@ -38,18 +61,17 @@
                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
 
             {{-- Sidebar header --}}
-            <div class="px-6 py-5 font-bold border-b border-gray-700 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                            fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-                        </svg>
+            <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+                <a href="/" class="flex items-center gap-3 hover:opacity-90 transition">
+                    <img src="/images/logo-rounded.png" alt="Teraju Setia Logo"
+                        class="w-9 h-9 rounded-xl object-cover shadow-md shrink-0 border border-slate-700/80">
+                    <div class="min-w-0">
+                        <span class="block text-white text-sm font-extrabold tracking-tight leading-tight truncate">Teraju Setia</span>
+                        <span class="block text-[11px] text-blue-400 font-semibold tracking-wide uppercase leading-tight">Vehicle System</span>
                     </div>
-                    <span class="text-white text-base">Vehicle System</span>
-                </div>
+                </a>
                 {{-- Close button mobile --}}
-                <button @click="sidebarOpen = false" class="lg:hidden text-gray-400 hover:text-white">
+                <button @click="sidebarOpen = false" class="lg:hidden text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -66,19 +88,19 @@
                         if ($active && !empty($exclude) && request()->is(...(array) $exclude)) {
                             $active = false;
                         }
-                        $base   = 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-gray-700 transition ';
-                        $base  .= $active ? 'bg-gray-700 text-white' : 'text-gray-300';
+                        $base   = 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition ';
+                        $base  .= $active ? 'bg-gray-800 text-white font-semibold' : 'text-gray-300';
                         $html   = '<a href="'.$href.'" class="'.$base.'">';
                         $html  .= '<i data-lucide="'.$icon.'" class="w-4 h-4 shrink-0"></i>';
                         $html  .= '<span class="flex-1 truncate">'.$label.'</span>';
                         if ($badge) {
-                            $html .= '<span class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full shrink-0">'.$badge.'</span>';
+                            $html .= '<span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shrink-0">'.$badge.'</span>';
                         }
                         $html .= '</a>';
                         return $html;
                     };
                     $section = function($label) {
-                        return '<p class="px-3 pt-4 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-wider first:pt-0">'.$label.'</p>';
+                        return '<p class="px-3 pt-4 pb-1 text-xs font-bold text-gray-400 uppercase tracking-wider first:pt-0">'.$label.'</p>';
                     };
                 @endphp
 
@@ -121,14 +143,15 @@
 
                     {!! $section('People') !!}
                     {!! $link('/admin/users',           'users',            'Users',             'admin/users*') !!}
-                    {!! $link('/admin/staff-management/attendance', 'user-cog', 'Staff Management', 'admin/staff-management*', $sidebarCounts['pending_leave'] ?: null) !!}
+                    {!! $link('/admin/staff-management/roster', 'user-cog', 'Staff Management', 'admin/staff-management*', $sidebarCounts['pending_leave'] ?: null) !!}
                     {!! $link('/admin/companies',       'building-2',       'Companies',         'admin/companies*') !!}
                     {!! $link('/admin/account-requests','user-x',           'Account Requests',  'admin/account-requests*', $sidebarCounts['pending_requests'] ?: null) !!}
 
                     {!! $section('System') !!}
-                    {!! $link('/pricing/job-types',     'list-checks',      'Job Types',         'pricing/job-types*') !!}
-                    {!! $link('/admin/reports',         'bar-chart-2',      'Reports',           'admin/reports') !!}
-                    {!! $link('/admin/activity-log',    'history',          'Activity Log',      'admin/activity-log*') !!}
+                    {!! $link('/pricing/job-types',             'list-checks',      'Job Types',                 'pricing/job-types*') !!}
+                    {!! $link('/admin/predictions/proofread',   'trending-down',    'Demand & Predictions',      'admin/predictions/proofread*') !!}
+                    {!! $link('/admin/reports',                 'bar-chart-2',      'Reports',                   'admin/reports') !!}
+                    {!! $link('/admin/activity-log',            'history',          'Activity Log',              'admin/activity-log*') !!}
 
                 @elseif(auth()->user()->role === 'staff')
                     {!! $section('Overview') !!}
@@ -154,19 +177,38 @@
                     {!! $section('My Account') !!}
                     {!! $link('/staff/staff-management/attendance', 'clock-4', 'My Attendance',  'staff/staff-management/attendance') !!}
                     {!! $link('/staff/staff-management/leave',      'calendar-off', 'Leave',     'staff/staff-management/leave') !!}
+                    {!! $link('/staff/staff-management/salary',     'wallet',       'My Salary',  'staff/staff-management/salary') !!}
 
                 @elseif(auth()->user()->role === 'coordinator')
                     @php
-                        $coordStaleBadge = \Illuminate\Support\Facades\Cache::remember('sidebar_stale_coordinator', 30, function () {
-                            return \App\Models\JobCard::where('current_stage','!=','completed')
-                                ->where('updated_at','<', now()->subHours(3))->count();
+                        $coordStats = \Illuminate\Support\Facades\Cache::remember('sidebar_counts_coordinator', 30, function () {
+                            return [
+                                'stale'     => \App\Models\JobCard::where('current_stage','!=','completed')->where('updated_at','<', now()->subHours(3))->count(),
+                                'low_stock' => \App\Models\SparePart::whereColumn('stock','<=','min_stock')->count(),
+                                'appts'     => \App\Models\Appointment::whereDate('date', today())->where('status','confirmed')->count(),
+                            ];
                         });
                     @endphp
                     {!! $section('Overview') !!}
                     {!! $link('/coordinator/dashboard', 'layout-dashboard', 'Dashboard',         'coordinator/dashboard') !!}
 
+                    {!! $section('Front Desk') !!}
+                    {!! $link('/coordinator/appointments',       'calendar',        'Appointments',   'coordinator/appointments*', null, 'coordinator/appointments/queue') !!}
+                    {!! $link('/coordinator/appointments/queue', 'clock',           'Today\'s Queue', 'coordinator/appointments/queue', $coordStats['appts'] ?: null) !!}
+
                     {!! $section('Repair Progress') !!}
-                    {!! $link('/coordinator/job-cards', 'clipboard-check',  'Job Cards',         'coordinator/job-cards*', $coordStaleBadge ?: null) !!}
+                    {!! $link('/coordinator/job-cards',          'clipboard-check', 'Job Cards',      'coordinator/job-cards*', $coordStats['stale'] ?: null) !!}
+
+                    {!! $section('Inventory') !!}
+                    {!! $link('/coordinator/inventory',          'package',         'Inventory',      'coordinator/inventory*', $coordStats['low_stock'] ?: null) !!}
+
+                    {!! $section('Finance') !!}
+                    {!! $link('/coordinator/invoices',           'receipt',         'Invoices',       'coordinator/invoices*') !!}
+
+                    {!! $section('My Account') !!}
+                    {!! $link('/coordinator/staff-management/attendance', 'clock-4', 'My Attendance',  'coordinator/staff-management/attendance') !!}
+                    {!! $link('/coordinator/staff-management/leave',      'calendar-off', 'Leave',     'coordinator/staff-management/leave') !!}
+                    {!! $link('/coordinator/staff-management/salary',     'wallet',       'My Salary',  'coordinator/staff-management/salary') !!}
 
                 @elseif(auth()->user()->role === 'corporate')
                     {!! $section('Overview') !!}
@@ -302,19 +344,19 @@
 
                     <div class="min-w-0">
                         @if(count($crumbs) > 1)
-                        <nav class="flex items-center gap-1 text-xs text-gray-400 truncate">
+                        <nav class="flex items-center gap-1.5 text-xs text-gray-500 font-medium truncate mb-0.5">
                             @foreach($crumbs as $i => $crumb)
-                                @if($i > 0)<span>/</span>@endif
+                                @if($i > 0)<span class="text-gray-300">/</span>@endif
                                 @if($i === count($crumbs) - 1)
-                                    <span class="text-gray-500 font-medium truncate">{{ $crumb['label'] }}</span>
+                                    <span class="text-gray-700 font-semibold truncate">{{ $crumb['label'] }}</span>
                                 @else
-                                    <a href="{{ $crumb['href'] }}" class="hover:text-blue-600 hover:underline shrink-0">{{ $crumb['label'] }}</a>
+                                    <a href="{{ $crumb['href'] }}" class="hover:text-blue-600 transition shrink-0">{{ $crumb['label'] }}</a>
                                 @endif
                             @endforeach
                         </nav>
                         @endif
-                        <h1 class="text-base font-semibold text-gray-800 truncate">@yield('page-title', 'Dashboard')</h1>
-                        <p class="text-xs text-gray-400 hidden sm:block">{{ now()->format('l, d F Y') }}</p>
+                        <h1 class="text-xl font-bold text-gray-900 tracking-tight truncate">@yield('page-title', 'Dashboard')</h1>
+                        <p class="text-xs text-gray-500 font-medium hidden sm:block mt-0.5">{{ now()->format('l, d F Y') }}</p>
                     </div>
                 </div>
 
@@ -457,13 +499,13 @@
             {{-- Flash messages --}}
             @if(session('success'))
             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
-                class="mx-4 mt-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm border border-green-200">
+                class="mx-4 mt-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm border border-green-200 no-print">
                 {{ session('success') }}
             </div>
             @endif
             @if(session('error'))
             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
-                class="mx-4 mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm border border-red-200">
+                class="mx-4 mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm border border-red-200 no-print">
                 {{ session('error') }}
             </div>
             @endif
@@ -476,104 +518,7 @@
     </div>
 
     {{-- Chatbot widget --}}
-    <div x-data="{
-        open: false,
-        messages: [
-            { role: 'bot', text: 'Hi! I\'m the Teraju Setia assistant. Ask me about services, part prices, or your appointments.' }
-        ],
-        input: '',
-        loading: false,
-        async send() {
-            if (!this.input.trim() || this.loading) return;
-            const userMsg = this.input.trim();
-            this.messages.push({ role: 'user', text: userMsg });
-            this.input = '';
-            this.loading = true;
-            this.$nextTick(() => this.scrollToBottom());
-            try {
-                const res = await fetch('/chatbot/reply', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                    },
-                    body: JSON.stringify({ message: userMsg }),
-                });
-                const data = await res.json();
-                this.messages.push({ role: 'bot', text: data.reply });
-            } catch(e) {
-                this.messages.push({ role: 'bot', text: 'Sorry, something went wrong.' });
-            }
-            this.loading = false;
-            this.$nextTick(() => this.scrollToBottom());
-        },
-        scrollToBottom() {
-            const el = this.$refs.chatBody;
-            if (el) el.scrollTop = el.scrollHeight;
-        }
-    }" class="fixed bottom-4 right-4 z-50 no-print">
-        <button @click="open = !open"
-            class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-600 text-white shadow-lg
-                   flex items-center justify-center hover:bg-blue-700 transition">
-            <svg x-show="!open" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <svg x-show="open" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-        </button>
-
-        <div x-show="open" x-transition
-            class="absolute bottom-16 right-0 bg-white rounded-2xl shadow-2xl border flex flex-col overflow-hidden"
-            style="width: min(320px, calc(100vw - 2rem)); height: 460px; display:none">
-            <div class="bg-blue-600 text-white px-4 py-3 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                        fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="font-semibold text-sm">Teraju Assistant</p>
-                    <p class="text-xs text-blue-100">Ask about services & prices</p>
-                </div>
-            </div>
-            <div x-ref="chatBody" class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50">
-                <template x-for="(msg, i) in messages" :key="i">
-                    <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                        <div :class="msg.role === 'user'
-                                ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm px-3 py-2 text-xs max-w-[85%]'
-                                : 'bg-white border text-gray-700 rounded-2xl rounded-bl-sm px-3 py-2 text-xs max-w-[85%] shadow-sm'"
-                            x-text="msg.text"
-                            style="white-space: pre-wrap; word-break: break-word;">
-                        </div>
-                    </div>
-                </template>
-                <div x-show="loading" class="flex justify-start">
-                    <div class="bg-white border text-gray-400 rounded-2xl rounded-bl-sm px-3 py-2 text-xs shadow-sm">
-                        Typing...
-                    </div>
-                </div>
-            </div>
-            <div class="p-3 border-t bg-white flex gap-2">
-                <input type="text" x-model="input"
-                    @keydown.enter="send()"
-                    placeholder="Type a message..."
-                    class="flex-1 border rounded-full px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <button @click="send()" :disabled="loading"
-                    class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center
-                           hover:bg-blue-700 disabled:opacity-50 shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
+    @include('partials.chatbot')
 
     {{-- Global confirm dialog — replaces native confirm() popups with a
          styled modal. Trigger from any form via:

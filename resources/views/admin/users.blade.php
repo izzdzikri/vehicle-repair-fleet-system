@@ -5,117 +5,131 @@
 
 <div x-data="{ showAdd: false }">
 
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-semibold text-gray-700">
-            Users
-            <span class="text-sm font-normal text-gray-400 ml-2">{{ $totalUsers }} total</span>
-        </h2>
+    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">System Users & Access</h2>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                    {{ $totalUsers }} registered accounts
+                </span>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">Manage administrators, mechanics, coordinators, and corporate fleet accounts</p>
+        </div>
         <button @click="showAdd = true"
-            class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> Add User
+            class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 transition shadow-xs flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add New User
         </button>
     </div>
 
-    {{-- Search --}}
-    <form method="GET" class="mb-4 flex gap-2">
-        @if(request('role'))<input type="hidden" name="role" value="{{ request('role') }}">@endif
-        @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
-        <input type="text" name="search" value="{{ $search }}"
-            placeholder="Search by name or email..."
-            class="flex-1 max-w-md border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">Search</button>
-        @if($search)
-        <a href="/admin/users" class="px-4 py-2 rounded text-sm border text-gray-600 hover:bg-gray-50">Clear</a>
-        @endif
-    </form>
+    {{-- Search & Filters --}}
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+        {{-- Search --}}
+        <form method="GET" class="flex gap-2 max-w-md w-full">
+            @if(request('role'))<input type="hidden" name="role" value="{{ request('role') }}">@endif
+            @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
+            <div class="relative flex-1">
+                <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input type="text" name="search" value="{{ $search }}"
+                    placeholder="Search by name or email..."
+                    class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xs">
+            </div>
+            <button type="submit" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-slate-800 transition shadow-xs">Search</button>
+            @if($search)
+            <a href="/admin/users" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 flex items-center">Clear</a>
+            @endif
+        </form>
 
-    {{-- Filters --}}
-    <div class="flex gap-2 mb-4 flex-wrap">
-        <a href="/admin/users"
-            class="px-4 py-2 rounded text-sm {{ !request('role') && !request('status') ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
-            All ({{ $totalUsers }})
-        </a>
-        @foreach(['admin','staff','coordinator','corporate','individual'] as $r)
-        <a href="/admin/users?role={{ $r }}"
-            class="px-4 py-2 rounded text-sm capitalize {{ request('role') === $r ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
-            {{ ucfirst($r) }}
-        </a>
-        @endforeach
-        <a href="/admin/users?status=inactive"
-            class="px-4 py-2 rounded text-sm {{ request('status') === 'inactive' ? 'bg-red-500 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50' }}">
-            Inactive
-        </a>
+        {{-- Filters --}}
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <a href="/admin/users"
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ !request('role') && !request('status') ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                All ({{ $totalUsers }})
+            </a>
+            @foreach(['admin','staff','coordinator','corporate','individual'] as $r)
+            <a href="/admin/users?role={{ $r }}"
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border capitalize {{ request('role') === $r ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                {{ ucfirst($r) }}
+            </a>
+            @endforeach
+            <a href="/admin/users?status=inactive"
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'inactive' ? 'bg-rose-600 text-white border-rose-600 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                Inactive
+            </a>
+        </div>
     </div>
 
     {{-- User List --}}
-    <div class="bg-white rounded-lg shadow p-6">
-        <table class="w-full text-sm">
+    <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs overflow-hidden mb-6">
+        <div class="overflow-x-auto">
+        <table class="w-full text-left">
             <thead>
-                <tr class="text-left text-gray-500 border-b">
-                    <th class="pb-2 pr-4">Name</th>
-                    <th class="pb-2 pr-4">Email</th>
-                    <th class="pb-2 pr-4">Contact</th>
-                    <th class="pb-2 pr-4">Role</th>
-                    <th class="pb-2 pr-4">Status</th>
-                    <th class="pb-2 pr-4">Joined</th>
-                    <th class="pb-2 w-12">Action</th>
+                <tr class="bg-gray-50/80 text-xs font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-100">
+                    <th class="px-5 py-3.5">User Identity</th>
+                    <th class="px-5 py-3.5">Email Address</th>
+                    <th class="px-5 py-3.5">Contact No.</th>
+                    <th class="px-5 py-3.5">Assigned Role</th>
+                    <th class="px-5 py-3.5">Account Status</th>
+                    <th class="px-5 py-3.5">Registered</th>
+                    <th class="px-5 py-3.5 text-right w-16">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-gray-100">
                 @forelse($users as $user)
-                <tr class="border-b hover:bg-gray-50 {{ $user->status === 'inactive' ? 'opacity-60' : '' }}">
-                    <td class="py-3 pr-4">
+                <tr class="hover:bg-gray-50/60 transition {{ $user->status === 'inactive' ? 'opacity-60 bg-gray-50/40' : '' }}">
+                    <td class="px-5 py-4">
                         <a href="/admin/users/{{ $user->id }}"
-                            class="font-medium text-blue-600 hover:underline">{{ $user->name }}</a>
+                            class="font-bold text-sm text-gray-900 hover:text-blue-600 transition">{{ $user->name }}</a>
                         @if($user->username)
                         <p class="text-xs text-gray-400">@ {{ $user->username }}</p>
                         @endif
                     </td>
-                    <td class="py-3 pr-4 text-gray-500">{{ $user->email }}</td>
-                    <td class="py-3 pr-4 text-gray-500">{{ $user->contact_no ?? '—' }}</td>
-                    <td class="py-3 pr-4">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium
-                            {{ $user->role === 'admin'       ? 'bg-purple-100 text-purple-700' :
-                              ($user->role === 'staff'       ? 'bg-blue-100 text-blue-700' :
-                              ($user->role === 'coordinator' ? 'bg-cyan-100 text-cyan-700' :
-                              ($user->role === 'corporate'   ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-green-100 text-green-700'))) }}">
+                    <td class="px-5 py-4 text-xs font-medium text-gray-600">{{ $user->email }}</td>
+                    <td class="px-5 py-4 text-xs font-medium text-gray-600 font-mono">{{ $user->contact_no ?? '—' }}</td>
+                    <td class="px-5 py-4">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold border
+                            {{ $user->role === 'admin'       ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                              ($user->role === 'staff'       ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              ($user->role === 'coordinator' ? 'bg-cyan-50 text-cyan-700 border-cyan-200' :
+                              ($user->role === 'corporate'   ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-emerald-50 text-emerald-700 border-emerald-200'))) }}">
                             {{ ucfirst($user->role) }}
                         </span>
                         @if($user->role === 'staff' && $user->staff_role_label)
-                        <p class="text-xs text-gray-400 mt-1">{{ $user->staff_role_label }}</p>
+                        <p class="text-xs font-semibold text-gray-500 mt-1">{{ $user->staff_role_label }}</p>
                         @endif
                         @if($user->role === 'staff' && !empty($user->permissions))
                         <div class="flex flex-wrap gap-1 mt-1">
                             @foreach($user->permissions as $perm)
-                            <span class="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full">{{ \App\Models\User::PERMISSIONS[$perm] ?? $perm }}</span>
+                            <span class="text-[10px] font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">{{ \App\Models\User::PERMISSIONS[$perm] ?? $perm }}</span>
                             @endforeach
                         </div>
                         @endif
                     </td>
-                    <td class="py-3 pr-4">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium
-                            {{ $user->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                    <td class="px-5 py-4">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border
+                            {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200' }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ $user->status === 'active' ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
                             {{ ucfirst($user->status) }}
                         </span>
                     </td>
-                    <td class="py-3 pr-4 text-gray-500">{{ $user->created_at->format('d M Y') }}</td>
-                    <td class="py-3">
-                        <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
-                            <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
+                    <td class="px-5 py-4 text-xs font-medium text-gray-500">{{ $user->created_at->format('d M Y') }}</td>
+                    <td class="px-5 py-4 text-right">
+                        <div class="relative inline-block text-left" x-data="{ open: false, dropUp: false }" @click.outside="open = false">
+                            <button @click="open = !open; if(open) { dropUp = ($el.getBoundingClientRect().bottom + 180 > window.innerHeight); }" class="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-600 transition">
                                 <i data-lucide="more-vertical" class="w-4 h-4"></i>
                             </button>
                             <div x-show="open" x-transition
-                                class="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border py-1 z-20"
+                                :class="dropUp ? 'bottom-full mb-1' : 'top-full mt-1'"
+                                class="absolute right-0 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-30 text-left"
                                 style="display:none">
                                 <a href="/admin/users/{{ $user->id }}"
-                                    class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                    class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">
                                     <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-400"></i> View Profile
                                 </a>
                                 @if($user->role === 'staff')
                                 <button type="button"
                                     @click="open = false; const row = document.getElementById('specialty-row-{{ $user->id }}'); row.style.display = row.style.display === 'none' ? 'table-row' : 'none';"
-                                    class="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50">
+                                    class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50">
                                     <i data-lucide="wrench" class="w-3.5 h-3.5"></i> Edit Specialties
                                 </button>
                                 @endif
@@ -123,7 +137,7 @@
                                 <form method="POST" action="/admin/users/{{ $user->id }}/toggle">
                                     @csrf @method('PATCH')
                                     <button type="submit"
-                                        class="w-full flex items-center gap-2 px-4 py-2 text-sm {{ $user->status === 'active' ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50' }}">
+                                        class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold {{ $user->status === 'active' ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50' }}">
                                         <i data-lucide="{{ $user->status === 'active' ? 'user-x' : 'user-check' }}" class="w-3.5 h-3.5"></i>
                                         {{ $user->status === 'active' ? 'Deactivate' : 'Activate' }}
                                     </button>
@@ -132,12 +146,12 @@
                                     onsubmit="return confirmSubmit(event, {title:'Delete user?', message:'This will permanently delete {{ addslashes($user->name) }} ({{ addslashes($user->email) }}). This cannot be undone.', confirmLabel:'Delete User'})">
                                     @csrf @method('DELETE')
                                     <button type="submit"
-                                        class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                                        class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 border-t border-gray-100">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-500"></i> Delete
                                     </button>
                                 </form>
                                 @else
-                                <p class="px-4 py-2 text-xs text-gray-400 italic border-t">This is you</p>
+                                <p class="px-4 py-2 text-xs text-gray-400 italic border-t border-gray-100">Current User (You)</p>
                                 @endif
                             </div>
                         </div>
@@ -145,35 +159,35 @@
                 </tr>
                 @if($user->role === 'staff')
                 {{-- Collapsible specialties row --}}
-                <tr class="bg-gray-50 border-b" id="specialty-row-{{ $user->id }}" style="display: none;">
-                    <td colspan="7" class="px-4 py-3">
+                <tr class="bg-gray-50/70 border-b border-gray-100" id="specialty-row-{{ $user->id }}" style="display: none;">
+                    <td colspan="7" class="px-5 py-4">
                         <form method="POST" action="/admin/users/{{ $user->id }}/specialties"
                             class="flex items-start gap-4 flex-wrap">
                             @csrf
                             <div class="flex-1">
-                                <p class="text-xs font-semibold text-gray-600 mb-2">
-                                    Specialties for {{ $user->name }}
-                                    <span class="text-gray-400 font-normal">(select all job types this staff can handle)</span>
+                                <p class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                    Assigned Specialties for {{ $user->name }}
+                                    <span class="text-gray-400 font-normal lowercase">(job types handled by mechanic)</span>
                                 </p>
                                 @if(isset($jobTypes) && $jobTypes->count())
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
                                     @foreach($jobTypes as $jt)
-                                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                                    <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer bg-white p-2 rounded-lg border border-gray-200">
                                         <input type="checkbox" name="specialties[]"
                                             value="{{ $jt->id }}"
                                             {{ is_array($user->specialties) && in_array($jt->id, $user->specialties) ? 'checked' : '' }}
-                                            class="rounded border-gray-300 text-blue-600">
-                                        {{ $jt->name }}
-                                        <span class="text-gray-400">({{ $jt->category }})</span>
+                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <span class="font-medium">{{ $jt->name }}</span>
+                                        <span class="text-gray-400 text-[11px]">({{ $jt->category }})</span>
                                     </label>
                                     @endforeach
                                 </div>
                                 @else
-                                <p class="text-sm text-gray-400">No job types defined. Please create job types first.</p>
+                                <p class="text-xs text-gray-400">No job types configured yet.</p>
                                 @endif
                             </div>
                             <button type="submit"
-                                class="bg-blue-600 text-white px-4 py-1.5 rounded text-xs hover:bg-blue-700 shrink-0 mt-4">
+                                class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-slate-800 shrink-0 mt-4 shadow-xs">
                                 Save Specialties
                             </button>
                         </form>
@@ -181,12 +195,15 @@
                 </tr>
                 @endif
                 @empty
-                <tr><td colspan="7" class="py-6 text-center text-gray-400">No users found.</td></tr>
+                <tr><td colspan="7" class="py-12 text-center">
+                    <x-empty-state icon="users" title="No users found" subtitle="Try clearing search or filters to see all accounts." />
+                </td></tr>
                 @endforelse
             </tbody>
         </table>
+        </div>
         @if($users->hasPages())
-        <div class="mt-4 pt-4 border-t">
+        <div class="px-5 py-4 border-t border-gray-100 bg-gray-50/50">
             {{ $users->links() }}
         </div>
         @endif

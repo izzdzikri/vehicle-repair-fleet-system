@@ -9,6 +9,32 @@ class Vehicle extends Model {
     public function owner() {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function isFleet(): bool {
+        return $this->owner && $this->owner->role === 'corporate';
+    }
+
+    public function isIndividual(): bool {
+        return !$this->isFleet();
+    }
+
+    public function getOwnerTypeLabelAttribute(): string {
+        return $this->isFleet() ? 'Corporate Fleet' : 'Individual Customer';
+    }
+
+    public function getOwnerDisplayNameAttribute(): string {
+        if (!$this->owner) {
+            return 'Unassigned Owner';
+        }
+        if ($this->isFleet() && $this->owner->company) {
+            return $this->owner->company->name . ' (PIC: ' . $this->owner->name . ')';
+        }
+        return $this->owner->name;
+    }
+
+    public function getCompanyAttribute() {
+        return ($this->owner && $this->owner->company) ? $this->owner->company : null;
+    }
     public function appointments() {
         return $this->hasMany(Appointment::class);
     }

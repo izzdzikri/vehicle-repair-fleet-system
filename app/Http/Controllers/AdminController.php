@@ -34,18 +34,52 @@ class AdminController extends Controller
                 $q->where('current_stage','!=','completed');
             }])->get();
 
+        $totalVehicles = Vehicle::count();
+        $urgentAlerts  = \App\Models\MaintenanceAlert::where('urgency', 'high')->where('is_read', false)->count();
+        $mediumAlerts  = \App\Models\MaintenanceAlert::where('urgency', 'medium')->where('is_read', false)->count();
+        $lowAlerts     = \App\Models\MaintenanceAlert::where('urgency', 'low')->where('is_read', false)->count();
+
+        $upcomingPredictions = \App\Models\MaintenanceAlert::with(['vehicle.owner', 'jobType'])
+            ->where('is_read', false)
+            ->orderByRaw("FIELD(urgency, 'high', 'medium', 'low')")
+            ->orderBy('predicted_due_date')
+            ->take(6)
+            ->get();
+
+        // Calculate fleet health index percentage
+        $vehiclesAtRisk = \App\Models\MaintenanceAlert::whereIn('urgency', ['high', 'medium'])
+            ->where('is_read', false)
+            ->distinct('vehicle_id')
+            ->count('vehicle_id');
+        $fleetHealthScore = $totalVehicles > 0
+            ? max(0, min(100, round((($totalVehicles - $vehiclesAtRisk) / $totalVehicles) * 100)))
+            : 100;
+
+        // Predictive Part Demand & Off-Season Savings (Admin Only)
+        $predictionService = app(MaintenancePredictionService::class);
+        $demandForecast = $predictionService->getDemandForecast(60);
+        $offSeasonSavings = $predictionService->getOffSeasonSavingsAnalysis($demandForecast);
+
         return view('admin.dashboard', [
-            'totalVehicles'     => Vehicle::count(),
-            'totalUsers'        => User::count(),
-            'pendingJobs'       => JobCard::where('current_stage','!=','completed')->count(),
-            'lowStock'          => SparePart::whereColumn('stock','<=','min_stock')->count(),
-            'todayAppointments' => Appointment::whereDate('date', today())->count(),
-            'pendingAppts'      => Appointment::where('status','pending')->count(),
-            'staleJobs'         => JobCard::where('current_stage', '!=', 'completed')
+            'totalVehicles'       => $totalVehicles,
+            'totalUsers'          => User::count(),
+            'pendingJobs'         => JobCard::where('current_stage','!=','completed')->count(),
+            'lowStock'            => SparePart::whereColumn('stock','<=','min_stock')->count(),
+            'todayAppointments'   => Appointment::whereDate('date', today())->count(),
+            'pendingAppts'        => Appointment::where('status','pending')->count(),
+            'staleJobs'           => JobCard::where('current_stage', '!=', 'completed')
                                        ->where('updated_at', '<', now()->subHours(3))
                                        ->count(),
-            'recentJobs'        => $recentJobs,
-            'staffWorkload'     => $staffWorkload,
+            'recentJobs'          => $recentJobs,
+            'staffWorkload'       => $staffWorkload,
+            'urgentAlerts'        => $urgentAlerts,
+            'mediumAlerts'        => $mediumAlerts,
+            'lowAlerts'           => $lowAlerts,
+            'upcomingPredictions' => $upcomingPredictions,
+            'fleetHealthScore'    => $fleetHealthScore,
+            'vehiclesAtRisk'      => $vehiclesAtRisk,
+            'demandForecast'      => $demandForecast,
+            'offSeasonSavings'    => $offSeasonSavings,
         ]);
     }
 
@@ -327,5 +361,212 @@ class AdminController extends Controller
     public function activityLog() {
         $logs = ActivityLog::with('user')->latest()->paginate(30);
         return view('admin.activity-log', compact('logs'));
+    }
+
+    /**
+     * Prediction Engine Proofreading & Audit Workspace.
+     * Allows workshop administrators and academic reviewers to transparently inspect
+     * predictive telemetry, backtest accuracy metrics, review empirical derivations,
+     * verify predictions, or override due dates with audit justifications.
+     */
+    public function proofreadPredictions(Request $request) {
+        $predictionService = app(MaintenancePredictionService::class);
+
+        // Run backtest evaluation
+        $backtest = $predictionService->evaluate();
+
+        // Get demand and procurement forecast
+        $forecast = $predictionService->getDemandForecast(60);
+        $offSeasonSavings = $predictionService->getOffSeasonSavingsAnalysis($forecast);
+
+        // Check if migration has been executed
+        $hasVerificationColumns = false;
+        try {
+            $hasVerificationColumns = \Illuminate\Support\Facades\Schema::hasColumn('maintenance_alerts', 'is_verified');
+        } catch (\Throwable $e) {
+            $hasVerificationColumns = false;
+        }
+
+        // Query all active predicted alerts with vehicle, owner, company, and optional verifier relations
+        $withRelations = ['vehicle.owner.company', 'jobType'];
+        if ($hasVerificationColumns) {
+            $withRelations[] = 'verifier';
+        }
+
+        $query = \App\Models\MaintenanceAlert::with($withRelations)
+            ->where('source', 'predicted');
+
+        $statusFilter = $request->input('filter', 'all');
+        if ($statusFilter === 'verified') {
+            if ($hasVerificationColumns) {
+                $query->where('is_verified', true);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        } elseif ($statusFilter === 'pending') {
+            if ($hasVerificationColumns) {
+                $query->where('is_verified', false);
+            }
+        } elseif ($statusFilter === 'overridden') {
+            if ($hasVerificationColumns) {
+                $query->where(function($q) {
+                    $q->whereNotNull('overridden_due_date')->orWhereNotNull('overridden_urgency');
+                });
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        $search = trim((string) $request->input('search'));
+        if ($search !== '') {
+            $query->whereHas('vehicle', function($q) use ($search) {
+                $q->where('plate_number', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%")
+                  ->orWhere('model', 'like', "%{$search}%");
+            });
+        }
+
+        $alerts = $query->orderByRaw("FIELD(urgency, 'high', 'medium', 'low')")
+            ->orderBy('predicted_due_date')
+            ->paginate(25)
+            ->withQueryString();
+
+        $totalPredictions = \App\Models\MaintenanceAlert::where('source', 'predicted')->count();
+        $verifiedCount = 0;
+        $pendingCount = $totalPredictions;
+        $overriddenCount = 0;
+
+        if ($hasVerificationColumns) {
+            try {
+                $verifiedCount = \App\Models\MaintenanceAlert::where('source', 'predicted')->where('is_verified', true)->count();
+                $pendingCount = \App\Models\MaintenanceAlert::where('source', 'predicted')->where('is_verified', false)->count();
+                $overriddenCount = \App\Models\MaintenanceAlert::where('source', 'predicted')->where(function($q) {
+                    $q->whereNotNull('overridden_due_date')->orWhereNotNull('overridden_urgency');
+                })->count();
+            } catch (\Throwable $e) {
+                $verifiedCount = 0;
+                $pendingCount = $totalPredictions;
+                $overriddenCount = 0;
+            }
+        }
+
+        $stats = [
+            'total_predictions' => $totalPredictions,
+            'verified_count'    => $verifiedCount,
+            'pending_count'     => $pendingCount,
+            'overridden_count'  => $overriddenCount,
+        ];
+
+        return view('admin.predictions.proofread', compact(
+            'alerts', 'backtest', 'forecast', 'offSeasonSavings', 'stats', 'statusFilter', 'search', 'hasVerificationColumns'
+        ));
+    }
+
+    /**
+     * Mark a prediction as human-verified and accurate.
+     */
+    public function verifyPrediction(Request $request, \App\Models\MaintenanceAlert $alert) {
+        $hasVerificationColumns = false;
+        try {
+            $hasVerificationColumns = \Illuminate\Support\Facades\Schema::hasColumn('maintenance_alerts', 'is_verified');
+        } catch (\Throwable $e) {}
+
+        if (!$hasVerificationColumns) {
+            return back()->with('error', 'Database migration required: please run "php artisan migrate" in your terminal first to activate prediction verification.');
+        }
+
+        $alert->update([
+            'is_verified' => true,
+            'verified_by' => auth()->id(),
+            'verified_at' => now(),
+            'admin_notes' => $request->input('admin_notes') ?: 'Confirmed accurate by workshop administrator after telemetry audit.',
+        ]);
+
+        ActivityLog::record(
+            'prediction.verified',
+            "Administrator verified prediction for vehicle {$alert->vehicle?->plate_number} ({$alert->alert_type})"
+        );
+
+        return back()->with('success', "Prediction for {$alert->vehicle?->plate_number} successfully verified.");
+    }
+
+    /**
+     * Override / adjust a predicted due date or urgency with justification note.
+     */
+    public function adjustPrediction(Request $request, \App\Models\MaintenanceAlert $alert) {
+        $hasVerificationColumns = false;
+        try {
+            $hasVerificationColumns = \Illuminate\Support\Facades\Schema::hasColumn('maintenance_alerts', 'is_verified');
+        } catch (\Throwable $e) {}
+
+        if (!$hasVerificationColumns) {
+            return back()->with('error', 'Database migration required: please run "php artisan migrate" in your terminal first to activate prediction parameter overrides.');
+        }
+
+        $request->validate([
+            'overridden_due_date' => 'nullable|date',
+            'overridden_urgency'  => 'nullable|in:low,medium,high',
+            'admin_notes'         => 'required|string|max:1000',
+        ]);
+
+        $alert->update([
+            'overridden_due_date' => $request->overridden_due_date ?: null,
+            'overridden_urgency'  => $request->overridden_urgency ?: null,
+            'admin_notes'         => $request->admin_notes,
+            'is_verified'         => true,
+            'verified_by'         => auth()->id(),
+            'verified_at'         => now(),
+        ]);
+
+        ActivityLog::record(
+            'prediction.adjusted',
+            "Administrator adjusted prediction for vehicle {$alert->vehicle?->plate_number}: {$request->admin_notes}"
+        );
+
+        return back()->with('success', "Prediction parameters adjusted and verified for {$alert->vehicle?->plate_number}.");
+    }
+
+    /**
+     * Auto-draft a Purchase Order from the predictive shortfall forecast with off-season discount support.
+     */
+    public function draftForecastPurchaseOrder(Request $request) {
+        $request->validate([
+            'spare_part_id' => 'required|exists:spare_parts,id',
+            'quantity'      => 'required|integer|min:1',
+            'unit_cost'     => 'nullable|numeric|min:0.01',
+            'is_off_season' => 'nullable|boolean',
+        ]);
+
+        $part = \App\Models\SparePart::findOrFail($request->spare_part_id);
+        $supplier = \App\Models\Supplier::where('name', $part->supplier_name)->first()
+            ?? \App\Models\Supplier::first();
+
+        $unitCost = $request->unit_cost ?: (float) $part->unit_price;
+        $isOffSeason = (bool) $request->input('is_off_season', false);
+
+        $notes = $isOffSeason
+            ? "Auto-drafted: Locked in Off-Season Supplier Discount (RM " . number_format($unitCost, 2) . "/unit vs regular RM " . number_format($part->unit_price, 2) . ")."
+            : "Auto-drafted from Predictive Maintenance Demand Forecast shortfall analysis.";
+
+        $po = \App\Models\PurchaseOrder::create([
+            'supplier_id'    => $supplier?->id,
+            'spare_part_id'  => $part->id,
+            'quantity'       => $request->quantity,
+            'unit_cost'      => $unitCost,
+            'status'         => 'draft',
+            'auto_generated' => true,
+            'notes'          => $notes,
+            'created_by'     => auth()->id(),
+        ]);
+
+        ActivityLog::record(
+            'purchase_order.auto_drafted',
+            "Auto-drafted PO #{$po->id} for {$part->name} ({$request->quantity} units) " . ($isOffSeason ? 'with Off-Season Discount' : '')
+        );
+
+        $savedMsg = $isOffSeason ? " with locked-in off-season discount rate (RM " . number_format($unitCost, 2) . "/unit)" : "";
+
+        return redirect('/admin/purchase-orders')
+            ->with('success', "Purchase Order #{$po->id} auto-drafted for {$part->name} ({$request->quantity} units){$savedMsg}.");
     }
 }

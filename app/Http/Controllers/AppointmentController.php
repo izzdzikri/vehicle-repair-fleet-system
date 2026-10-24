@@ -18,7 +18,7 @@ class AppointmentController extends Controller
         $search  = trim((string) $request->input('search'));
         $perPage = 15;
 
-        if ($user->role === 'admin') {
+        if (in_array($user->role, ['admin', 'coordinator'])) {
             $base = Appointment::query();
         } elseif ($user->role === 'corporate') {
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
@@ -63,13 +63,13 @@ class AppointmentController extends Controller
     public function show(Appointment $appointment) {
     $user = auth()->user();
 
-    if ($user->role !== 'admin') {
+    if (!in_array($user->role, ['admin', 'coordinator'])) {
         $this->authorizeAppointmentAccess($appointment, $user);
     }
 
     $appointment->load(['vehicle', 'user', 'jobCard']);
 
-    if ($user->role === 'admin') {
+    if (in_array($user->role, ['admin', 'coordinator'])) {
         session(['viewed_appointment_' . $appointment->id => true]);
     }
 
@@ -160,7 +160,7 @@ class AppointmentController extends Controller
                 'You can only book appointments for your own vehicles.');
         }
 
-        Appointment::create([
+        $appointment = Appointment::create([
             'user_id'      => $user->id,
             'vehicle_id'   => $request->vehicle_id,
             'date'         => $request->date,
@@ -170,6 +170,8 @@ class AppointmentController extends Controller
             'status'       => 'pending',
             'is_walkin'    => false,
         ]);
+
+        $this->notifyStatus($appointment, 'Submitted');
 
         $redirect = $user->role === 'corporate'
             ? '/client/dashboard'
@@ -227,7 +229,16 @@ class AppointmentController extends Controller
             'walkin_contact' => $request->walkin_contact,
         ]);
 
-        return redirect('/admin/appointments/' . $appointment->id)
+        $rolePrefix = match(auth()->user()->role) {
+            'coordinator' => 'coordinator',
+            'staff'       => 'staff',
+            default       => 'admin',
+        };
+        $redirect = ($rolePrefix === 'staff')
+            ? '/staff/appointments/queue'
+            : "/{$rolePrefix}/appointments/{$appointment->id}";
+
+        return redirect($redirect)
             ->with('success', 'Walk-in appointment created and confirmed.');
     }
 

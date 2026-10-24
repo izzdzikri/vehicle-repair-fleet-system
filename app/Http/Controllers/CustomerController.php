@@ -25,6 +25,7 @@ class CustomerController extends Controller
             ->get();
 
         $totalServices = ServiceHistory::whereIn('vehicle_id', $vehicleIds)->count();
+        $totalSpent    = ServiceHistory::whereIn('vehicle_id', $vehicleIds)->sum('cost');
 
         // Maintenance alerts for this customer's vehicles
         $maintenanceAlerts = MaintenanceAlert::with('vehicle')
@@ -36,7 +37,7 @@ class CustomerController extends Controller
 
         return view('customer.dashboard', compact(
             'vehicles', 'appointments', 'serviceHistory',
-            'totalServices', 'maintenanceAlerts'
+            'totalServices', 'totalSpent', 'maintenanceAlerts'
         ));
     }
 }

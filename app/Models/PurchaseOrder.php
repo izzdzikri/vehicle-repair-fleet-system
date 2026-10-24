@@ -28,4 +28,20 @@ class PurchaseOrder extends Model
     public function creator() {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function getPoNumberAttribute(): string {
+        return sprintf('PO-%05d', $this->id);
+    }
+
+    public function getTotalCostAttribute(): float {
+        return (float) ($this->quantity * ($this->unit_cost ?? 0));
+    }
+
+    public function isActive(): bool {
+        return in_array($this->status, ['draft', 'ordered']);
+    }
+
+    public function isCompleted(): bool {
+        return in_array($this->status, ['received', 'cancelled']);
+    }
 }

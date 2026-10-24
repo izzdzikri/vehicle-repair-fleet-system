@@ -11,10 +11,21 @@ class PurchaseOrderController extends Controller
     public function index() {
         $this->autoGenerate();
 
-        $orders    = PurchaseOrder::with(['sparePart', 'supplier', 'creator'])->latest()->get();
-        $suppliers = Supplier::orderBy('name')->get();
+        $orders     = PurchaseOrder::with(['sparePart', 'supplier', 'creator'])->latest()->get();
+        $suppliers  = Supplier::orderBy('name')->get();
+        $spareParts = SparePart::orderBy('name')->get();
 
-        return view('purchase-orders.index', compact('orders', 'suppliers'));
+        $activeOrders    = $orders->whereIn('status', ['draft', 'ordered']);
+        $completedOrders = $orders->whereIn('status', ['received', 'cancelled']);
+
+        $stats = [
+            'total'          => $orders->count(),
+            'active_count'   => $activeOrders->count(),
+            'received_count' => $orders->where('status', 'received')->count(),
+            'total_spend'    => (float) $orders->where('status', 'received')->sum(fn($po) => $po->quantity * ($po->unit_cost ?? 0)),
+        ];
+
+        return view('purchase-orders.index', compact('orders', 'suppliers', 'spareParts', 'activeOrders', 'completedOrders', 'stats'));
     }
 
     private function autoGenerate(): void {
@@ -87,11 +98,25 @@ class PurchaseOrderController extends Controller
 
         $purchaseOrder->sparePart->increment('stock', $purchaseOrder->quantity);
 
-        return back()->with('success', "Stock received — {$purchaseOrder->sparePart->name} +{$purchaseOrder->quantity} units.");
+        return back()->with('success', "Stock received — {$purchaseOrder->sparePart->name} +{$purchaseOrder->quantity} units. Moved to Completed History (Invoice ready to print).");
     }
 
     public function cancel(PurchaseOrder $purchaseOrder) {
         $purchaseOrder->update(['status' => 'cancelled']);
         return back()->with('success', 'Purchase order cancelled.');
+    }
+
+    public function invoice(PurchaseOrder $purchaseOrder) {
+        $purchaseOrder->load(['sparePart', 'supplier', 'creator']);
+        return view('purchase-orders.invoice', compact('purchaseOrder'));
+    }
+
+    public function downloadPdf(PurchaseOrder $purchaseOrder) {
+        $purchaseOrder->load(['sparePart', 'supplier', 'creator']);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('purchase-orders.pdf', compact('purchaseOrder'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'PurchaseOrder-' . $purchaseOrder->po_number . '.pdf';
+        return $pdf->download($filename);
     }
 }

@@ -3,19 +3,35 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto">
-    <a href="/admin/appointments" class="text-sm text-blue-600 hover:underline">← Back to Appointments</a>
+    <a href="/admin/appointments"
+        class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-gray-900 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-xs mb-4 transition">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Appointments
+    </a>
 
-    <div class="bg-white rounded-lg shadow p-6 mt-4">
-        <h2 class="text-lg font-semibold text-gray-700 mb-6">Create New Job Card</h2>
+    <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-7">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <i data-lucide="wrench" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">Create & Assign Job Card</h2>
+                <p class="text-xs font-medium text-gray-500 mt-0.5">Initialize repair order, assign technician, and link parts</p>
+            </div>
+        </div>
 
         @if($appointments->isEmpty())
-        <div class="bg-yellow-50 border border-yellow-200 rounded p-4 text-sm text-yellow-700">
-            No confirmed appointments available.
-            <a href="/admin/appointments" class="underline font-medium">Go confirm an appointment first →</a>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm font-medium text-amber-900 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600"></i>
+                <span>No confirmed appointments available for job card dispatch.</span>
+            </div>
+            <a href="/admin/appointments" class="text-xs font-bold text-amber-800 hover:underline">
+                Review Appointments &rarr;
+            </a>
         </div>
         @else
 
-        <form method="POST" action="/admin/job-cards" class="space-y-5"
+        <form method="POST" action="/admin/job-cards" class="space-y-4"
             x-data="{
                 selectedJobType: '',
                 allStaff: {{ $staff->map(fn($s) => [
@@ -71,18 +87,17 @@
 
             {{-- Appointment --}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Appointment <span class="text-red-500">*</span>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                    Confirmed Appointment <span class="text-rose-500">*</span>
                 </label>
                 <select name="appointment_id"
-                    class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                     required>
-                    <option value="">Select confirmed appointment</option>
+                    <option value="">Select confirmed appointment...</option>
                     @foreach($appointments as $apt)
                     <option value="{{ $apt->id }}"
                         {{ request('appointment_id') == $apt->id ? 'selected' : '' }}>
-                        #{{ $apt->id }}
-                        — {{ $apt->vehicle->plate_number ?? '?' }}
+                        #{{ $apt->id }} — {{ $apt->vehicle->plate_number ?? '?' }}
                         | {{ $apt->service_type }}
                         | {{ \Carbon\Carbon::parse($apt->date)->format('d M Y') }} {{ $apt->time }}
                         | {{ $apt->is_walkin ? 'Walk-in: '.$apt->walkin_name : ($apt->user->name ?? '?') }}
@@ -93,11 +108,11 @@
 
             {{-- Job Type --}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Job Type & Standard Rate</label>
                 <select name="job_type_id"
                     x-model="selectedJobType"
-                    class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="">Select job type (optional)</option>
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                    <option value="">Select standard job type (optional)...</option>
                     @foreach($jobTypes->groupBy('category') as $cat => $types)
                     <optgroup label="{{ $cat }}">
                         @foreach($types as $jt)
@@ -117,33 +132,33 @@
                 </select>
 
                 {{-- Job type info pill --}}
-                <div x-show="selectedJobType" class="mt-2 flex gap-2 flex-wrap">
-                    <span class="text-xs bg-blue-50 border border-blue-200 text-blue-700 px-2 py-1 rounded-full">
+                <div x-show="selectedJobType" class="mt-2.5 flex gap-2 flex-wrap" style="display:none">
+                    <span class="text-xs bg-blue-50 border border-blue-200 text-blue-700 px-2.5 py-1 rounded-md font-bold">
                         ⏱ Est: <span x-text="estimatedTime"></span>
                     </span>
-                    <span class="text-xs bg-green-50 border border-green-200 text-green-700 px-2 py-1 rounded-full">
-                        Base labour: <span x-text="basePrice"></span>
+                    <span class="text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded-md font-bold">
+                        Base Labour: <span x-text="basePrice"></span>
                     </span>
                 </div>
             </div>
 
             {{-- Assign Staff --}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Assign to Staff <span class="text-red-500">*</span>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                    Assign Technician / Mechanic <span class="text-rose-500">*</span>
                 </label>
 
                 @if($staff->isEmpty())
-                <div class="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-600">
-                    No staff accounts found.
-                    <a href="/admin/users" class="underline">Add a staff user first →</a>
+                <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 text-sm text-rose-700 font-medium">
+                    No active staff accounts found in database.
+                    <a href="/admin/users" class="underline font-bold ml-1">Create a staff account first &rarr;</a>
                 </div>
                 @else
 
                 <select name="staff_id"
-                    class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                     required>
-                    <option value="">Select staff member</option>
+                    <option value="">Select technician...</option>
                     <template x-for="s in filteredStaff" :key="s.id">
                         <option :value="s.id"
                             x-text="s.name + ' (' + s.active_jobs + ' active job' + (s.active_jobs !== 1 ? 's' : '') + ')'">
@@ -152,20 +167,18 @@
                 </select>
 
                 {{-- Staff filter status --}}
-                <div class="mt-1.5 space-y-0.5">
-                    <p class="text-xs text-blue-500"
+                <div class="mt-2 text-xs">
+                    <p class="text-blue-600 font-semibold"
                         x-show="selectedJobType && hasSpecialtyMatch">
-                        ✓ Showing <span x-text="filteredStaff.length"></span>
-                        staff matched to this job type's specialty
+                        ✓ Showing <span x-text="filteredStaff.length"></span> technician(s) matching this job specialty
                     </p>
-                    <p class="text-xs text-orange-500"
+                    <p class="text-amber-600 font-semibold"
                         x-show="selectedJobType && !hasSpecialtyMatch">
-                        ⚠ No staff specialised in this job type — showing all
-                        <span x-text="filteredStaff.length"></span> staff
+                        ⚠ No technicians specialized in this task — showing all <span x-text="filteredStaff.length"></span> workshop staff
                     </p>
-                    <p class="text-xs text-gray-400"
+                    <p class="text-gray-400 font-medium"
                         x-show="!selectedJobType">
-                        Select a job type above to filter staff by specialty
+                        Select a job type above to filter mechanics by specialty
                     </p>
                 </div>
 
@@ -174,19 +187,21 @@
 
             {{-- Initial Diagnosis --}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Initial Diagnosis
-                    <span class="font-normal text-gray-400">(optional)</span>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                    Initial Diagnosis / Work Instructions
+                    <span class="font-normal text-gray-400 normal-case">(optional)</span>
                 </label>
                 <textarea name="diagnosis" rows="3"
-                    class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="e.g. Engine noise on startup, oil leak detected..."></textarea>
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="e.g. Engine ticking on idle, inspect brake pads and rotor wear..."></textarea>
             </div>
 
-            <button type="submit"
-                class="w-full bg-blue-600 text-white py-2.5 rounded hover:bg-blue-700 text-sm font-semibold">
-                Create & Assign Job Card
-            </button>
+            <div class="pt-3">
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-xs transition flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i> Dispatch & Create Job Card
+                </button>
+            </div>
         </form>
 
         @endif

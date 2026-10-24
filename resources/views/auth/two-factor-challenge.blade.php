@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Two-Factor Verification — Vehicle Repair System</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center"
@@ -12,14 +16,9 @@
     x-data="{ useRecovery: false }">
 
     <div class="mb-6 text-center">
-        <div class="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center mx-auto mb-3 shadow-lg"
-            style="box-shadow: 0 0 30px rgba(59,130,246,0.5);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
-                fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-        </div>
+        <img src="/images/logo-rounded.png" alt="Teraju Setia Enterprise"
+            class="w-16 h-16 rounded-2xl mx-auto mb-3 shadow-xl border border-white/20 object-cover"
+            style="box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
         <h1 class="text-2xl font-bold text-white tracking-tight">Two-Factor Verification</h1>
         <p class="text-blue-300 text-sm mt-1">Teraju Setia Enterprise</p>
     </div>

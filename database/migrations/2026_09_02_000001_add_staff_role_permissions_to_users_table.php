@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('staff_role', 30)->nullable()->after('role');
+            $table->string('staff_role', 100)->nullable()->after('role');
             $table->json('permissions')->nullable()->after('staff_role');
         });
     }

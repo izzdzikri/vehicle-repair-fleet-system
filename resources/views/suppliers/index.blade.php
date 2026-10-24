@@ -5,76 +5,84 @@
 
 <div x-data="{ showAdd: false, showEdit: false, supplier: {}, openEdit(s) { this.supplier = s; this.showEdit = true; } }">
 
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-semibold text-gray-700">
-            Suppliers
-            <span class="text-sm font-normal text-gray-400 ml-2">{{ $suppliers->count() }} total</span>
-        </h2>
+    <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Parts Vendors & Suppliers</h2>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                    {{ $suppliers->count() }} registered suppliers
+                </span>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">Vendor directory, contact persons, and purchase order records</p>
+        </div>
         <button @click="showAdd = true"
-            class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> Add Supplier
+            class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 transition shadow-xs flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add New Supplier
         </button>
     </div>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr class="text-left text-gray-500 border-b">
-                    <th class="px-4 py-3">Name</th>
-                    <th class="px-4 py-3">Contact</th>
-                    <th class="px-4 py-3">Phone</th>
-                    <th class="px-4 py-3">Email</th>
-                    <th class="px-4 py-3">Purchase Orders</th>
-                    <th class="px-4 py-3 w-12">Action</th>
+    <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs overflow-hidden">
+        <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-gray-50/80 text-xs font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-100">
+                    <th class="px-5 py-3.5">Company / Vendor</th>
+                    <th class="px-5 py-3.5">Contact Person</th>
+                    <th class="px-5 py-3.5">Phone Number</th>
+                    <th class="px-5 py-3.5">Email Address</th>
+                    <th class="px-5 py-3.5">Purchase Orders</th>
+                    <th class="px-5 py-3.5 text-right">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-gray-100">
                 @forelse($suppliers as $s)
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="px-4 py-3 font-medium">{{ $s->name }}</td>
-                    <td class="px-4 py-3 text-gray-500">{{ $s->contact_person ?? '—' }}</td>
-                    <td class="px-4 py-3 text-gray-500">{{ $s->phone ?? '—' }}</td>
-                    <td class="px-4 py-3 text-gray-500">{{ $s->email ?? '—' }}</td>
-                    <td class="px-4 py-3">
-                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">{{ $s->purchase_orders_count }}</span>
+                <tr class="hover:bg-gray-50/60 transition">
+                    <td class="px-5 py-4 font-bold text-sm text-gray-900">{{ $s->name }}</td>
+                    <td class="px-5 py-4 text-sm font-medium text-gray-700">{{ $s->contact_person ?? '—' }}</td>
+                    <td class="px-5 py-4 text-xs font-medium text-gray-600 font-mono">{{ $s->phone ?? '—' }}</td>
+                    <td class="px-5 py-4 text-xs font-medium text-gray-600">{{ $s->email ?? '—' }}</td>
+                    <td class="px-5 py-4">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-xs font-semibold">
+                            {{ $s->purchase_orders_count }} orders
+                        </span>
                     </td>
-                    <td class="px-4 py-3">
-                        <div class="relative inline-block text-left" x-data="{ open: false }" @click.outside="open = false">
-                            <button @click="open = !open" class="p-1.5 rounded hover:bg-gray-100 text-gray-500">
-                                <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                    <td class="px-5 py-4 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1.5">
+                            <button type="button"
+                                @click="openEdit({
+                                    id: {{ $s->id }},
+                                    name: '{{ addslashes($s->name) }}',
+                                    contact_person: '{{ addslashes($s->contact_person ?? '') }}',
+                                    phone: '{{ addslashes($s->phone ?? '') }}',
+                                    email: '{{ addslashes($s->email ?? '') }}',
+                                    address: '{{ addslashes($s->address ?? '') }}'
+                                })"
+                                class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5 text-gray-400"></i>
+                                <span>Edit</span>
                             </button>
-                            <div x-show="open" x-transition
-                                class="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border py-1 z-20"
-                                style="display:none">
-                                <button type="button"
-                                    @click="open = false; openEdit({
-                                        id: {{ $s->id }},
-                                        name: '{{ addslashes($s->name) }}',
-                                        contact_person: '{{ addslashes($s->contact_person ?? '') }}',
-                                        phone: '{{ addslashes($s->phone ?? '') }}',
-                                        email: '{{ addslashes($s->email ?? '') }}',
-                                        address: '{{ addslashes($s->address ?? '') }}'
-                                    })"
-                                    class="w-full flex items-center gap-2 px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50">
-                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                            <form method="POST" action="/admin/suppliers/{{ $s->id }}" class="inline"
+                                onsubmit="return confirmSubmit(event, {title:'Delete supplier?', message:'This will permanently delete {{ addslashes($s->name) }}. This cannot be undone.', confirmLabel:'Delete Supplier'})">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                    class="text-xs font-semibold bg-white border border-gray-200 text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-500"></i>
+                                    <span>Delete</span>
                                 </button>
-                                <form method="POST" action="/admin/suppliers/{{ $s->id }}"
-                                    onsubmit="return confirmSubmit(event, {title:'Delete supplier?', message:'This will permanently delete {{ addslashes($s->name) }}. This cannot be undone.', confirmLabel:'Delete Supplier'})">
-                                    @csrf @method('DELETE')
-                                    <button type="submit"
-                                        class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
-                                    </button>
-                                </form>
-                            </div>
+                            </form>
                         </div>
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="py-8 text-center text-gray-400">No suppliers yet.</td></tr>
+                <tr>
+                    <td colspan="6" class="py-12 text-center">
+                        <x-empty-state icon="truck" title="No suppliers registered" subtitle="Add your first supplier using the button above." />
+                    </td>
+                </tr>
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 
     {{-- Add Modal --}}

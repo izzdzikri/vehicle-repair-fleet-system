@@ -51,15 +51,30 @@
     <div class="header">
         <table class="header-table">
             <tr>
-                <td style="width:60%; vertical-align:top;">
-                    <div class="workshop-name">Teraju Setia Enterprise</div>
-                    <div class="workshop-meta">
-                        No 14, Jalan Perindustrian 7, Kawasan Perindustrian Senai<br>
-                        81400 Senai, Johor, Malaysia<br>
-                        Tel: 07-555 1234 &nbsp;|&nbsp; admin@terajusetia.my
-                    </div>
+                <td style="width:62%; vertical-align:top;">
+                    <table style="width:100%; border:none; border-collapse:collapse; margin:0; padding:0;">
+                        <tr>
+                            @php
+                                $logoPath = public_path('images/invoice-logo.png');
+                                $logoBase64 = file_exists($logoPath) ? base64_encode(file_get_contents($logoPath)) : null;
+                            @endphp
+                            @if($logoBase64)
+                            <td style="width:80px; vertical-align:top; padding-right:10px;">
+                                <img src="data:image/png;base64,{{ $logoBase64 }}" style="width:72px; height:auto;">
+                            </td>
+                            @endif
+                            <td style="vertical-align:top;">
+                                <div class="workshop-name">Teraju Setia Enterprise</div>
+                                <div class="workshop-meta">
+                                    No. 1, Jalan Malinja 2, Taman Perindustrian Matahari<br>
+                                    86000 Kluang, Johor Darul Ta'zim, Malaysia<br>
+                                    Tel: 07-787 8728 &nbsp;|&nbsp; admin@terajusetia.my
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
                 </td>
-                <td style="width:40%; vertical-align:top;">
+                <td style="width:38%; vertical-align:top;">
                     <div class="invoice-label">INVOICE</div>
                     <div class="invoice-number">{{ $invoice->invoice_number }}</div>
                     <div class="invoice-meta">
@@ -204,7 +219,7 @@
 
     {{-- Footer --}}
     <div class="footer">
-        <strong>Teraju Setia Enterprise</strong> &nbsp;|&nbsp; No 14, Jalan Perindustrian 7, 81400 Senai, Johor &nbsp;|&nbsp; Tel: 07-555 1234<br>
+        <strong>Teraju Setia Enterprise</strong> &nbsp;|&nbsp; No. 1, Jalan Malinja 2, Taman Perindustrian Matahari, 86000 Kluang, Johor &nbsp;|&nbsp; Tel: 07-787 8728<br>
         This invoice was generated electronically and is valid without a physical signature.<br>
         Thank you for choosing Teraju Setia Enterprise.
     </div>

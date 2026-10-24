@@ -12,19 +12,25 @@ class VehicleController extends Controller
         $search = trim((string) $request->input('search'));
 
         if ($user->role === 'admin') {
-            $query = Vehicle::with('owner')->orderBy('plate_number');
+            $query = Vehicle::with(['owner.company'])->orderBy('plate_number');
         } elseif ($user->role === 'corporate') {
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
-            $query = Vehicle::whereIn('user_id', $companyUserIds)->with('owner')->orderBy('plate_number');
+            $query = Vehicle::whereIn('user_id', $companyUserIds)->with(['owner.company'])->orderBy('plate_number');
         } else {
-            $query = Vehicle::where('user_id', $user->id)->with('owner')->orderBy('plate_number');
+            $query = Vehicle::where('user_id', $user->id)->with(['owner.company'])->orderBy('plate_number');
         }
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('plate_number', 'like', "%{$search}%")
                   ->orWhere('brand', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%");
+                  ->orWhere('model', 'like', "%{$search}%")
+                  ->orWhereHas('owner', function($oq) use ($search) {
+                      $oq->where('name', 'like', "%{$search}%")
+                         ->orWhereHas('company', function($cq) use ($search) {
+                             $cq->where('name', 'like', "%{$search}%");
+                         });
+                  });
             });
         }
 
@@ -37,7 +43,7 @@ class VehicleController extends Controller
         $this->authorizeVehicleAccess($vehicle);
 
         $vehicle->load([
-            'owner',
+            'owner.company',
             'serviceHistory.jobCard',
             'appointments' => fn($q) => $q->latest()->take(10),
             'maintenanceAlerts' => fn($q) => $q->latest()->take(5),
@@ -49,18 +55,24 @@ class VehicleController extends Controller
         $firstService = $vehicle->serviceHistory->last();
         $lastService  = $vehicle->serviceHistory->first();
 
-        $usageStats = app(\App\Services\MaintenancePredictionService::class)->getUsageStats($vehicle);
+        $predictionService = app(\App\Services\MaintenancePredictionService::class);
+        $usageStats = $predictionService->getUsageStats($vehicle);
+        $telemetry  = $predictionService->getVehicleTelemetry($vehicle);
         $isSecondaryPic = auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic();
 
         return view('vehicles.show', compact(
-            'vehicle','totalVisits','totalSpent','firstService','lastService','usageStats','isSecondaryPic'
+            'vehicle','totalVisits','totalSpent','firstService','lastService','usageStats','telemetry','isSecondaryPic'
         ));
     }
 
     public function create() {
         $owners = null;
         if (auth()->user()->role === 'admin') {
-            $owners = User::whereIn('role',['individual','corporate'])->get();
+            $owners = User::whereIn('role', ['individual', 'corporate'])
+                ->with('company')
+                ->orderBy('role')
+                ->orderBy('name')
+                ->get();
         }
         return view('vehicles.create', compact('owners'));
     }
@@ -95,7 +107,18 @@ class VehicleController extends Controller
 
     public function edit(Vehicle $vehicle) {
         $this->authorizeVehicleAccess($vehicle);
-        return view('vehicles.edit', compact('vehicle'));
+        $vehicle->load('owner.company');
+
+        $owners = null;
+        if (auth()->user()->role === 'admin') {
+            $owners = User::whereIn('role', ['individual', 'corporate'])
+                ->with('company')
+                ->orderBy('role')
+                ->orderBy('name')
+                ->get();
+        }
+
+        return view('vehicles.edit', compact('vehicle', 'owners'));
     }
 
     public function update(Request $request, Vehicle $vehicle) {
@@ -110,14 +133,21 @@ class VehicleController extends Controller
             'model'   => 'required',
             'year'    => 'required|integer|min:1990|max:2030',
             'mileage' => 'nullable|numeric|min:0',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
-        $vehicle->update([
+        $data = [
             'brand'   => $request->brand,
             'model'   => $request->model,
             'year'    => $request->year,
             'mileage' => $request->mileage ?? $vehicle->mileage,
-        ]);
+        ];
+
+        if (auth()->user()->role === 'admin' && $request->filled('user_id')) {
+            $data['user_id'] = $request->user_id;
+        }
+
+        $vehicle->update($data);
 
         return back()->with('success', 'Vehicle updated.');
     }

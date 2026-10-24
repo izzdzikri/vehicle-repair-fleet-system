@@ -119,6 +119,26 @@ class User extends Authenticatable
     }
 
     // ----------------------------------------------------------------
+    // Role helpers
+    // ----------------------------------------------------------------
+
+    public function isAdmin(): bool {
+        return $this->role === 'admin';
+    }
+
+    public function isCoordinator(): bool {
+        return $this->role === 'coordinator';
+    }
+
+    public function isStaff(): bool {
+        return $this->role === 'staff';
+    }
+
+    public function isMechanic(): bool {
+        return $this->role === 'staff' && $this->staff_role === 'mechanic';
+    }
+
+    // ----------------------------------------------------------------
     // PIC role helpers
     // ----------------------------------------------------------------
 

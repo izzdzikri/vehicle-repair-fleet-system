@@ -43,11 +43,19 @@ class CoordinatorController extends Controller
         $staleCount   = $activeJobs->filter(fn($j) => $j->is_stale)->count();
         $overdueCount = $activeJobs->filter(fn($j) => $j->estimated_completion && $j->estimated_completion->isPast())->count();
 
+        $todayAppointments = \App\Models\Appointment::whereDate('date', today())
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->count();
+
+        $lowStockCount = \App\Models\SparePart::whereColumn('stock', '<=', 'min_stock')->count();
+
         return view('coordinator.dashboard', [
-            'urgentJobs'   => $activeJobs->take(8),
-            'totalActive'  => $activeJobs->count(),
-            'staleCount'   => $staleCount,
-            'overdueCount' => $overdueCount,
+            'urgentJobs'         => $activeJobs->take(8),
+            'totalActive'        => $activeJobs->count(),
+            'staleCount'         => $staleCount,
+            'overdueCount'       => $overdueCount,
+            'todayAppointments'  => $todayAppointments,
+            'lowStockCount'      => $lowStockCount,
         ]);
     }
 

@@ -7,72 +7,72 @@
     {{-- Top Heading & Context --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">Trip Logs & Mileage Tracking</h2>
+            <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Trip Logs & Mileage Tracking</h2>
             <p class="text-sm text-gray-500 mt-1">
-                Log vehicle journeys to compute real-world daily mileage rates for the predictive maintenance engine.
+                Log vehicle journeys to compute dynamic daily usage rates for predictive maintenance projections
             </p>
         </div>
         @if(!$isSecondaryPic)
         <a href="#log-trip-card"
-            class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg shadow-sm transition shrink-0">
-            <i data-lucide="plus" class="w-4 h-4"></i> Log New Trip
+            class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xs transition shrink-0">
+            <i data-lucide="plus" class="w-4 h-4"></i> Record New Trip
         </a>
         @endif
     </div>
 
     {{-- Summary KPI Cards --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl shadow-sm border p-4">
+        <div class="bg-white rounded-xl shadow-xs border border-gray-200/80 p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Trips</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Total Trips</p>
                 <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                     <i data-lucide="route" class="w-4 h-4"></i>
                 </div>
             </div>
-            <p class="text-2xl font-bold text-gray-800">{{ number_format($totalTrips) }}</p>
-            <p class="text-xs text-gray-400 mt-1">Recorded journeys</p>
+            <p class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ number_format($totalTrips) }}</p>
+            <p class="text-xs text-gray-400 font-medium mt-1">recorded journeys</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border p-4">
+        <div class="bg-white rounded-xl shadow-xs border border-gray-200/80 p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Distance</p>
-                <div class="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Total Distance</p>
+                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <i data-lucide="gauge" class="w-4 h-4"></i>
                 </div>
             </div>
-            <p class="text-2xl font-bold text-green-700">{{ number_format($totalDistance, 1) }} <span class="text-sm font-normal text-gray-500">km</span></p>
-            <p class="text-xs text-gray-400 mt-1">Across all logged trips</p>
+            <p class="text-3xl font-extrabold text-emerald-700 tracking-tight">{{ number_format($totalDistance, 1) }} <span class="text-sm font-semibold text-gray-500">km</span></p>
+            <p class="text-xs text-gray-400 font-medium mt-1">across all logged journeys</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border p-4">
+        <div class="bg-white rounded-xl shadow-xs border border-gray-200/80 p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Active Rate</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Active Rate</p>
                 <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
                     <i data-lucide="activity" class="w-4 h-4"></i>
                 </div>
             </div>
             @if($activeUsageStats)
-                <p class="text-2xl font-bold text-purple-700">
-                    {{ $activeUsageStats['daily_km'] }} <span class="text-sm font-normal text-gray-500">km/day</span>
+                <p class="text-3xl font-extrabold text-purple-700 tracking-tight">
+                    {{ $activeUsageStats['daily_km'] }} <span class="text-sm font-semibold text-gray-500">km/day</span>
                 </p>
-                <p class="text-xs {{ $activeUsageStats['is_fallback'] ? 'text-amber-600 font-medium' : 'text-purple-600' }} mt-1">
+                <p class="text-xs {{ $activeUsageStats['is_fallback'] ? 'text-amber-600 font-semibold' : 'text-purple-600 font-semibold' }} mt-1">
                     {{ $activeUsageStats['label'] }}
                 </p>
             @else
-                <p class="text-2xl font-bold text-purple-700">{{ $vehicles->count() }}</p>
-                <p class="text-xs text-gray-400 mt-1">Fleet vehicles tracked</p>
+                <p class="text-3xl font-extrabold text-purple-700 tracking-tight">{{ $vehicles->count() }}</p>
+                <p class="text-xs text-gray-400 font-medium mt-1">fleet vehicles tracked</p>
             @endif
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border p-4">
+        <div class="bg-white rounded-xl shadow-xs border border-gray-200/80 p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Heuristic Engine</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Heuristic Engine</p>
                 <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
                     <i data-lucide="sparkles" class="w-4 h-4"></i>
                 </div>
             </div>
-            <p class="text-base font-bold text-gray-800">Rule-Based</p>
-            <p class="text-xs text-gray-400 mt-1">Next-due = Last service + km rate</p>
+            <p class="text-xl font-bold text-gray-900 mt-1">Hybrid Rule-Based</p>
+            <p class="text-xs text-gray-500 mt-1">Dynamic distance projections</p>
         </div>
     </div>
 
@@ -169,7 +169,7 @@
                 <div class="md:col-span-2">
                     <label class="block text-xs font-semibold text-gray-700 mb-1.5">Trip Notes (Optional)</label>
                     <input type="text" name="notes" value="{{ old('notes') }}"
-                        placeholder="e.g. Senai to Pasir Gudang client deliveries"
+                        placeholder="e.g. Kluang to Johor Bahru client deliveries"
                         class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
             </div>
@@ -197,17 +197,17 @@
     @endif
 
     {{-- Filter Bar & Table --}}
-    <div class="bg-white rounded-xl shadow-sm border p-6">
+    <div class="bg-white rounded-xl shadow-xs border border-gray-200/80 p-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
             <div>
-                <h3 class="text-lg font-bold text-gray-800">Trip History</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Browse past journeys and filter by vehicle or terrain.</p>
+                <h3 class="text-base font-bold text-gray-900 tracking-tight">Trip History & Fleet Odometer Runs</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Filter records by vehicle plate or route terrain profile</p>
             </div>
 
             <form method="GET" action="{{ $baseRoute }}/trip-logs" class="flex flex-wrap items-center gap-2">
                 {{-- Vehicle filter --}}
                 <select name="vehicle_id" onchange="this.form.submit()"
-                    class="border rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                     <option value="">All Vehicles ({{ $vehicles->count() }})</option>
                     @foreach($vehicles as $v)
                     <option value="{{ $v->id }}" {{ $selectedVehicleId == $v->id ? 'selected' : '' }}>
@@ -218,7 +218,7 @@
 
                 {{-- Terrain filter --}}
                 <select name="terrain_type" onchange="this.form.submit()"
-                    class="border rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                     <option value="">All Terrains</option>
                     <option value="urban" {{ $selectedTerrain === 'urban' ? 'selected' : '' }}>Urban</option>
                     <option value="highway" {{ $selectedTerrain === 'highway' ? 'selected' : '' }}>Highway</option>
@@ -229,7 +229,7 @@
 
                 @if($selectedVehicleId || $selectedTerrain)
                 <a href="{{ $baseRoute }}/trip-logs"
-                    class="text-xs text-red-600 hover:text-red-700 px-2 py-1 hover:underline">
+                    class="text-xs font-semibold text-rose-600 hover:text-rose-800 px-2 py-1 hover:underline">
                     Reset
                 </a>
                 @endif
@@ -239,18 +239,18 @@
         {{-- Table --}}
         @if($tripLogs->count() > 0)
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm border-collapse">
+            <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="border-b bg-gray-50/75 text-gray-600 text-xs uppercase tracking-wider font-semibold">
-                        <th class="py-3 px-4">Date</th>
-                        <th class="py-3 px-4">Vehicle</th>
-                        <th class="py-3 px-4">Distance</th>
-                        <th class="py-3 px-4">Terrain</th>
-                        <th class="py-3 px-4">Notes</th>
-                        <th class="py-3 px-4 text-right">Actions</th>
+                    <tr class="border-b border-gray-100 bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wider font-semibold">
+                        <th class="py-3.5 px-4">Date</th>
+                        <th class="py-3.5 px-4">Vehicle</th>
+                        <th class="py-3.5 px-4">Distance</th>
+                        <th class="py-3.5 px-4">Terrain Profile</th>
+                        <th class="py-3.5 px-4">Notes</th>
+                        <th class="py-3.5 px-4 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 text-gray-700">
+                <tbody class="divide-y divide-gray-100 text-sm">
                     @foreach($tripLogs as $trip)
                     @php
                         $terrainColors = match($trip->terrain_type) {
@@ -261,25 +261,25 @@
                             default    => 'bg-gray-100 text-gray-700 border-gray-200',
                         };
                     @endphp
-                    <tr class="hover:bg-gray-50/50 transition">
-                        <td class="py-3.5 px-4 font-medium text-gray-900 whitespace-nowrap">
+                    <tr class="hover:bg-gray-50/60 transition">
+                        <td class="py-3.5 px-4 font-bold text-gray-900 whitespace-nowrap">
                             {{ $trip->trip_date ? $trip->trip_date->format('d M Y') : '—' }}
                         </td>
                         <td class="py-3.5 px-4">
                             @if($trip->vehicle)
-                            <a href="{{ $baseRoute }}/vehicles/{{ $trip->vehicle->id }}" class="font-semibold text-blue-600 hover:underline">
+                            <a href="{{ $baseRoute }}/vehicles/{{ $trip->vehicle->id }}" class="font-mono text-xs font-bold text-gray-900 bg-gray-100 px-2.5 py-1 rounded border border-gray-200 hover:text-blue-700 inline-block">
                                 {{ $trip->vehicle->plate_number }}
                             </a>
-                            <p class="text-xs text-gray-400">{{ $trip->vehicle->brand }} {{ $trip->vehicle->model }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ $trip->vehicle->brand }} {{ $trip->vehicle->model }}</p>
                             @else
-                            <span class="text-gray-400">—</span>
+                            <span class="text-gray-400 text-xs">—</span>
                             @endif
                         </td>
-                        <td class="py-3.5 px-4 font-semibold text-gray-800 whitespace-nowrap">
-                            {{ number_format($trip->distance_km, 1) }} <span class="text-xs font-normal text-gray-400">km</span>
+                        <td class="py-3.5 px-4 font-bold text-gray-900 whitespace-nowrap">
+                            {{ number_format($trip->distance_km, 1) }} <span class="text-xs font-semibold text-gray-400">km</span>
                         </td>
                         <td class="py-3.5 px-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border {{ $terrainColors }} capitalize">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border {{ $terrainColors }} capitalize">
                                 {{ $trip->terrain_type }}
                             </span>
                         </td>
@@ -292,7 +292,7 @@
                                 onsubmit="return confirmSubmit(event, {title: 'Delete Trip Log', message: 'Delete this trip entry of {{ $trip->distance_km }} km? The predictive maintenance scanner will recalculate service due dates.', confirmLabel: 'Delete'})">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-gray-400 hover:text-red-600 p-1 rounded transition" title="Delete trip">
+                                <button type="submit" class="text-gray-400 hover:text-rose-600 p-1.5 rounded-lg border border-transparent hover:border-gray-200 transition" title="Delete trip">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </form>
@@ -306,15 +306,17 @@
             </table>
         </div>
 
-        <div class="mt-4">
+        <div class="mt-4 pt-4 border-t border-gray-100">
             {{ $tripLogs->links() }}
         </div>
         @else
-        <x-empty-state
-            icon="map-pin-off"
-            title="No trip logs found"
-            subtitle="Record vehicle journeys above to start gathering real daily mileage data."
-        />
+        <div class="py-8">
+            <x-empty-state
+                icon="map-pin-off"
+                title="No trip logs found"
+                subtitle="Record vehicle journeys above to start gathering real daily mileage data."
+            />
+        </div>
         @endif
     </div>
 
