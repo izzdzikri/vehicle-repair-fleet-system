@@ -270,10 +270,10 @@ class ChatbotController extends Controller
         }
 
         // 13. Active Diagnostic Intake Session OR Booking Intent Trigger (Customer Only)
-        if (session()->has('chatbot_intake') || $this->isBookingIntent($message, $userContext)) {
+        if (session()->has('chatbot_intake') || session()->has('pending_chatbot_booking') || $this->isBookingIntent($message, $userContext)) {
             // Internal staff (admin, coordinator, staff) do NOT do customer vehicle registration here!
             if (!empty($userContext['is_internal_staff'])) {
-                session()->forget('chatbot_intake');
+                session()->forget(['chatbot_intake', 'pending_chatbot_booking']);
             } else {
                 return $this->handleBookingConversation($message, $user, $lang, $userContext);
             }
@@ -616,18 +616,43 @@ class ChatbotController extends Controller
             $intake['phone'] = $phoneResult['phone'];
         }
 
-        // 3. Extract Customer Name
-        if (preg_match('/(?:nama\s*saya|nama\s*sy|nama|my\s*name\s*is|i\s*am)\s*[:=]?\s*([A-Za-z\s\.\@\']{2,30})/i', $message, $nm)) {
-            $intake['customer_name'] = trim($nm[1]);
-        }
-
-        // 4. Extract Malaysian Plate Number
-        if (preg_match('/(?:plat|no\.?\s*plat|pendaftaran)\s*[:=]?\s*([A-Z]{1,3}\s*\d{1,4}\s*[A-Z]?)/i', $message, $explicitPlate)) {
+        // 3. Extract Malaysian Plate Number
+        if (preg_match('/(tiada\s*plat|tak\s*ada\s*plat|takde\s*plat|no\s*plate|unknown\s*plate|tak\s*tahu\s*plat)/i', $message)) {
+            if (empty($intake['plate_number'])) {
+                $intake['plate_number'] = 'WALK-IN-' . rand(1000, 9999);
+            }
+        } elseif (preg_match('/(?:plat|no\.?\s*plat|pendaftaran)\s*[:=]?\s*([A-Z]{1,3}\s*\d{1,4}\s*[A-Z]?)/i', $message, $explicitPlate)) {
             $intake['plate_number'] = strtoupper(preg_replace('/\s+/', ' ', trim($explicitPlate[1])));
         } elseif (empty($intake['plate_number'])) {
             // Exclude non-plate words like JAM, HARI, SESI, BULAN, TAHUN, DAN, DARI
             if (preg_match('/(?<!\w)(?!(?:at|in|on|by|to|for|is|am|pm|an|no|po|km|rm|jam|hari|sesi|bulan|tahun|dan|dari)\b)[A-Z]{1,3}\s*\d{1,4}\s*[A-Z]?(?!\w)/i', $message, $pm)) {
                 $intake['plate_number'] = strtoupper(preg_replace('/\s+/', ' ', trim($pm[0])));
+            }
+        }
+
+        // 4. Extract Customer Name
+        if (preg_match('/(?:nama\s*saya|nama\s*sy|nama|my\s*name\s*is|i\s*am)\s*[:=]?\s*([A-Za-z\s\.\@\']{2,30})/i', $message, $nm)) {
+            $intake['customer_name'] = trim($nm[1]);
+        } elseif (empty($intake['customer_name']) && ($phoneResult['status'] === 'valid' || (!empty($intake['symptoms']) && !empty($intake['car_brand']) && !$this->isBookingIntent($message)))) {
+            // Only infer customer name if accompanied by a valid phone or when specifically prompted in later intake steps
+            $cleaned = $message;
+            if ($phoneResult['status'] === 'valid') {
+                $cleaned = str_replace($phoneResult['raw'], '', $cleaned);
+            }
+            if (!empty($intake['plate_number'])) {
+                $cleaned = str_ireplace($intake['plate_number'], '', $cleaned);
+                $cleaned = str_ireplace(str_replace(' ', '', $intake['plate_number']), '', $cleaned);
+            }
+            $cleaned = preg_replace('/\b(perodua|proton|honda|toyota|nissan|mazda|ford|isuzu|serena|myvi|vios|alza|saga|bezza|axia|city|civic|hilux|d-?max)\b/i', '', $cleaned);
+            $cleaned = preg_replace('/\b(plat|no|tel|phone|hp|esok|hari|pagi|petang|malam|jam|pukul|walk-?in|temujanji|booking|book|nak|saya|sy|datang)\b/i', '', $cleaned);
+            $cleaned = preg_replace('/\b(lah|la|je|jer|aje|sahaja|pun|kan|kot|dah|dulu|tu|ni|ya|yes|ok|okay|tq|terima\s*kasih|thanks)\b/i', '', $cleaned);
+            $cleaned = trim(preg_replace('/[^a-zA-Z\s\.\']/', '', $cleaned));
+
+            if (strlen($cleaned) >= 2 && strlen($cleaned) <= 30 && preg_match('/^[a-zA-Z\s\.\']{2,30}$/', $cleaned)) {
+                $words = array_values(array_filter(explode(' ', preg_replace('/\s+/', ' ', $cleaned))));
+                if (count($words) >= 1 && count($words) <= 4) {
+                    $intake['customer_name'] = ucwords(strtolower(implode(' ', $words)));
+                }
             }
         }
 
@@ -686,9 +711,19 @@ class ChatbotController extends Controller
         }
 
         // 7. Extract Preferred Date & Time
-        if ($this->hasDateOrTimeCue($message)) {
+        $lowerMsg = strtolower($message);
+        $hasDateCue = (bool) (
+            preg_match('/(esok|lusa|isnin|selasa|rabu|khamis|jumaat|sabtu|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday)/i', $lowerMsg)
+            || preg_match('/\b\d{1,2}[-\/]\d{1,2}(?:[-\/]\d{2,4})?\b/', $lowerMsg)
+            || preg_match('/\b\d{4}[-\/]\d{1,2}[-\/]\d{1,2}\b/', $lowerMsg)
+        );
+        $hasTimeCue = (bool) (
+            preg_match('/(\d{1,2})(?::(\d{2}))?\s*(am|pm|pagi|petang|tengahari|malam)/i', $lowerMsg)
+            || preg_match('/(?:jam|pukul)\s*(\d{1,2})/i', $lowerMsg)
+        );
+
+        if ($hasDateCue) {
             $targetDate = $this->extractDate($message);
-            $targetTime = $this->extractTime($message);
 
             if ($targetDate->isSaturday()) {
                 $intake['date'] = null;
@@ -705,8 +740,16 @@ class ChatbotController extends Controller
                 ]);
             }
 
+            $intake['date']       = $targetDate->toDateString();
+            $intake['date_label'] = $this->formatDateLabel($targetDate, $lang);
+        }
+
+        if ($hasTimeCue) {
+            $targetTime = $this->extractTime($message);
+
             // Adjust for Friday prayer break (12:30 PM - 2:30 PM)
-            if ($targetDate->isFriday()) {
+            $checkDate = !empty($intake['date']) ? Carbon::parse($intake['date']) : Carbon::tomorrow();
+            if ($checkDate->isFriday()) {
                 $hour = (int) Carbon::parse($targetTime)->format('H');
                 $min  = (int) Carbon::parse($targetTime)->format('i');
                 $totalMin = $hour * 60 + $min;
@@ -715,8 +758,6 @@ class ChatbotController extends Controller
                 }
             }
 
-            $intake['date']       = $targetDate->toDateString();
-            $intake['date_label'] = $this->formatDateLabel($targetDate, $lang);
             $intake['time']       = $targetTime;
             $intake['time_label'] = Carbon::parse($targetTime)->format('g:i A');
         }
@@ -731,25 +772,38 @@ class ChatbotController extends Controller
         // Check A: Symptoms / Problem Details missing?
         // A mechanic MUST know the issue to prepare the right parts and tools!
         if (empty($intake['symptoms'])) {
-            // If user's message has NO symptoms AND is NOT an explicit booking intent AND provided NO vehicle info:
-            if (!$this->isBookingIntent($message) && empty($symptomInfo['symptoms']) && empty($vehicleSpecs['brand']) && empty($intake['plate_number']) && !$this->hasDateOrTimeCue($message)) {
-                // User asked something else (general query, pricing, hours, etc.)
-                // Clear the empty intake so they are not trapped!
-                session()->forget('chatbot_intake');
+            // Check if user is asking a general question (e.g. price, location, hours) instead of describing symptoms
+            if (str_contains($message, '?') || preg_match('/(berapa|harga|kos|kat\s*mana|lokasi|apa|how\s*much|cost|price|where)\b/i', $message)) {
                 if ($geminiReply = $this->tryGemini($message, $user, $lang, $userContext)) {
-                    return response()->json(['reply' => $geminiReply, 'lang' => $lang]);
+                    $note = $lang === 'ms'
+                        ? "\n\n*(Nota: Sesi tempahan temujanji anda masih dibuka. Sila kongsikan masalah kenderaan atau servis yang anda inginkan, atau taip 'batal' untuk membatalkan tempahan.)*"
+                        : "\n\n*(Note: Your appointment booking is still active. Please share your vehicle symptoms or required service to proceed, or type 'cancel' to cancel.)*";
+                    return response()->json(['reply' => $geminiReply . $note, 'lang' => $lang]);
                 }
-                $response = $this->buildResponse($message, $user, $lang, $userContext);
-                return response()->json(['reply' => $response, 'lang' => $lang]);
+            }
+
+            // Build helpful prompt acknowledging any details already provided
+            $acknowledged = [];
+            if (!empty($intake['car_brand'])) {
+                $acknowledged[] = trim(($intake['car_brand'] ?? '') . ' ' . ($intake['car_model'] ?? ''));
+            }
+            if (!empty($intake['date_label'])) {
+                $acknowledged[] = $intake['date_label'];
+            }
+            $intro = '';
+            if (!empty($acknowledged)) {
+                $intro = $lang === 'ms'
+                    ? "Maklumat **" . implode(' & ', $acknowledged) . "** telah direkodkan. 👍\n\n"
+                    : "Details for **" . implode(' & ', $acknowledged) . "** have been noted. 👍\n\n";
             }
 
             $q = $lang === 'ms'
-                ? "Boleh kongsikan lebih lanjut mengenai masalah atau simptom kenderaan anda?\n\n"
-                . "• **Apakah bunyi atau masalah yang dialami?** (Contoh: brek berdecit/bergegar, enjin semput/bergegar masa idle, aircond kurang sejuk, atau ada lampu amaran menyala?)\n"
+                ? $intro . "Boleh kongsikan lebih lanjut mengenai masalah atau simptom kenderaan anda?\n\n"
+                . "• **Apakah masalah atau simptom yang dialami?** (Contoh: *kereta rasa sengguk-sengguk / jerking*, *enjin semput semasa memecut*, *brek berdecit*, atau *lampu amaran menyala*?)\n"
                 . "• **Bila ia berlaku?** (Contoh: waktu pagi, semasa membelok, atau semasa kelajuan tinggi?)\n"
-                . "• *Atau adakah ini servis berkala biasa (tukar minyak hitam & filter)?*"
-                : "Could you tell us more about what issue or symptoms your vehicle is experiencing?\n\n"
-                . "• **What sounds or faults are noticeable?** (e.g., brake squeal/vibration, engine misfiring/shaking on idle, warm A/C, or warning lights on dashboard?)\n"
+                . "• *Atau adakah ini servis berkala biasa (tukar minyak hitam & penapis)?*"
+                : $intro . "Could you tell us more about what issue or symptoms your vehicle is experiencing?\n\n"
+                . "• **What symptoms or faults are noticeable?** (e.g., *car jerking / sengguk-sengguk*, *engine hesitation on acceleration*, *brake squeal*, or *warning lights*?)\n"
                 . "• **When does it occur?** (e.g., cold start morning, when turning, or at highway speed?)\n"
                 . "• *Or is this routine periodic maintenance (engine oil & filter change)?*";
 
@@ -770,13 +824,18 @@ class ChatbotController extends Controller
 
             $missingPieces = [];
             if (empty($intake['plate_number'])) $missingPieces[] = $lang === 'ms' ? 'Nombor Plat Pendaftaran' : 'Plate Number';
-            if (empty($intake['car_brand']))    $missingPieces[] = $lang === 'ms' ? 'Model & Tahun Kereta (contoh: Perodua Myvi 2018)' : 'Car Make, Model & Year (e.g. Honda City 2020)';
+            if (empty($intake['car_brand']))    $missingPieces[] = $lang === 'ms' ? 'Model Kereta (contoh: Nissan Serena, Perodua Myvi)' : 'Car Make & Model (e.g. Nissan Serena, Perodua Myvi)';
 
             $missingText = implode($lang === 'ms' ? ' dan ' : ' and ', $missingPieces);
+            $carKnown = !empty($intake['car_brand']) ? trim(($intake['car_brand'] ?? '') . ' ' . ($intake['car_model'] ?? '')) : null;
 
             $q = $lang === 'ms'
-                ? "Terima kasih atas penerangan simptom tersebut! Bagi membolehkan mekanik kami menyediakan alat ganti yang tepat, sila berikan **{$missingText}** kenderaan anda.\n\nContoh: *Perodua Myvi 2018, No Plat: JVU 122*"
-                : "Thank you for describing the issue! To ensure our mechanics prepare the correct parts and tools, please provide your **{$missingText}**.\n\nExample: *Perodua Myvi 2018, Plate: JVU 122*";
+                ? ($carKnown
+                    ? "Terima kasih atas penerangan simptom tersebut! Sila berikan **Nombor Plat Pendaftaran** bagi **{$carKnown}** anda (contoh: *JQR 1234*, atau taip *tiada plat* jika walk-in tanpa rekod plat):"
+                    : "Terima kasih atas penerangan simptom tersebut! Bagi membolehkan mekanik kami menyediakan alat ganti yang tepat, sila berikan **{$missingText}** kenderaan anda.\n\nContoh: *Nissan Serena, No Plat: JQR 1234* *(atau taip 'tiada plat' jika walk-in)*")
+                : ($carKnown
+                    ? "Thank you for explaining the issue! Please provide the **Plate Number** for your **{$carKnown}** (e.g. *JQR 1234*, or type *no plate* if walk-in without plate):"
+                    : "Thank you for explaining the issue! To ensure our mechanics prepare the correct parts and tools, please provide your **{$missingText}**.\n\nExample: *Nissan Serena, Plate: JQR 1234* *(or type 'no plate' if unknown)*");
 
             return response()->json(['reply' => $q, 'lang' => $lang]);
         }
@@ -798,13 +857,17 @@ class ChatbotController extends Controller
 
         // Check D: Date & Time Slot missing?
         if (empty($intake['date']) || empty($intake['time'])) {
+            $missingDateTime = [];
+            if (empty($intake['date'])) $missingDateTime[] = $lang === 'ms' ? 'tarikh temujanji' : 'appointment date';
+            if (empty($intake['time'])) $missingDateTime[] = $lang === 'ms' ? 'masa kedatangan (contoh: 9 pagi)' : 'arrival time (e.g. 9 AM)';
+
             $q = $lang === 'ms'
                 ? "Semua maklumat kenderaan dan simptom telah lengkap direkodkan! 🚗\n\n"
-                . "Bila tarikh dan masa yang anda ingin bawa kenderaan ke bengkel Teraju Setia di Kluang?\n"
-                . "Sila pilih tarikh dan slot masa yang masih kosong dari kalendar di bawah, atau taip pilihan anda (contoh: *Ahad jam 10 pagi*)."
+                . "Sila nyatakan " . implode(' dan ', $missingDateTime) . " untuk kenderaan dibawa ke bengkel Teraju Setia di Kluang.\n"
+                . "Anda boleh pilih tarikh dan slot daripada kalendar di bawah, atau terus taip (contoh: *Esok jam 9 pagi*):"
                 : "All vehicle diagnostic details have been captured! 🚗\n\n"
-                . "What date and time would you like to bring your vehicle into our workshop in Kluang?\n"
-                . "Please pick an available slot from the calendar below, or type your choice (e.g., *Sunday at 10 AM*).";
+                . "Please specify your " . implode(' and ', $missingDateTime) . " to bring your vehicle into our workshop in Kluang.\n"
+                . "You can pick a slot from the schedule below, or type your preferred time (e.g., *Tomorrow at 9 AM*):";
 
             return response()->json([
                 'reply'         => $q,
@@ -1115,9 +1178,9 @@ class ChatbotController extends Controller
             $serviceType = 'Brake Inspection & Replacement';
         }
 
-        // Engine & Hesitation
-        if (preg_match('/(enjin|engine|semput|knocking|ketuk|gegar|shaking|vibrat|mati sendiri|stalling|misfire|asap|overheat|panas)/i', $lower)) {
-            $symptoms[] = 'Engine performance / hesitation / vibration or temperature anomaly';
+        // Engine & Hesitation / Jerking
+        if (preg_match('/(enjin|engine|semput|senguk|sengguk|tersengguk|jerking|knocking|ketuk|gegar|shaking|vibrat|mati sendiri|stalling|misfire|asap|overheat|panas)/i', $lower)) {
+            $symptoms[] = 'Masalah enjin tersengguk-sengguk / jerking / semput (Engine Diagnostics Scan & Troubleshooting)';
             $serviceType = $serviceType ?: 'Engine Diagnostics & Troubleshooting';
         }
 
@@ -1657,10 +1720,10 @@ class ChatbotController extends Controller
             return false;
         }
         $lower = strtolower(trim($msg));
-        if (preg_match('/^(proceed|confirm|sahkan|setuju|teruskan|buatkan|deal|ya|yes|ok|okay|betul|correct)$/i', $lower)) {
+        if (preg_match('/^(proceed|confirm|sahkan|setuju|teruskan|buatkan|deal|ya|yes|ok|okay|baik|baiklah|betul|correct|tq|terima kasih|thank you|thanks)$/i', $lower)) {
             return true;
         }
-        if (preg_match('/\b(sahkan tempahan|confirm booking|proceed booking|sahkan slot|confirm slot|ya sahkan|yes confirm|maklumat betul)\b/i', $lower)) {
+        if (preg_match('/\b(sahkan tempahan|confirm booking|proceed booking|sahkan slot|confirm slot|ya sahkan|yes confirm|maklumat betul|ya betul|semua betul|ok terima kasih|ok tq|ok thank you|terima kasih banyak)\b/i', $lower)) {
             return true;
         }
         return false;
@@ -1728,29 +1791,29 @@ class ChatbotController extends Controller
         }
 
         // 5c. Customer expresses vehicle abnormal feeling or breakdown symptoms
-        if (preg_match('/(kereta|keta|kenderaan|car|enjin|engine|brek|brake).*(rasa\s*pelik|pelik|weird|strange|unusual|rosak|masalah|problem|berbunyi|gegar|semput|tak\s*boleh\s*start|tak\s*sejuk)/i', $lower)
+        if (preg_match('/(kereta|keta|kenderaan|car|enjin|engine|brek|brake).*(rasa\s*(pelik|senguk|sengguk)|pelik|senguk|sengguk|tersengguk|jerking|weird|strange|unusual|rosak|masalah|problem|berbunyi|gegar|semput|tak\s*boleh\s*start|tak\s*sejuk)/i', $lower)
+            || preg_match('/\b(senguk|sengguk|tersengguk|jerking|semput)\b/i', $lower)
             || preg_match('/^(kereta\s*saya\s*rasa\s*pelik|kereta\s*rasa\s*pelik|kereta\s*rosak|my\s*car\s*feels\s*weird|car\s*feels\s*strange)$/i', $lower)) {
             return true;
         }
 
-        // 6. Explicit booking action in Malay
-        if (preg_match('/(buat|nak|mau|hendak|mohon|set|atur|tolong\s*(buat|set|tempah))\s*(kan)?\s*.*(appointment|booking|servis|service|temujanji|slot)/i', $lower)) {
+        // 6. Explicit booking action in Malay / English
+        if (preg_match('/\b(book|booking|tempah|tempahan|temujanji|appointment|walk-?in)\b/i', $lower)) {
             return true;
         }
 
-        if (preg_match('/(tempah|book)\s*(an|a)?\s*(slot|servis|service|temujanji|appointment)/i', $lower)) {
+        if (preg_match('/(buat|nak|mau|hendak|mohon|set|atur|tolong\s*(buat|set|tempah|book))\s*(kan)?\s*.*(appointment|booking|servis|service|temujanji|slot)/i', $lower)) {
             return true;
         }
 
-        if (preg_match('/(nak|mau|hendak)\s*(hantar|servis|baiki|tukar\s*minyak|check)\s*(kereta|keta|lori|kenderaan)/i', $lower)) {
+        if (preg_match('/(nak|mau|hendak|want to|would like to|can i|boleh ke|boleh tak|boleh lah)\s*(hantar|bawa|bawak|servis|baiki|periksa|check|repair|send|bring)\s*(kereta|keta|lori|kenderaan|car|vehicle)?/i', $lower)) {
             return true;
         }
 
-        if (preg_match('/^(tempah\s*temujanji|booking\s*servis|book\s*appointment|walk-?in)$/i', $lower)) {
+        if (preg_match('/(nak|mau|hendak|want to)\s*(servis|service|repair|baiki|tukar\s*minyak|oil change)/i', $lower)) {
             return true;
         }
 
-        // 7. Explicit booking action in English
         if (preg_match('/(schedule|book|make)\s*(an|a)?\s*(appointment|service|slot)/i', $lower)
             || preg_match('/(want|would like|need)\s*to\s*(book|schedule|make)\s*(an|a)?\s*(appointment|service|slot)/i', $lower)) {
             return true;
@@ -3193,7 +3256,12 @@ ROLE-SPECIFIC ASSISTANCE GUIDELINES:
    - Assist with commercial trucks, vans, and pickups; periodic maintenance schedules; and corporate billing invoices.
 4. For INDIVIDUAL CUSTOMERS & GUESTS:
    - Be helpful and courteous without repetitive welcoming. Explain mechanical symptoms in clear layman terms.
-   - Guide them through direct walk-in appointment booking with diagnostic symptom capture.
+   - For vehicle booking, encourage them to click the [📅 Book Service Slot / Tempah Slot] button or state their vehicle details.
+
+CRITICAL APPOINTMENT BOOKING CONSTRAINTS (NO HALLUCINATIONS):
+1. You do NOT have database write access and CANNOT create, book, modify, or insert appointments into the database.
+2. Therefore, you MUST NEVER tell the user that their appointment has been booked, confirmed, scheduled, or finalized (e.g. NEVER output phrases like \'temujanji anda telah ditetapkan\', \'slot anda telah ditempah\', \'temujanji telah disahkan\', \'your appointment has been booked\', or \'your appointment is scheduled\').
+3. If a user wants to book, tell them to click the [📅 Book Service Slot / Tempah Slot] button or provide their vehicle make, model and plate number so our automated booking engine can register their slot directly into the workshop schedule.
 
 Tone: Professional, helpful, concise, and structured. Avoid walls of text.";
 
