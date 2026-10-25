@@ -222,6 +222,7 @@
 
                     {!! $section('Finance') !!}
                     {!! $link('/client/invoices',       'receipt',          'Invoices',          'client/invoices*') !!}
+                    {!! $link('/client/statement',      'file-text',        'Fleet Statement',   'client/statement*') !!}
 
                     {!! $section('Company') !!}
                     {!! $link('/client/company',        'building-2',       'Company',           'client/company*') !!}

@@ -39,8 +39,18 @@ class PurchaseOrderController extends Controller
             if (!$alreadyQueued) {
                 $suggestedQty = max($part->max_stock - $part->stock, $part->min_stock);
 
+                $supplier = null;
+                if (!empty($part->supplier_name)) {
+                    $supplier = Supplier::where('name', $part->supplier_name)->first();
+                }
+                if (!$supplier) {
+                    $supplier = Supplier::first();
+                }
+
                 PurchaseOrder::create([
                     'spare_part_id'  => $part->id,
+                    'supplier_id'    => $supplier?->id,
+                    'unit_cost'      => $part->unit_price,
                     'quantity'       => $suggestedQty,
                     'status'         => 'draft',
                     'auto_generated' => true,
@@ -48,6 +58,42 @@ class PurchaseOrderController extends Controller
                 ]);
             }
         }
+    }
+
+    public function batchOrder(Request $request) {
+        $request->validate([
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'po_ids'      => 'nullable|array',
+            'po_ids.*'    => 'exists:purchase_orders,id',
+        ]);
+
+        $query = PurchaseOrder::where('status', 'draft');
+        if ($request->filled('po_ids')) {
+            $query->whereIn('id', $request->po_ids);
+        }
+        $drafts = $query->with('sparePart')->get();
+
+        if ($drafts->isEmpty()) {
+            return back()->with('error', 'No draft purchase orders found to dispatch.');
+        }
+
+        $defaultSupplierId = $request->supplier_id ?: Supplier::first()?->id;
+        $count = 0;
+
+        foreach ($drafts as $po) {
+            $supplierId = $po->supplier_id ?: $defaultSupplierId;
+            $unitCost   = $po->unit_cost ?: ($po->sparePart?->unit_price ?: 0);
+
+            $po->update([
+                'supplier_id' => $supplierId,
+                'unit_cost'   => $unitCost,
+                'status'      => 'ordered',
+                'ordered_at'  => now(),
+            ]);
+            $count++;
+        }
+
+        return back()->with('success', "Batch dispatch complete: {$count} purchase order(s) successfully marked as Ordered.");
     }
 
     public function store(Request $request) {

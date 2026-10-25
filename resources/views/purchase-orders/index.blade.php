@@ -74,7 +74,7 @@
 
         <div class="flex items-center gap-2.5">
             <button type="button" @click="showAddModal = true"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition">
+                class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Create Manual PO
             </button>
         </div>
@@ -107,6 +107,45 @@
 
     {{-- TAB 1: ACTIVE PURCHASE ORDERS (Draft & Ordered) --}}
     <div x-show="activeTab === 'active'" class="space-y-4">
+        {{-- Automated Low-Stock Batch Replenishment Card --}}
+        @php
+            $draftOrders = $activeOrders->where('status', 'draft');
+        @endphp
+        @if($draftOrders->count() > 0)
+        <div class="p-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl text-white shadow-xs flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0 text-amber-400">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-bold tracking-tight">Auto-Replenishment: {{ $draftOrders->count() }} Draft Requisition(s) Ready</h4>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">Action Required</span>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-0.5">Low-stock spare parts were identified and prepared for order. Bulk dispatch them directly to assigned vendors.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('admin.purchase-orders.batch-order') }}" class="flex items-center gap-2 flex-wrap"
+                onsubmit="return confirmSubmit(event, {title:'Dispatch All Draft POs?', message:'This will mark all {{ $draftOrders->count() }} draft purchase orders as Ordered and dispatch to suppliers.', confirmLabel:'Dispatch All Drafts'})">
+                @csrf
+                @if($suppliers->count() > 0)
+                <select name="supplier_id" class="text-xs bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-400">
+                    <option value="">Default Vendor</option>
+                    @foreach($suppliers as $s)
+                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                    @endforeach
+                </select>
+                @endif
+                <button type="submit"
+                    class="bg-white hover:bg-slate-100 text-slate-900 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <span>Quick Order All Drafts ({{ $draftOrders->count() }})</span>
+                </button>
+            </form>
+        </div>
+        @endif
+
         <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center flex-wrap gap-2">
                 <div>
@@ -190,15 +229,26 @@
                             <td class="px-5 py-4 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if($po->status === 'draft')
+                                    @if($po->supplier_id)
+                                    <form method="POST" action="/admin/purchase-orders/{{ $po->id }}/order" class="inline">
+                                        @csrf @method('PATCH')
+                                        <input type="hidden" name="supplier_id" value="{{ $po->supplier_id }}">
+                                        <input type="hidden" name="unit_cost" value="{{ $po->unit_cost ?? $po->sparePart?->unit_price ?? 0 }}">
+                                        <button type="submit"
+                                            class="text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white px-2.5 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1">
+                                            <i data-lucide="send" class="w-3 h-3"></i> Quick Order
+                                        </button>
+                                    </form>
+                                    @endif
                                     <button type="button" @click="openOrderModal({
                                             id: {{ $po->id }},
                                             spare_part: { name: '{{ addslashes($po->sparePart->name ?? '') }}' },
                                             supplier_id: '{{ $po->supplier_id }}',
                                             unit_cost: '{{ $po->unit_cost }}'
                                         })"
-                                        class="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                                        class="text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
                                         <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
-                                        <span>Assign Vendor & Order</span>
+                                        <span>{{ $po->supplier_id ? 'Edit & Order' : 'Assign Vendor & Order' }}</span>
                                     </button>
                                     <form method="POST" action="/admin/purchase-orders/{{ $po->id }}/cancel" class="inline"
                                         onsubmit="return confirmSubmit(event, {title:'Cancel requisition?', message:'Cancel this purchase order?', confirmLabel:'Cancel PO'})">

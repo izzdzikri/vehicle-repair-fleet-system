@@ -3,7 +3,17 @@
 
 @section('content')
 
-@include('partials.greeting')
+<div class="flex justify-between items-start mb-2 flex-wrap gap-4">
+    <div>
+        @include('partials.greeting')
+    </div>
+    <div class="flex items-center gap-2.5 mb-6">
+        <a href="/client/statement"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-xs transition">
+            <i data-lucide="file-text" class="w-4 h-4"></i> Fleet Statement
+        </a>
+    </div>
+</div>
 
 @if(auth()->user()->status === 'inactive')
 <div class="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-xl text-sm font-medium text-rose-800 flex items-center gap-3">
@@ -244,14 +254,20 @@
 {{-- Service History --}}
 @if($serviceHistory->count())
 <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6 mb-6">
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
         <div>
             <h2 class="text-lg font-bold text-gray-900">Fleet Service History</h2>
             <p class="text-xs font-medium text-gray-500 mt-0.5">{{ $totalServices }} total logged service events</p>
         </div>
-        <div class="text-right">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Total Spent</span>
-            <span class="text-base font-extrabold text-emerald-700">RM {{ number_format($totalSpent, 2) }}</span>
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Total Spent</span>
+                <span class="text-base font-extrabold text-emerald-700">RM {{ number_format($totalSpent, 2) }}</span>
+            </div>
+            <a href="/client/statement"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-xs transition">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Full Statement
+            </a>
         </div>
     </div>
     <div class="overflow-x-auto">

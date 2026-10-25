@@ -203,6 +203,7 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
     Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('admin.suppliers.destroy');
     Route::get('/purchase-orders',                        [PurchaseOrderController::class, 'index'])->name('admin.purchase-orders');
     Route::post('/purchase-orders',                       [PurchaseOrderController::class, 'store'])->name('admin.purchase-orders.store');
+    Route::post('/purchase-orders/batch-order',           [PurchaseOrderController::class, 'batchOrder'])->name('admin.purchase-orders.batch-order');
     Route::patch('/purchase-orders/{purchaseOrder}/order', [PurchaseOrderController::class, 'markOrdered'])->name('admin.purchase-orders.order');
     Route::patch('/purchase-orders/{purchaseOrder}/receive',[PurchaseOrderController::class, 'markReceived'])->name('admin.purchase-orders.receive');
     Route::patch('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('admin.purchase-orders.cancel');
@@ -318,6 +319,8 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     Route::get('/invoices',           [InvoiceController::class, 'index'])->name('client.invoices');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('client.invoices.show');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('client.invoices.pdf');
+    Route::get('/statement',          [ClientController::class, 'statement'])->name('client.statement');
+    Route::get('/statement/pdf',      [ClientController::class, 'statement'])->name('client.statement.pdf');
 });
 
 // ----------------------------------------------------------------

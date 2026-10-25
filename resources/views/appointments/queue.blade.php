@@ -12,6 +12,80 @@
     </div>
 </div>
 
+@if(isset($stats))
+<div class="mb-5 bg-white rounded-xl border border-gray-200/80 p-5 shadow-xs">
+    <div class="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="gauge" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h3 class="text-base font-bold text-gray-900 tracking-tight">Real-Time Workshop Bay Capacity & Intake Status</h3>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold
+                        {{ $stats['utilization_rate'] >= 90 ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                          ($stats['utilization_rate'] >= 70 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                          'bg-emerald-50 text-emerald-700 border border-emerald-200') }}">
+                        {{ $stats['utilization_rate'] }}% Utilized
+                    </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">Live monitoring of daily intake slots and active service bays across workshop</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            @if(in_array(auth()->user()->role, ['admin', 'coordinator']))
+            <a href="/{{ auth()->user()->role }}/appointments" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition flex items-center gap-1.5">
+                <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Adjust Daily Cap
+            </a>
+            @endif
+            <span class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg
+                {{ $stats['available_slots'] > 0 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200' }}">
+                <span class="w-2 h-2 rounded-full {{ $stats['available_slots'] > 0 ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
+                {{ $stats['available_slots'] > 0 ? $stats['available_slots'] . ' Intake Slots Available' : 'Workshop Fully Booked' }}
+            </span>
+        </div>
+    </div>
+
+    {{-- Capacity Progress Meter --}}
+    <div class="mt-4">
+        <div class="flex justify-between items-center text-xs mb-1.5">
+            <span class="font-medium text-gray-600">Daily Booking Load</span>
+            <span class="font-bold text-gray-900">{{ $stats['total_booked'] }} / {{ $stats['capacity'] }} slots scheduled</span>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+            <div class="h-2.5 rounded-full transition-all duration-500
+                {{ $stats['utilization_rate'] >= 90 ? 'bg-rose-500' : ($stats['utilization_rate'] >= 70 ? 'bg-amber-500' : 'bg-emerald-500') }}"
+                style="width: {{ min(100, $stats['utilization_rate']) }}%"></div>
+        </div>
+    </div>
+
+    {{-- 4 Stat Micro-Cards --}}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-100">
+        <div class="bg-gray-50/70 rounded-lg p-3 border border-gray-100">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-gray-500 block">Daily Limit</span>
+            <span class="text-xl font-extrabold text-gray-900">{{ $stats['capacity'] }}</span>
+            <span class="text-[11px] text-gray-400 block mt-0.5">configured capacity</span>
+        </div>
+        <div class="bg-blue-50/50 rounded-lg p-3 border border-blue-100/60">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-blue-700 block">Queue Today</span>
+            <span class="text-xl font-extrabold text-blue-900">{{ $stats['total_booked'] }}</span>
+            <span class="text-[11px] text-blue-600 block mt-0.5">confirmed & walk-ins</span>
+        </div>
+        <div class="bg-purple-50/50 rounded-lg p-3 border border-purple-100/60">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-purple-700 block">In Service Bays</span>
+            <span class="text-xl font-extrabold text-purple-900">{{ $stats['active_in_bay'] }}</span>
+            <span class="text-[11px] text-purple-600 block mt-0.5">active job cards</span>
+        </div>
+        <div class="bg-emerald-50/50 rounded-lg p-3 border border-emerald-100/60">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 block">Completed Today</span>
+            <span class="text-xl font-extrabold text-emerald-900">{{ $stats['completed_today'] }}</span>
+            <span class="text-[11px] text-emerald-600 block mt-0.5">finished & inspected</span>
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center flex-wrap gap-3">
         <div>

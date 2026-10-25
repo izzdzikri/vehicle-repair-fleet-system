@@ -7,6 +7,7 @@ use App\Models\Vehicle;
 use App\Models\User;
 use App\Models\Setting;
 use App\Models\Notification;
+use App\Models\JobCard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -94,7 +95,25 @@ class AppointmentController extends Controller
             })
             ->values();
 
-        return view('appointments.queue', compact('appointments'));
+        $dailyCapacity   = (int) Setting::get('daily_appointment_capacity', 25);
+        $totalBooked     = $appointments->count();
+        $activeInBay     = JobCard::whereIn('current_stage', ['diagnosing', 'waiting_parts', 'repairing', 'quality_check'])->count();
+        $completedToday  = JobCard::where('current_stage', 'completed')
+            ->whereDate('completed_at', today())
+            ->count();
+        $capacityPercent = $dailyCapacity > 0 ? min(100, round(($totalBooked / $dailyCapacity) * 100)) : 0;
+        $availableSlots  = max(0, $dailyCapacity - $totalBooked);
+
+        $stats = [
+            'capacity'         => $dailyCapacity,
+            'total_booked'     => $totalBooked,
+            'active_in_bay'    => $activeInBay,
+            'completed_today'  => $completedToday,
+            'available_slots'  => $availableSlots,
+            'utilization_rate' => $capacityPercent,
+        ];
+
+        return view('appointments.queue', compact('appointments', 'stats'));
     }
 
     // ----------------------------------------------------------------
