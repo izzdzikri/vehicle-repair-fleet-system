@@ -103,20 +103,24 @@
             All <span class="ml-1 opacity-75 font-normal">({{ $statusCounts['all'] }})</span>
         </a>
         <a href="{{ $tabHref('pending') }}"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'pending' ? 'bg-amber-600 text-white border-amber-600 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
-            Pending <span class="ml-1 opacity-75 font-normal">({{ $statusCounts['pending'] }})</span>
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'pending' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            Pending <span class="ml-0.5 opacity-75 font-normal">({{ $statusCounts['pending'] }})</span>
         </a>
         <a href="{{ $tabHref('confirmed') }}"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'confirmed' ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
-            Confirmed <span class="ml-1 opacity-75 font-normal">({{ $statusCounts['confirmed'] }})</span>
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'confirmed' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+            <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+            Confirmed <span class="ml-0.5 opacity-75 font-normal">({{ $statusCounts['confirmed'] }})</span>
         </a>
         <a href="{{ $tabHref('completed') }}"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'completed' ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
-            Completed <span class="ml-1 opacity-75 font-normal">({{ $statusCounts['completed'] }})</span>
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'completed' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Completed <span class="ml-0.5 opacity-75 font-normal">({{ $statusCounts['completed'] }})</span>
         </a>
         <a href="{{ $tabHref('cancelled') }}"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'cancelled' ? 'bg-rose-600 text-white border-rose-600 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
-            Cancelled <span class="ml-1 opacity-75 font-normal">({{ $statusCounts['cancelled'] }})</span>
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ request('status') === 'cancelled' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+            Cancelled <span class="ml-0.5 opacity-75 font-normal">({{ $statusCounts['cancelled'] }})</span>
         </a>
     </div>
 </div>

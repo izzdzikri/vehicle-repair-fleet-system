@@ -80,9 +80,9 @@
     <form method="POST" action="/admin/maintenance" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @csrf
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Vehicle</label>
             <select name="vehicle_id"
-                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required>
                 <option value="">Select vehicle</option>
                 @foreach($vehicles as $v)
@@ -95,9 +95,9 @@
             </select>
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Alert Type</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Alert Type</label>
             <select name="alert_type"
-                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required>
                 <option value="">Select type</option>
                 <option value="Oil Change Due">Oil Change Due</option>
@@ -114,9 +114,9 @@
             </select>
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Urgency</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Urgency</label>
             <select name="urgency"
-                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required>
                 <option value="low">Low — informational</option>
                 <option value="medium" selected>Medium — schedule soon</option>
@@ -124,16 +124,16 @@
             </select>
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Recommendation</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Recommendation</label>
             <input type="text" name="recommendation"
                 placeholder="e.g. Schedule oil change within 500 km or 1 month"
-                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required>
         </div>
-        <div class="md:col-span-2">
+        <div class="md:col-span-2 pt-1">
             <button type="submit"
-                class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 text-sm font-medium">
-                Create Alert
+                class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Create Alert
             </button>
         </div>
     </form>
@@ -345,7 +345,7 @@
                                 };
                             @endphp
                             <a href="{{ $bookUrl }}"
-                                class="inline-flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg shadow-xs transition"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-xs transition"
                                 title="Book appointment for this vehicle and service">
                                 <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
                                 <span>Book Now</span>
@@ -441,7 +441,7 @@
                     };
                 @endphp
                 <a href="{{ $bookUrl }}"
-                    class="inline-flex items-center gap-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg shadow-xs transition"
+                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-xs transition"
                     title="Book appointment for this vehicle and service">
                     <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
                     <span>Book Now</span>

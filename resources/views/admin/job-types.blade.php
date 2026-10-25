@@ -19,7 +19,7 @@
             <p class="text-xs font-medium text-gray-500 mt-0.5">Define service catalog, labor baseline prices, and predictive maintenance trigger cycles</p>
         </div>
         <button @click="showAdd = true"
-            class="bg-blue-600 text-white px-4 py-2.5 rounded-lg text-xs font-bold hover:bg-blue-700 flex items-center gap-2 shadow-xs transition">
+            class="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs transition">
             <i data-lucide="plus" class="w-4 h-4"></i> Add Job Type
         </button>
     </div>
@@ -187,7 +187,7 @@
                         Cancel
                     </button>
                     <button type="submit"
-                        class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 text-xs font-bold shadow-xs transition">
+                        class="bg-slate-900 text-white px-5 py-2 rounded-lg hover:bg-slate-800 text-xs font-bold shadow-xs transition">
                         Create Job Type
                     </button>
                 </div>
@@ -271,7 +271,7 @@
                         Cancel
                     </button>
                     <button type="submit"
-                        class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 text-xs font-bold shadow-xs transition">
+                        class="bg-slate-900 text-white px-5 py-2 rounded-lg hover:bg-slate-800 text-xs font-bold shadow-xs transition">
                         Save Changes
                     </button>
                 </div>

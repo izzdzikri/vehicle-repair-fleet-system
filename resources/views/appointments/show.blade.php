@@ -228,7 +228,7 @@
                 <div class="flex items-center gap-3 flex-wrap">
                     <form method="POST" action="{{ $actionPrefix }}/appointments/{{ $appointment->id }}/confirm">
                         @csrf @method('PATCH')
-                        <button class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 text-sm font-semibold transition shadow-xs flex items-center gap-2">
+                        <button class="bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 text-sm font-bold transition shadow-xs flex items-center gap-2">
                             <i data-lucide="check" class="w-4 h-4"></i> Confirm Appointment
                         </button>
                     </form>

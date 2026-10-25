@@ -118,10 +118,10 @@
                     <input type="text" name="address" class="w-full border rounded px-3 py-2 text-sm">
                 </div>
                 <div class="col-span-2 flex gap-3 pt-2">
-                    <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 text-sm font-medium">
+                    <button type="submit" class="bg-slate-900 text-white px-5 py-2 rounded-lg hover:bg-slate-800 text-xs font-bold shadow-xs transition">
                         Add Supplier
                     </button>
-                    <button type="button" @click="showAdd = false" class="px-5 py-2 border rounded text-sm text-gray-600 hover:bg-gray-50">
+                    <button type="button" @click="showAdd = false" class="px-5 py-2 border rounded-lg text-xs text-gray-600 hover:bg-gray-50 transition">
                         Cancel
                     </button>
                 </div>
@@ -169,10 +169,13 @@
                     </div>
                 </div>
                 <div class="flex gap-3 mt-5">
-                    <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 text-sm font-medium">
+                    <button type="submit" class="bg-slate-900 text-white px-5 py-2 rounded-lg hover:bg-slate-800 text-xs font-bold shadow-xs transition">
                         Save Changes
                     </button>
-                    <button type="button" @click="showEdit = false" class="px-5 py-2 border rounded text-sm text-gray-600 hover:bg-gray-50">
+                    <button type="button" @click="showEdit = false" class="px-5 py-2 border rounded-lg text-xs text-gray-600 hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                </div>
                         Cancel
                     </button>
                 </div>

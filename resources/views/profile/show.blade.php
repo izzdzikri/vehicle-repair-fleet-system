@@ -98,7 +98,7 @@
 
             <div class="pt-3">
                 <button type="submit"
-                    class="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-xs transition">
+                    class="w-full bg-slate-900 text-white py-2.5 rounded-lg hover:bg-slate-800 text-sm font-semibold shadow-xs transition">
                     Save Profile Changes
                 </button>
             </div>
@@ -159,7 +159,7 @@
                                 required>
                         </div>
                         <button type="submit"
-                            class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-xs">
+                            class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition">
                             Confirm & Enable
                         </button>
                     </form>
@@ -212,7 +212,7 @@
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                             required>
                     </div>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-xs">
+                    <button type="submit" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition">
                         Regenerate
                     </button>
                     <button type="button" @click="showRegenerate = false"
@@ -224,7 +224,7 @@
         @elseif(!session('two_factor_setup'))
             <form method="POST" action="/profile/two-factor/enable" class="pt-2">
                 @csrf
-                <button type="submit" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-xs transition">
+                <button type="submit" class="bg-slate-900 text-white px-5 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition">
                     Enable Two-Factor Authentication
                 </button>
             </form>

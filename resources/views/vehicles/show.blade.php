@@ -208,7 +208,7 @@
                     {{-- 1-Click Booking Action Button --}}
                     <div class="flex items-center gap-2">
                         <a href="{{ $bookUrl }}"
-                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-xs transition">
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-xs transition">
                             <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
                             <span>Book Now</span>
                         </a>

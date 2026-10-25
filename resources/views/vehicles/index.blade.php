@@ -38,7 +38,7 @@
             @endif
         </form>
         <a href="{{ $base }}/vehicles/create"
-            class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition shadow-xs flex items-center gap-2">
+            class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition shadow-xs flex items-center gap-2">
             <i data-lucide="plus" class="w-4 h-4"></i> Add Vehicle
         </a>
     </div>

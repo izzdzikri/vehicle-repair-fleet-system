@@ -277,11 +277,11 @@
                 </div>
                 <div class="md:col-span-2 flex gap-3 pt-2">
                     <button type="submit"
-                        class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 text-sm font-medium">
+                        class="bg-slate-900 text-white px-5 py-2.5 rounded-lg hover:bg-slate-800 text-xs font-bold shadow-xs transition">
                         Create User
                     </button>
                     <button type="button" @click="showAdd = false"
-                        class="px-6 py-2 border rounded text-sm text-gray-600 hover:bg-gray-50">
+                        class="px-5 py-2.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                         Cancel
                     </button>
                 </div>

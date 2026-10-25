@@ -219,7 +219,7 @@
 
             <div class="pt-3">
                 <button type="submit"
-                    class="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-xs transition flex items-center justify-center gap-2">
+                    class="w-full bg-slate-900 text-white py-2.5 rounded-xl hover:bg-slate-800 text-sm font-bold shadow-xs transition flex items-center justify-center gap-2">
                     <i data-lucide="check-circle" class="w-4 h-4"></i> Dispatch & Create Job Card
                 </button>
             </div>

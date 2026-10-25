@@ -440,7 +440,7 @@
                         Cancel
                     </button>
                     <button type="submit"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-xs transition flex items-center gap-1.5">
+                        class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition flex items-center gap-1.5">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i> Confirm & Dispatch Order
                     </button>
                 </div>
@@ -502,7 +502,7 @@
                         Cancel
                     </button>
                     <button type="submit"
-                        class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-xs transition flex items-center gap-1.5">
+                        class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition flex items-center gap-1.5">
                         <i data-lucide="plus" class="w-3.5 h-3.5"></i> Create Requisition
                     </button>
                 </div>

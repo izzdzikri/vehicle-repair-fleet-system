@@ -136,7 +136,7 @@
 
             <div class="pt-3">
                 <button type="submit"
-                    class="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-xs transition">
+                    class="w-full bg-slate-900 text-white py-2.5 rounded-lg hover:bg-slate-800 text-sm font-semibold shadow-xs transition">
                     Save User Profile Changes
                 </button>
             </div>
@@ -176,7 +176,7 @@
             </div>
             <div class="pt-2">
                 <button type="submit"
-                    class="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 text-xs font-bold shadow-xs transition">
+                    class="bg-slate-900 text-white px-5 py-2.5 rounded-lg hover:bg-slate-800 text-xs font-bold shadow-xs transition">
                     Save Role & Permissions
                 </button>
             </div>

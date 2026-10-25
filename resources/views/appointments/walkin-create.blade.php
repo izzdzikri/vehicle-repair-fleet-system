@@ -162,11 +162,11 @@
 
             <div class="flex items-center gap-3 pt-3">
                 <button type="submit"
-                    class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-xs transition">
-                    Create Walk-in Appointment
+                    class="bg-slate-900 text-white px-6 py-2.5 rounded-xl hover:bg-slate-800 text-sm font-bold shadow-xs transition flex items-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i> Create Walk-in Appointment
                 </button>
                 <a href="{{ $backLink }}"
-                    class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+                    class="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
                     Cancel
                 </a>
             </div>

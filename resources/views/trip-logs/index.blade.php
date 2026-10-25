@@ -182,7 +182,7 @@
                 </label>
 
                 <button type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-sm">
+                    class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-xs">
                     <i data-lucide="check" class="w-4 h-4"></i> Save Trip & Refresh Predictions
                 </button>
             </div>
