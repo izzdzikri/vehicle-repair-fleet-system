@@ -87,8 +87,8 @@
 
     {{-- Add Modal --}}
     <div x-show="showAdd" x-transition.opacity
-        class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display:none">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" @click.outside="showAdd = false">
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" style="display:none">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg p-6" @click.outside="showAdd = false">
             <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
@@ -136,8 +136,8 @@
 
     {{-- Edit Modal --}}
     <div x-show="showEdit" x-transition.opacity
-        class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display:none">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" @click.outside="showEdit = false">
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" style="display:none">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg p-6" @click.outside="showEdit = false">
             <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">

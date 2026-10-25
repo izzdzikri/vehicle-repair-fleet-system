@@ -403,11 +403,11 @@
 
     {{-- MODAL: ASSIGN VENDOR & SUBMIT ORDER --}}
     <div x-show="orderModal.show" x-transition.opacity
-        class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display:none">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 text-left" @click.outside="orderModal.show = false">
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" style="display:none">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md p-6 text-left" @click.outside="orderModal.show = false">
             <div class="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-                <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-gray-900 tracking-tight">Dispatch Order to Vendor</h3>
@@ -434,13 +434,13 @@
                         class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500">
                 </div>
 
-                <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
                     <button type="button" @click="orderModal.show = false"
-                        class="px-4 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                        class="px-4 py-2 border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                         Cancel
                     </button>
                     <button type="submit"
-                        class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition flex items-center gap-1.5">
+                        class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs transition flex items-center gap-1.5">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i> Confirm & Dispatch Order
                     </button>
                 </div>
@@ -450,11 +450,11 @@
 
     {{-- MODAL: CREATE MANUAL PURCHASE ORDER --}}
     <div x-show="showAddModal" x-transition.opacity
-        class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display:none">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 text-left" @click.outside="showAddModal = false">
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4" style="display:none">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-lg p-6 text-left" @click.outside="showAddModal = false">
             <div class="flex items-center gap-3 mb-5 pb-3 border-b border-gray-100">
-                <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <i data-lucide="package-plus" class="w-5 h-5"></i>
+                <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
+                    <i data-lucide="package-plus" class="w-4 h-4"></i>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-gray-900 tracking-tight">Create Manual Purchase Requisition</h3>
@@ -496,13 +496,13 @@
                     </select>
                 </div>
 
-                <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
                     <button type="button" @click="showAddModal = false"
-                        class="px-4 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                        class="px-4 py-2 border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                         Cancel
                     </button>
                     <button type="submit"
-                        class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition flex items-center gap-1.5">
+                        class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs transition flex items-center gap-1.5">
                         <i data-lucide="plus" class="w-3.5 h-3.5"></i> Create Requisition
                     </button>
                 </div>

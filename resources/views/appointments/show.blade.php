@@ -261,7 +261,7 @@
                 </div>
                 @if(auth()->user()->role === 'admin')
                 <a href="/admin/job-cards/{{ $appointment->jobCard->id }}"
-                    class="text-xs font-semibold bg-purple-700 text-white px-3.5 py-2 rounded-lg hover:bg-purple-800 transition shadow-xs flex items-center gap-1.5">
+                    class="text-xs font-bold bg-slate-900 text-white px-3.5 py-2 rounded-xl hover:bg-slate-800 transition shadow-xs flex items-center gap-1.5">
                     <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Open Job Card
                 </a>
                 @endif

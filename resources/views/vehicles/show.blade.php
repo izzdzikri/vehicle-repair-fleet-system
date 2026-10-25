@@ -130,7 +130,7 @@
         <div class="flex justify-between items-start mb-6 pb-5 border-b border-gray-100 flex-wrap gap-4">
             <div>
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
                         <i data-lucide="gauge" class="w-4 h-4"></i>
                     </div>
                     <h3 class="text-lg font-extrabold text-gray-900 tracking-tight">Service Life & Predictive Telemetry</h3>

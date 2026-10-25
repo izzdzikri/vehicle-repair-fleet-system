@@ -11,7 +11,7 @@
         {{-- Company Info Card --}}
         <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6">
             <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center shrink-0">
                     <i data-lucide="building-2" class="w-6 h-6"></i>
                 </div>
                 <div class="min-w-0">

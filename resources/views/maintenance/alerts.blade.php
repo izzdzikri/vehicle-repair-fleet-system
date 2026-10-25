@@ -168,12 +168,12 @@
             <div class="flex items-center bg-gray-100 p-0.5 rounded-lg text-xs">
                 <button type="button" @click="viewMode = 'table'"
                     :class="viewMode === 'table' ? 'bg-white text-gray-900 font-semibold shadow-xs' : 'text-gray-500 hover:text-gray-900'"
-                    class="px-2.5 py-1 rounded transition">
+                    class="px-2.5 py-1 rounded-md transition">
                     Table View
                 </button>
                 <button type="button" @click="viewMode = 'cards'"
                     :class="viewMode === 'cards' ? 'bg-white text-gray-900 font-semibold shadow-xs' : 'text-gray-500 hover:text-gray-900'"
-                    class="px-2.5 py-1 rounded transition">
+                    class="px-2.5 py-1 rounded-md transition">
                     Card View
                 </button>
             </div>

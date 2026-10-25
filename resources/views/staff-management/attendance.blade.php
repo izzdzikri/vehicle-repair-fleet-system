@@ -274,7 +274,7 @@
         class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4"
         style="display:none;">
         
-        <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-lg w-full overflow-hidden"
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 max-w-lg w-full overflow-hidden"
             @click.outside="showAdjustModal = false">
             
             <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">

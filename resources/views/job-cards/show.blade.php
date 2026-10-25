@@ -436,9 +436,9 @@
 
         {{-- Barcode Scanner Modal --}}
         <div x-show="showScanner" x-transition.opacity
-            class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 no-print"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 no-print"
             style="display:none">
-            <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden" @click.away="closeScanner()">
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-200 max-w-md w-full overflow-hidden" @click.away="closeScanner()">
                 <div class="bg-gray-900 text-white px-4 py-3 flex justify-between items-center">
                     <div class="flex items-center gap-2">
                         <i data-lucide="scan-barcode" class="w-5 h-5 text-blue-400"></i>

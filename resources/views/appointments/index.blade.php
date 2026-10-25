@@ -259,7 +259,7 @@
                                     @elseif($apt->status === 'confirmed')
                                         @if(!$apt->jobCard && auth()->user()->role === 'admin')
                                         <a href="/admin/job-cards/create?appointment_id={{ $apt->id }}"
-                                            class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50">
+                                            class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">
                                             <i data-lucide="clipboard-plus" class="w-4 h-4"></i> Create Job Card
                                         </a>
                                         @elseif($apt->jobCard)
@@ -269,7 +269,7 @@
                                                 : "/admin/job-cards/{$apt->jobCard->id}";
                                         @endphp
                                         <a href="{{ $jobCardLink }}"
-                                            class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50">
+                                            class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50">
                                             <i data-lucide="clipboard-list" class="w-4 h-4"></i> View Job #{{ $apt->jobCard->id }}
                                         </a>
                                         @endif

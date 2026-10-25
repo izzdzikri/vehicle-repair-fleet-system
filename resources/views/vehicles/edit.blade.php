@@ -16,7 +16,7 @@
     <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-7">
         <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 flex-wrap gap-2">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center">
                     <i data-lucide="edit-3" class="w-5 h-5"></i>
                 </div>
                 <div>
