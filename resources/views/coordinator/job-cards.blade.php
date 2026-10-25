@@ -6,7 +6,7 @@
 {{-- Filter segmented toolbar --}}
 <div class="flex items-center gap-2 mb-5 flex-wrap">
     <a href="/coordinator/job-cards?filter=all"
-        class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition border {{ (!$activeFilter || $activeFilter === 'all') ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' }}">
+        class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition border {{ (!$activeFilter || $activeFilter === 'all') ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' }}">
         All Active ({{ $totalActive }})
     </a>
     <a href="/coordinator/job-cards?filter=stale"

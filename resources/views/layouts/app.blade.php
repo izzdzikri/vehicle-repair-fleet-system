@@ -539,11 +539,11 @@
             <p class="text-sm text-gray-500 mb-5" x-text="$store.confirmDialog.message"></p>
             <div class="flex gap-3 justify-end">
                 <button type="button" @click="$store.confirmDialog.close()"
-                    class="px-4 py-2 border rounded text-sm text-gray-600 hover:bg-gray-50">
+                    class="px-4 py-2 border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                     Cancel
                 </button>
                 <button type="button" @click="$store.confirmDialog.confirm()"
-                    class="px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                    class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 transition shadow-xs"
                     x-text="$store.confirmDialog.confirmLabel">
                 </button>
             </div>

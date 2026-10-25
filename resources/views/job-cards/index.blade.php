@@ -62,7 +62,7 @@
         </a>
         @foreach(['received','diagnosing','waiting_parts','repairing','quality_check','completed'] as $stage)
         <a href="{{ $tabHref($stage) }}"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border capitalize {{ request('stage') === $stage ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border capitalize {{ request('stage') === $stage ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
             {{ ucfirst(str_replace('_',' ',$stage)) }} <span class="ml-1 opacity-75 font-normal">({{ $stageCounts[$stage] }})</span>
         </a>
         @endforeach

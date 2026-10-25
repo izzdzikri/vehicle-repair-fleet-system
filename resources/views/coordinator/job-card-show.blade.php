@@ -148,7 +148,7 @@
                 class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" required></textarea>
             <div class="mt-2.5 text-right">
                 <button type="submit"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-xs transition">
+                    class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition">
                     Log Check-in Note
                 </button>
             </div>

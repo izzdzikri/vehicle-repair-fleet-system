@@ -507,8 +507,8 @@ function chatbotComponent() {
                                             <button type="button" @click="pickSlot(selectedDay, slot)"
                                                 :disabled="!slot.is_available"
                                                 :class="{
-                                                    'bg-blue-600 text-white font-bold ring-2 ring-blue-300': selectedSlot && selectedSlot.time === slot.time,
-                                                    'bg-white text-slate-800 border border-gray-300 hover:border-blue-600 hover:bg-blue-50 font-medium active:scale-95': slot.is_available && (!selectedSlot || selectedSlot.time !== slot.time),
+                                                    'bg-slate-900 text-white font-bold ring-2 ring-slate-400': selectedSlot && selectedSlot.time === slot.time,
+                                                    'bg-white text-slate-800 border border-gray-300 hover:border-slate-800 hover:bg-slate-50 font-medium active:scale-95': slot.is_available && (!selectedSlot || selectedSlot.time !== slot.time),
                                                     'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-50': slot.is_past,
                                                     'bg-red-50 text-red-500 border border-red-200 cursor-not-allowed opacity-60 font-semibold': slot.is_full && !slot.is_past
                                                 }"
@@ -547,7 +547,7 @@ function chatbotComponent() {
                         <template x-if="msg.appointment_url">
                             <div class="mt-2.5 ml-1 flex items-center gap-2">
                                 <a :href="msg.appointment_url"
-                                    class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition active:scale-95">
+                                    class="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition active:scale-95">
                                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                     <span x-text="lang === 'ms' ? 'Lihat Butiran Temujanji di Sistem' : 'View Appointment in System'"></span>
                                 </a>
@@ -589,7 +589,7 @@ function chatbotComponent() {
                         <template x-if="msg.action === 'confirm_invoice_payment'">
                             <div class="mt-2.5 flex flex-wrap items-center gap-2 justify-start ml-1">
                                 <a :href="msg.invoice_url"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition active:scale-95">
+                                    class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition active:scale-95">
                                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                     <span x-text="lang === 'ms' ? 'Lompat ke Bahagian Bayaran' : 'Jump to Payment Section'"></span>
                                 </a>

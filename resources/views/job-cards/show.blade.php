@@ -169,10 +169,10 @@
 
             {{-- Initial diagnosis text --}}
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Technician Diagnosis</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Technician Diagnosis</label>
                 <input type="text" name="diagnosis" value="{{ old('diagnosis', $jobCard->diagnosis) }}"
                     placeholder="e.g. Worn brake pads, low coolant level"
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
             </div>
 
             {{-- Symptom checklist --}}
@@ -240,10 +240,10 @@
 
             {{-- Technician notes --}}
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Technician Notes</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Technician Notes</label>
                 <textarea name="technician_notes" rows="3"
                     placeholder="Additional observations, parts needed, recommendations..."
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('technician_notes', $jobCard->technician_notes) }}</textarea>
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">{{ old('technician_notes', $jobCard->technician_notes) }}</textarea>
             </div>
 
             {{-- Tally indicator --}}
@@ -261,7 +261,7 @@
             @endif
 
             <button type="submit"
-                class="bg-blue-600 text-white px-5 py-2 rounded text-sm hover:bg-blue-700 font-medium">
+                class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs transition">
                 Save Diagnosis & Symptoms
             </button>
         </form>
@@ -306,22 +306,22 @@
             class="flex gap-3 items-end flex-wrap mb-5">
             @csrf
             <div class="flex-1 min-w-48">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Photo</label>
                 <input type="file" name="photo" accept="image/jpeg,image/png"
-                    class="w-full text-sm text-gray-500 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full text-sm text-gray-500 border border-gray-300 rounded-lg px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     required>
                 <p class="text-xs text-gray-400 mt-1">JPG or PNG, max 5MB</p>
             </div>
             <div class="flex-1 min-w-48">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
                     Caption <span class="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <input type="text" name="caption" maxlength="150"
                     placeholder="e.g. Worn brake pad — front left"
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
             </div>
             <button type="submit"
-                class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
+                class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs transition">
                 Upload Photo
             </button>
         </form>
@@ -407,9 +407,9 @@
             class="flex gap-3 items-end flex-wrap mb-4">
             @csrf
             <div class="flex-1 min-w-48">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Part</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Part</label>
                 <select name="spare_part_id" x-model="selectedPartId" id="job-card-part-select"
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     required>
                     <option value="">Select part or scan barcode above</option>
                     @foreach($spareParts as $part)
@@ -423,13 +423,13 @@
                 </select>
             </div>
             <div class="w-28">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Qty</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Qty</label>
                 <input type="number" name="quantity" min="1" value="1" id="job-card-part-qty"
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     required>
             </div>
             <button type="submit"
-                class="bg-green-600 text-white px-5 py-2 rounded text-sm font-medium hover:bg-green-700 shadow-sm transition">
+                class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs transition">
                 Add Part
             </button>
         </form>
@@ -464,9 +464,9 @@
                             <input type="text" x-model="manualCode" @keydown.enter.prevent="lookupManual()"
                                 id="jobcard-scanner-manual-input"
                                 placeholder="Scan or type part number (e.g. CO-5W30-4L)..."
-                                class="flex-1 border rounded px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                                class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono bg-white">
                             <button type="button" @click="lookupManual()"
-                                class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-700">
+                                class="bg-slate-900 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-800 transition">
                                 Select
                             </button>
                         </div>
@@ -474,7 +474,7 @@
                 </div>
                 <div class="bg-gray-50 px-4 py-2.5 border-t text-right">
                     <button type="button" @click="closeScanner()"
-                        class="px-3 py-1.5 border rounded text-xs text-gray-600 hover:bg-gray-100">
+                        class="px-4 py-1.5 border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">
                         Cancel
                     </button>
                 </div>
@@ -532,11 +532,11 @@
             }">
             @csrf
             <div class="flex-1 min-w-48">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Service / Labour Description</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Service / Labour Description</label>
                 <select name="description"
                     x-model="selected"
                     @change="onSelect($event.target.value)"
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     required>
                     <option value="">Select job type</option>
                     @foreach($jobTypes->groupBy('category') as $category => $types)
@@ -554,27 +554,27 @@
                 </select>
             </div>
             <div class="w-36">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Charge (RM)</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Charge (RM)</label>
                 <input type="number" name="charge" min="1" step="0.50"
                     placeholder="e.g. 50"
                     x-model="charge"
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     required>
                 <p class="text-xs text-gray-400 mt-0.5">Auto-filled from base price</p>
             </div>
 
             {{-- Remark Field (between charge input and submit button) --}}
             <div class="w-full">
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
                     Remark <span class="text-gray-400 font-normal">(optional — e.g. "Dashboard removal required for this model")</span>
                 </label>
                 <input type="text" name="remark"
                     placeholder="e.g. Additional disassembly needed based on vehicle model"
-                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
             </div>
 
             <button type="submit"
-                class="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700 mt-2">
+                class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs transition mt-2">
                 Add Labour
             </button>
         </form>
@@ -646,12 +646,12 @@
 
         <form method="POST" action="/coordinator/job-cards/{{ $jobCard->id }}/checkin" class="mb-5">
             @csrf
-            <label class="block text-sm font-medium text-gray-700 mb-1">Log a check-in</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Log a check-in</label>
             <textarea name="note" rows="2" maxlength="500"
                 placeholder="e.g. Confirmed with technician — waiting on brake pad delivery, ETA 2pm."
-                class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"></textarea>
             <button type="submit"
-                class="mt-2 bg-blue-600 text-white px-5 py-2 rounded text-sm hover:bg-blue-700">
+                class="mt-2 bg-slate-900 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs transition">
                 Log Check-in
             </button>
         </form>

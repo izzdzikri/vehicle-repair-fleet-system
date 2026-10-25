@@ -183,9 +183,7 @@
                         </div>
 
                         <button type="submit"
-                            class="w-full mt-5 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm
-                                   hover:bg-blue-700 transition shadow-md"
-                            style="box-shadow: 0 4px 15px rgba(59,130,246,0.35);">
+                            class="w-full mt-5 bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition shadow-md">
                             Sign In to Portal
                         </button>
                     </form>

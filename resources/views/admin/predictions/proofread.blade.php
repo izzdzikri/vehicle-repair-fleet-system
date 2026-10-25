@@ -39,7 +39,7 @@
             <form method="POST" action="/admin/maintenance/predict">
                 @csrf
                 <button type="submit"
-                    class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 flex items-center gap-2 shadow-xs transition">
+                    class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 flex items-center gap-2 shadow-xs transition">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i> Re-scan Predictions Now
                 </button>
             </form>
@@ -164,7 +164,7 @@
         <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-4 mb-4 flex justify-between items-center flex-wrap gap-3">
             <div class="flex items-center gap-2 flex-wrap">
                 <a href="/admin/predictions/proofread?filter=all"
-                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ $statusFilter === 'all' ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' }}">
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ $statusFilter === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-xs' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50' }}">
                     All Predictions ({{ $stats['total_predictions'] }})
                 </a>
                 <a href="/admin/predictions/proofread?filter=pending"
@@ -555,7 +555,7 @@
                                     <input type="hidden" name="spare_part_id" value="{{ $item['part']->id }}">
                                     <input type="hidden" name="quantity" value="{{ $item['shortage'] }}">
                                     <button type="submit"
-                                        class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                                        class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
                                         <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i> Auto-Draft PO
                                     </button>
                                 </form>
@@ -777,7 +777,7 @@
                         Cancel
                     </button>
                     <button type="submit"
-                        class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 text-xs font-bold shadow-xs transition">
+                        class="bg-slate-900 text-white px-5 py-2 rounded-lg hover:bg-slate-800 text-xs font-bold shadow-xs transition">
                         Save & Verify
                     </button>
                 </div>

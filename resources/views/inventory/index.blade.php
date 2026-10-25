@@ -179,10 +179,15 @@
     @if(auth()->user()->hasPermission('inventory.manage'))
     {{-- Add Modal --}}
     <div x-show="showAdd" x-transition.opacity
-        class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display:none">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6" @click.outside="showAdd = false">
-            <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg font-semibold text-gray-700">Add New Part</h3>
+        class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" style="display:none">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" @click.outside="showAdd = false">
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
+                        <i data-lucide="package-plus" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-900">Add New Part</h3>
+                </div>
                 <button @click="showAdd = false" class="text-gray-400 hover:text-gray-600">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
@@ -190,35 +195,35 @@
             <form method="POST" action="/inventory/spare-parts" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @csrf
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Part Name *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Part Name *</label>
                     <input type="text" name="name" value="{{ old('name') }}"
                         placeholder="e.g. Engine Oil 5W-30"
-                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                         required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Brand</label>
                     <input type="text" name="brand" value="{{ old('brand') }}"
                         placeholder="e.g. Castrol"
-                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Part Number *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Part Number *</label>
                     <div class="flex gap-2">
                         <input type="text" name="part_number" id="add-part-number" value="{{ old('part_number') }}"
                             placeholder="e.g. CO-5W30-4L"
-                            class="flex-1 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="flex-1 border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-mono"
                             required>
                         <button type="button" @click="openScanner('add-part')" title="Scan barcode for part number"
-                            class="border border-blue-400 text-blue-600 px-2.5 rounded hover:bg-blue-50 transition">
+                            class="border border-gray-300 text-slate-700 px-3 rounded-lg hover:bg-gray-100 transition flex items-center justify-center">
                             <i data-lucide="scan-barcode" class="w-4 h-4"></i>
                         </button>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Category *</label>
                     <select name="category"
-                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                         required>
                         <option value="">Select</option>
                         @foreach(['Lubricants','Filters','Brakes','Engine','Electrical','Cooling','Transmission','Suspension','Steering','Tyres','Accessories'] as $cat)
@@ -227,32 +232,32 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price (RM) *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Unit Price (RM) *</label>
                     <input type="number" name="unit_price" value="{{ old('unit_price') }}"
                         step="0.01" min="0" placeholder="0.00"
-                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                         required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Stock *</label>
                     <input type="number" name="stock" value="{{ old('stock', 0) }}" min="0"
-                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                         required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Min Stock *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Min Stock *</label>
                     <input type="number" name="min_stock" value="{{ old('min_stock', 5) }}" min="1"
-                        class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                         required>
                 </div>
-                <div class="md:col-span-2 flex gap-3 pt-2">
-                    <button type="submit"
-                        class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 text-sm font-medium">
-                        Add Part
-                    </button>
+                <div class="md:col-span-2 flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100">
                     <button type="button" @click="showAdd = false"
-                        class="px-5 py-2 border rounded text-sm text-gray-600 hover:bg-gray-50">
+                        class="px-4 py-2 border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                         Cancel
+                    </button>
+                    <button type="submit"
+                        class="bg-slate-900 text-white px-5 py-2 rounded-xl hover:bg-slate-800 text-xs font-bold shadow-xs transition">
+                        Add Part
                     </button>
                 </div>
             </form>
@@ -262,11 +267,16 @@
     {{-- Edit Modal --}}
     <div x-show="showEdit"
         x-transition.opacity
-        class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
         style="display:none">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6" @click.outside="showEdit = false">
-            <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg font-semibold text-gray-700">Edit Part</h3>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" @click.outside="showEdit = false">
+            <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 flex items-center justify-center">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-900">Edit Part</h3>
+                </div>
                 <button @click="showEdit = false" class="text-gray-400 hover:text-gray-600">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
@@ -276,26 +286,26 @@
                 @csrf @method('PUT')
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Part Name *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Part Name *</label>
                         <input type="text" name="name" :value="part.name"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                             required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Brand</label>
                         <input type="text" name="brand" :value="part.brand"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Part Number *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Part Number *</label>
                         <input type="text" name="part_number" :value="part.part_number"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-mono"
                             required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Category *</label>
                         <select name="category"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                             required>
                             @foreach(['Lubricants','Filters','Brakes','Engine','Electrical','Cooling','Transmission','Suspension','Steering','Tyres','Accessories'] as $cat)
                             <option value="{{ $cat }}" :selected="part.category === '{{ $cat }}'">{{ $cat }}</option>
@@ -303,35 +313,38 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price (RM) *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Unit Price (RM) *</label>
                         <input type="number" name="unit_price" :value="part.unit_price"
                             step="0.01" min="0"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                             required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Stock *</label>
                         <input type="number" name="stock" :value="part.stock" min="0"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                             required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Min Stock *</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Min Stock *</label>
                         <input type="number" name="min_stock" :value="part.min_stock" min="1"
-                            class="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                             required>
                     </div>
                 </div>
-                <div class="flex gap-3 mt-5">
-                    <button type="submit"
-                        class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 text-sm font-medium">
-                        Save Changes
-                    </button>
+                <div class="flex items-center justify-end gap-2.5 mt-5 pt-3 border-t border-gray-100">
                     <button type="button" @click="showEdit = false"
-                        class="px-5 py-2 border rounded text-sm text-gray-600 hover:bg-gray-50">
+                        class="px-4 py-2 border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                         Cancel
                     </button>
+                    <button type="submit"
+                        class="bg-slate-900 text-white px-5 py-2 rounded-xl hover:bg-slate-800 text-xs font-bold shadow-xs transition">
+                        Save Changes
+                    </button>
                 </div>
+            </form>
+        </div>
+    </div>
             </form>
         </div>
     </div>
@@ -363,10 +376,10 @@
                 <div class="flex gap-2 pt-1 border-t">
                     <input type="text" id="inventory-laser-input"
                         placeholder="Or scan with USB laser scanner..."
-                        class="flex-1 border rounded px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                         onkeydown="if(event.key==='Enter'){ event.preventDefault(); handleScanResult(this.value.trim(), window._currentScanTarget || 'search'); }">
                     <button type="button" onclick="handleScanResult(document.getElementById('inventory-laser-input').value.trim(), window._currentScanTarget || 'search')"
-                        class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-blue-700">
+                        class="bg-slate-900 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-800 transition">
                         Select
                     </button>
                 </div>

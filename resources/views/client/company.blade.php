@@ -189,7 +189,7 @@
                             class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     </div>
                     <button type="submit"
-                        class="w-full bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-xs mt-2">
+                        class="w-full bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 text-xs font-bold shadow-xs mt-2 transition">
                         Submit PIC Request
                     </button>
                 </form>

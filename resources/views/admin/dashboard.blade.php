@@ -208,7 +208,7 @@
                 </div>
 
                 <a href="/admin/predictions/proofread?filter=all"
-                    class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl text-xs font-bold shadow-lg transition flex items-center gap-2 whitespace-nowrap shrink-0">
+                    class="bg-white hover:bg-slate-100 text-slate-900 px-4 py-3 rounded-xl text-xs font-bold shadow-lg transition flex items-center gap-2 whitespace-nowrap shrink-0">
                     <i data-lucide="trending-down" class="w-4 h-4"></i>
                     <span>Review Savings &amp; Draft PO</span>
                 </a>
