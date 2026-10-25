@@ -8,12 +8,32 @@ use App\Models\Vehicle;
 use App\Models\JobType;
 use App\Models\Notification;
 use App\Models\MaintenanceAlert;
+use App\Models\ServiceHistory;
 use App\Services\MaintenancePredictionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class PredictiveNotificationTest extends TestCase
 {
     use DatabaseTransactions;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Ensure Ain's vehicle (VKK 3456) has a recent enough service history to trigger predictive alerts
+        $vehicle = Vehicle::where('plate_number', 'VKK 3456')->first();
+        if ($vehicle) {
+            $jobType = JobType::where('name', 'Oil & Filter Change')->first();
+            $last = ServiceHistory::where('vehicle_id', $vehicle->id)
+                ->whereHas('jobCard', fn($q) => $q->where('job_type_id', $jobType->id))
+                ->orderByDesc('service_date')
+                ->first();
+            if ($last) {
+                // Set to 172 days ago so projected due date is ~8 days from now (within medium due soon window of <= 14 days)
+                $last->update(['service_date' => now()->subDays(172)->toDateString()]);
+            }
+        }
+    }
 
     public function test_prediction_scan_dispatches_notification_to_individual_owner(): void
     {
@@ -95,13 +115,17 @@ class PredictiveNotificationTest extends TestCase
             'created_at' => now()->subDays(2),
         ]);
 
-        $alert = MaintenanceAlert::where('vehicle_id', $vehicle->id)
-            ->where('job_type_id', $jobType->id)
-            ->first();
-
-        if ($alert) {
-            $alert->update(['urgency' => 'medium']);
-        }
+        $alert = MaintenanceAlert::firstOrCreate(
+            ['vehicle_id' => $vehicle->id, 'job_type_id' => $jobType->id, 'source' => 'predicted'],
+            [
+                'alert_type'         => $jobType->name . ' Due',
+                'urgency'            => 'medium',
+                'recommendation'     => 'Due soon',
+                'predicted_due_date' => now()->addDays(5)->toDateString(),
+                'is_read'            => false,
+            ]
+        );
+        $alert->update(['urgency' => 'medium', 'is_read' => false]);
 
         // Trigger escalation by running scan or calling service
         $service = app(MaintenancePredictionService::class);
