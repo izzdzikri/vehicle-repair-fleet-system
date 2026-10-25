@@ -148,11 +148,79 @@ class ChatbotBookingTest extends TestCase
         // 5. Confirm booking
         $res6 = $this->postJson('/chatbot/reply', ['message' => 'ok']);
         $res6->assertStatus(200);
-        $res6->assertJson(['booking_confirmed' => true]);
+        $res6->assertJson([
+            'booking_confirmed' => true,
+        ]);
+        $this->assertNotNull($res6->json('appointment_id'));
+        $this->assertNotNull($res6->json('appointment_url'));
+        $this->assertStringContainsString('👉 [', $res6->json('reply'));
 
         $this->assertDatabaseHas('appointments', [
             'walkin_name'  => 'Ramli',
             'service_type' => 'Battery & Electrical Inspection',
         ]);
+    }
+
+    public function test_customer_booking_returns_direct_customer_appointment_jumplink()
+    {
+        $ain = User::where('email', 'ain@gmail.com')->first();
+        $this->actingAs($ain);
+
+        $this->postJson('/chatbot/reply', [
+            'message' => 'Saya nak booking servis kereta Proton X50 VKK 3456 esok jam 10 pagi untuk servis minyak hitam. Nama Ain 012-3456789'
+        ])->assertStatus(200)->assertJson(['action' => 'confirm_booking']);
+
+        $res = $this->postJson('/chatbot/reply', [
+            'action'  => 'confirm_booking',
+            'message' => 'Sahkan tempahan slot'
+        ]);
+
+        $res->assertStatus(200);
+        $res->assertJson(['booking_confirmed' => true]);
+        $aptId = $res->json('appointment_id');
+        $this->assertEquals("/customer/appointments/{$aptId}", $res->json('appointment_url'));
+        $this->assertStringContainsString("/customer/appointments/{$aptId}", $res->json('reply'));
+
+        // Customer can immediately visit the appointment detail page
+        $this->get("/customer/appointments/{$aptId}")
+            ->assertStatus(200)
+            ->assertSee('VKK 3456')
+            ->assertSee('Pending');
+    }
+
+    public function test_service_edit_returns_interactive_chips_and_pick_updates_draft()
+    {
+        session()->flush();
+
+        // Step 1: Draft initial booking (all details including service provided)
+        $this->postJson('/chatbot/reply', [
+            'message' => 'Saya nak servis minyak hitam kereta Honda Civic JQK 9999 esok jam 9 pagi. Nama Danial 017-1234567'
+        ])->assertStatus(200)->assertJson(['action' => 'confirm_booking']);
+
+        // Step 2: User clicks [Ubah Servis]
+        $editRes = $this->postJson('/chatbot/reply', [
+            'action'  => 'edit_booking_service',
+            'message' => 'Ubah servis'
+        ]);
+
+        $editRes->assertStatus(200);
+        $editRes->assertJson([
+            'action' => 'select_service_type',
+        ]);
+        $this->assertIsArray($editRes->json('service_options'));
+        $this->assertNotEmpty($editRes->json('service_options'));
+
+        // Step 3: User picks a service chip (e.g., Brake Inspection & Service)
+        $pickRes = $this->postJson('/chatbot/reply', [
+            'action'       => 'pick_service_type',
+            'service_type' => 'Brake Inspection & Service',
+            'symptoms'     => 'Brake pads squeaking sound when stopping',
+            'message'      => 'Pemeriksaan Sistem & Pad Brek'
+        ]);
+
+        $pickRes->assertStatus(200);
+        $pickRes->assertJson(['action' => 'confirm_booking']);
+        $this->assertStringContainsString('Brake Inspection & Service', $pickRes->json('reply'));
+        $this->assertEquals('Brake Inspection & Service', session('pending_chatbot_booking.service_type'));
     }
 }

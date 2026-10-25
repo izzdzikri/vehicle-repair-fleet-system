@@ -79,7 +79,14 @@
                 </td>
                 <td class="px-5 py-4 text-right">
                     @if($apt->jobCard)
-                    <a href="/admin/job-cards/{{ $apt->jobCard->id }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition">
+                    @php
+                        $jobCardUrl = match(auth()->user()->role) {
+                            'staff'       => "/staff/job-cards/{$apt->jobCard->id}",
+                            'coordinator' => "/coordinator/job-cards/{$apt->jobCard->id}",
+                            default       => "/admin/job-cards/{$apt->jobCard->id}",
+                        };
+                    @endphp
+                    <a href="{{ $jobCardUrl }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition">
                         <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
                         #{{ $apt->jobCard->id }} &bull; {{ $apt->jobCard->staff->name ?? 'Unassigned' }}
                     </a>

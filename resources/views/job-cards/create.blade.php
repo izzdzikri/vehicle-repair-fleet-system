@@ -34,6 +34,24 @@
         <form method="POST" action="/admin/job-cards" class="space-y-4"
             x-data="{
                 selectedJobType: '',
+                selectedAppointmentId: '{{ request('appointment_id', '') }}',
+                appointmentNotes: {{ $appointments->mapWithKeys(fn($a) => [(string)$a->id => $a->notes ?? ''])->toJson() }},
+                diagnosisText: {{ json_encode(old('diagnosis', $appointments->firstWhere('id', request('appointment_id'))?->notes ?? '')) }},
+
+                init() {
+                    if (!this.diagnosisText && this.selectedAppointmentId && this.appointmentNotes[this.selectedAppointmentId]) {
+                        this.diagnosisText = this.appointmentNotes[this.selectedAppointmentId];
+                    }
+                },
+
+                onAppointmentChange(evt) {
+                    const id = evt.target.value;
+                    this.selectedAppointmentId = id;
+                    if (id && this.appointmentNotes[id]) {
+                        this.diagnosisText = this.appointmentNotes[id];
+                    }
+                },
+
                 allStaff: {{ $staff->map(fn($s) => [
                     'id'          => $s->id,
                     'name'        => $s->name,
@@ -91,6 +109,8 @@
                     Confirmed Appointment <span class="text-rose-500">*</span>
                 </label>
                 <select name="appointment_id"
+                    x-model="selectedAppointmentId"
+                    @change="onAppointmentChange($event)"
                     class="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                     required>
                     <option value="">Select confirmed appointment...</option>
@@ -191,7 +211,8 @@
                     Initial Diagnosis / Work Instructions
                     <span class="font-normal text-gray-400 normal-case">(optional)</span>
                 </label>
-                <textarea name="diagnosis" rows="3"
+                <textarea name="diagnosis" rows="4"
+                    x-model="diagnosisText"
                     class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     placeholder="e.g. Engine ticking on idle, inspect brake pads and rotor wear..."></textarea>
             </div>

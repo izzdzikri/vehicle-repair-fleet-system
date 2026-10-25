@@ -83,13 +83,18 @@
         @endif
     </form>
 
-    {{-- Filter tabs — admin sees full lifecycle --}}
-    @if(auth()->user()->role === 'admin')
+    {{-- Filter tabs — accessible to all roles --}}
     @php
+        $baseRoute = match(auth()->user()->role) {
+            'coordinator' => '/coordinator/appointments',
+            'corporate'   => '/client/appointments',
+            'individual'  => '/customer/appointments',
+            default       => '/admin/appointments',
+        };
         $searchQs = $search ? 'search=' . urlencode($search) : '';
-        $tabHref  = function ($status = null) use ($searchQs) {
+        $tabHref  = function ($status = null) use ($baseRoute, $searchQs) {
             $params = array_filter([$status ? "status={$status}" : null, $searchQs]);
-            return '/admin/appointments' . (count($params) ? '?' . implode('&', $params) : '');
+            return $baseRoute . (count($params) ? '?' . implode('&', $params) : '');
         };
     @endphp
     <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
@@ -114,7 +119,6 @@
             Cancelled <span class="ml-1 opacity-75 font-normal">({{ $statusCounts['cancelled'] }})</span>
         </a>
     </div>
-    @endif
 </div>
 
 <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs overflow-hidden">
@@ -278,11 +282,19 @@
                         </div>
                     @elseif(auth()->user()->role === 'coordinator')
                         <a href="/coordinator/appointments/{{ $apt->id }}"
-                            class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg shadow-xs transition">
-                            Details
+                            class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-400"></i> Details
                         </a>
                     @else
-                        <span class="text-xs text-gray-400">{{ $apt->notes ?? '—' }}</span>
+                        @php
+                            $detailUrl = auth()->user()->role === 'corporate'
+                                ? "/client/appointments/{$apt->id}"
+                                : "/customer/appointments/{$apt->id}";
+                        @endphp
+                        <a href="{{ $detailUrl }}"
+                            class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-400"></i> Details
+                        </a>
                     @endif
                 </td>
             </tr>

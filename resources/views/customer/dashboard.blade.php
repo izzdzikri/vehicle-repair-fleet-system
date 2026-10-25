@@ -181,7 +181,7 @@
 
         <div class="space-y-2.5">
             @forelse($appointments as $apt)
-            <div class="border border-gray-200/80 rounded-xl p-3.5">
+            <div class="border border-gray-200/80 rounded-xl p-3.5 hover:border-blue-300 hover:bg-blue-50/20 transition group">
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="flex items-center gap-2">
@@ -204,13 +204,18 @@
                         </div>
                         @endif
                     </div>
-                    <span class="px-2.5 py-1 rounded-full text-xs font-bold shrink-0
-                        {{ $apt->status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                          ($apt->status === 'confirmed' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                          ($apt->status === 'cancelled' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                          'bg-amber-50 text-amber-700 border border-amber-200')) }}">
-                        {{ ucfirst($apt->status) }}
-                    </span>
+                    <div class="flex flex-col items-end gap-2">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold shrink-0
+                            {{ $apt->status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                              ($apt->status === 'confirmed' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                              ($apt->status === 'cancelled' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                              'bg-amber-50 text-amber-700 border border-amber-200')) }}">
+                            {{ ucfirst($apt->status) }}
+                        </span>
+                        <a href="/customer/appointments/{{ $apt->id }}" class="text-xs font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 group-hover:translate-x-0.5 transition">
+                            View Details &rarr;
+                        </a>
+                    </div>
                 </div>
             </div>
             @empty

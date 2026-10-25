@@ -139,6 +139,19 @@ class ChatbotController extends Controller
             }
         }
 
+        // 2c-1. User picks service type directly via quick chips
+        if ($action === 'pick_service_type' && $request->filled('service_type')) {
+            $intake = session('pending_chatbot_booking') ?? session('chatbot_intake', []);
+            $intake['service_type'] = $request->input('service_type');
+            if ($request->filled('symptoms')) {
+                $intake['symptoms'] = $request->input('symptoms');
+            } elseif (empty($intake['symptoms'])) {
+                $intake['symptoms'] = $request->input('service_type');
+            }
+            session(['chatbot_intake' => $intake]);
+            return $this->buildBookingDraftResponse($intake, $user, $lang);
+        }
+
         // 2c. User edits service type or symptoms
         if ($action === 'edit_booking_service' || preg_match('/^(ubah|tukar|change|edit)\s*(servis|service|simptom|symptom|masalah|problem|aduan)/i', $message)) {
             if (session()->has('pending_chatbot_booking') || session()->has('chatbot_intake')) {
@@ -148,10 +161,22 @@ class ChatbotController extends Controller
                 session()->forget('pending_chatbot_booking');
 
                 $reply = $lang === 'ms'
-                    ? "🛠️ **Kemaskini Jenis Servis / Masalah**\n\nSila terangkan simptom atau jenis servis yang anda inginkan (contoh: *Servis Minyak Hitam & Penapis*, *Pemeriksaan Brek*, atau *Diagnostic Scan*):"
-                    : "🛠️ **Update Service Type / Issues**\n\nPlease describe the symptoms or service required (e.g. *Brake Inspection*, *Oil & Filter Change*, or *Engine Diagnostics Scan*):";
+                    ? "🛠️ **Kemaskini Jenis Servis / Masalah**\n\nSila pilih salah satu pilihan servis di bawah atau terangkan simptom kerosakan kenderaan anda:"
+                    : "🛠️ **Update Service Type / Issues**\n\nPlease select one of the common service options below or describe the vehicle symptoms:";
 
-                return response()->json(['reply' => $reply, 'lang' => $lang]);
+                return response()->json([
+                    'reply'           => $reply,
+                    'action'          => 'select_service_type',
+                    'service_options' => [
+                        ['name_en' => 'Oil & Filter Change', 'name_ms' => 'Servis Minyak Hitam & Penapis', 'symptoms' => 'Regular engine oil and filter change service'],
+                        ['name_en' => 'Brake Inspection & Service', 'name_ms' => 'Pemeriksaan Sistem & Pad Brek', 'symptoms' => 'Brake pads inspection, squeaking sound, and fluid check'],
+                        ['name_en' => 'Battery & Alternator Check', 'name_ms' => 'Pemeriksaan Bateri & Alternator', 'symptoms' => 'Car hard to start, battery voltage check and health testing'],
+                        ['name_en' => 'Air Conditioning Service', 'name_ms' => 'Servis Aircond Kereta', 'symptoms' => 'AC not cold, blower inspection, and refrigerant gas refill'],
+                        ['name_en' => 'Engine Diagnostic Scan', 'name_ms' => 'Imbasan Komputer / Scan Diagnostik', 'symptoms' => 'Check engine light on, computer diagnostic troubleshooting'],
+                        ['name_en' => 'Suspension & Alignment', 'name_ms' => 'Suspensi & Penjajaran Tayar (Alignment)', 'symptoms' => 'Steering pulling, tyre vibration, and bushing inspection'],
+                    ],
+                    'lang'            => $lang,
+                ]);
             }
         }
 
@@ -617,16 +642,36 @@ class ChatbotController extends Controller
         }
 
         // 3. Extract Malaysian Plate Number
-        if (preg_match('/(tiada\s*plat|tak\s*ada\s*plat|takde\s*plat|no\s*plate|unknown\s*plate|tak\s*tahu\s*plat)/i', $message)) {
-            if (empty($intake['plate_number'])) {
-                $intake['plate_number'] = 'WALK-IN-' . rand(1000, 9999);
+        // If user is logged in, prioritize matching their registered vehicles first
+        if ($user && empty($intake['plate_number'])) {
+            $ids = $this->scopeUserIds($user);
+            $userVehicles = Vehicle::whereIn('user_id', $ids)->get();
+            foreach ($userVehicles as $uv) {
+                $cleanUserPlate = strtoupper(str_replace(' ', '', $uv->plate_number));
+                $cleanMsg = strtoupper(str_replace(' ', '', $message));
+                if (str_contains($cleanMsg, $cleanUserPlate)) {
+                    $intake['plate_number'] = $uv->plate_number;
+                    $intake['car_brand']    = $uv->brand;
+                    $intake['car_model']    = $uv->model;
+                    $intake['car_year']     = $uv->year;
+                    if ($uv->mileage > 0) {
+                        $intake['mileage']  = number_format($uv->mileage) . ' km';
+                    }
+                    break;
+                }
             }
-        } elseif (preg_match('/(?:plat|no\.?\s*plat|pendaftaran)\s*[:=]?\s*([A-Z]{1,3}\s*\d{1,4}\s*[A-Z]?)/i', $message, $explicitPlate)) {
-            $intake['plate_number'] = strtoupper(preg_replace('/\s+/', ' ', trim($explicitPlate[1])));
-        } elseif (empty($intake['plate_number'])) {
-            // Exclude non-plate words like JAM, HARI, SESI, BULAN, TAHUN, DAN, DARI
-            if (preg_match('/(?<!\w)(?!(?:at|in|on|by|to|for|is|am|pm|an|no|po|km|rm|jam|hari|sesi|bulan|tahun|dan|dari)\b)[A-Z]{1,3}\s*\d{1,4}\s*[A-Z]?(?!\w)/i', $message, $pm)) {
-                $intake['plate_number'] = strtoupper(preg_replace('/\s+/', ' ', trim($pm[0])));
+        }
+
+        if (empty($intake['plate_number'])) {
+            if (preg_match('/(tiada\s*plat|tak\s*ada\s*plat|takde\s*plat|no\s*plate|unknown\s*plate|tak\s*tahu\s*plat)/i', $message)) {
+                $intake['plate_number'] = 'WALK-IN-' . rand(1000, 9999);
+            } elseif (preg_match('/(?:plat|no\.?\s*plat|pendaftaran)\s*[:=]?\s*([A-Z]{1,3}\s*\d{1,4}\s*[A-Z]?)/i', $message, $explicitPlate)) {
+                $intake['plate_number'] = strtoupper(preg_replace('/\s+/', ' ', trim($explicitPlate[1])));
+            } else {
+                // Exclude non-plate words and car models like X50, X70, CX5, CRV, HRV
+                if (preg_match('/(?<!\w)(?!(?:at|in|on|by|to|for|is|am|pm|an|no|po|km|rm|jam|hari|sesi|bulan|tahun|dan|dari|x50|x70|x90|cx5|cx3|cx30|crv|hrv|brv|wrv)\b)[A-Z]{1,3}\s*\d{1,4}\s*[A-Z]?(?!\w)/i', $message, $pm)) {
+                    $intake['plate_number'] = strtoupper(preg_replace('/\s+/', ' ', trim($pm[0])));
+                }
             }
         }
 
@@ -898,7 +943,10 @@ class ChatbotController extends Controller
         // ------------------------------------------------------------
         // ALL Information Is Gathered -> Draft Comprehensive Diagnostic Intake!
         // ------------------------------------------------------------
+        return $this->buildBookingDraftResponse($intake, $user, $lang);
+    }
 
+    private function buildBookingDraftResponse(array $intake, $user, string $lang) {
         $brandModel = trim(($intake['car_brand'] ?? 'Customer Vehicle') . ' ' . ($intake['car_model'] ?? 'Standard'));
         $yearStr    = !empty($intake['car_year']) ? " ({$intake['car_year']})" : "";
         $mileageStr = !empty($intake['mileage']) ? " &bull; Jarak: {$intake['mileage']}" : "";
@@ -906,28 +954,28 @@ class ChatbotController extends Controller
 
         $diagnosticBrief = "=== TERAJU WORKSHOP INTAKE & DIAGNOSTIC BRIEF ===\n"
             . "• Vehicle: {$brandModel}{$yearStr}" . (!empty($intake['mileage']) ? " [{$intake['mileage']}]" : "") . "\n"
-            . "• Registration Plate: {$intake['plate_number']}\n"
-            . "• Customer Complaint & Symptoms: {$intake['symptoms']}\n"
+            . "• Registration Plate: " . ($intake['plate_number'] ?? '—') . "\n"
+            . "• Customer Complaint & Symptoms: " . ($intake['symptoms'] ?? 'General Inspection') . "\n"
             . "• Recommended Service / Inspection: {$serviceType}\n"
-            . "• Customer: {$intake['customer_name']} ({$intake['phone']})\n"
-            . "• Appointment: {$intake['date_label']} at {$intake['time_label']}\n"
+            . "• Customer: " . ($intake['customer_name'] ?? 'Customer') . " (" . ($intake['phone'] ?? '—') . ")\n"
+            . "• Appointment: " . ($intake['date_label'] ?? 'Pending Date') . " at " . ($intake['time_label'] ?? 'Pending Time') . "\n"
             . "• Intake Source: Public AI Assistant Intake Flow";
 
         $draft = [
             'is_guest'         => !$user,
-            'customer_name'    => $intake['customer_name'],
-            'phone'            => $intake['phone'],
-            'plate_number'     => $intake['plate_number'],
+            'customer_name'    => $intake['customer_name'] ?? ($user ? $user->name : 'Customer'),
+            'phone'            => $intake['phone'] ?? ($user ? $user->contact_no : '—'),
+            'plate_number'     => $intake['plate_number'] ?? '—',
             'car_brand'        => $intake['car_brand'] ?? 'Customer Vehicle',
             'car_model'        => $intake['car_model'] ?? 'Standard',
             'car_year'         => $intake['car_year'] ?? date('Y'),
             'mileage'          => $intake['mileage'] ?? '0 km',
-            'symptoms'         => $intake['symptoms'],
+            'symptoms'         => $intake['symptoms'] ?? 'General Inspection',
             'service_type'     => $serviceType,
-            'date'             => $intake['date'],
-            'date_label'       => $intake['date_label'],
-            'time'             => $intake['time'],
-            'time_label'       => $intake['time_label'],
+            'date'             => $intake['date'] ?? now()->toDateString(),
+            'date_label'       => $intake['date_label'] ?? now()->format('D, d M Y'),
+            'time'             => $intake['time'] ?? '09:00:00',
+            'time_label'       => $intake['time_label'] ?? '9:00 AM',
             'diagnostic_notes' => $diagnosticBrief,
         ];
 
@@ -1050,33 +1098,59 @@ class ChatbotController extends Controller
         $ref = '#APT-' . str_pad($appointment->id, 5, '0', STR_PAD_LEFT);
         $brandModel = trim("{$vehicle->brand} {$vehicle->model}");
 
+        $targetUrl = null;
+        if ($user) {
+            $prefix = match($user->role) {
+                'corporate'   => '/client',
+                'admin'       => '/admin',
+                'coordinator' => '/coordinator',
+                default       => '/customer',
+            };
+            $targetUrl = "{$prefix}/appointments/{$appointment->id}";
+        } else {
+            $targetUrl = "/login";
+        }
+
+        $jumpLinkMd = $user
+            ? "\n\n👉 [Lihat Butiran Temujanji {$ref}]({$targetUrl})"
+            : "\n\n👉 [Log Masuk / Daftar untuk Jejak Status Temujanji]({$targetUrl})";
+        $jumpLinkEn = $user
+            ? "\n\n👉 [View Appointment Details {$ref}]({$targetUrl})"
+            : "\n\n👉 [Login / Register to Track Appointment Status]({$targetUrl})";
+
         if ($lang === 'ms') {
             $reply = "🎉 **Tempahan Berjaya Disahkan & Direkodkan!**\n\n"
                    . "• **No Rujukan**: `{$ref}`\n"
+                   . "• **Status**: **" . ($user ? 'Menunggu Pengesahan Bengkel (Pending Review)' : 'Disahkan (Confirmed)') . "**\n"
                    . "• **Pelanggan**: **{$appointment->walkin_name}** ({$appointment->walkin_contact})\n"
                    . "• **Kenderaan**: **{$vehicle->plate_number}** ({$brandModel} {$vehicle->year})\n"
                    . "• **Servis**: **{$appointment->service_type}**\n"
                    . "• **Tarikh & Masa**: **{$booking['date_label']}** pada jam **{$booking['time_label']}**\n\n"
                    . "📋 **Catatan Pra-Diagnostik Mekanik**:\n"
                    . "_{$booking['symptoms']}_\n\n"
-                   . "Maklumat lengkap kerosakan dan keperluan alat ganti telah dimasukkan ke dalam sistem giliran bengkel kami. Sila bawa kenderaan anda ke **Teraju Setia Enterprise di Kluang, Johor** pada masa yang ditetapkan.\n\n"
+                   . "Maklumat lengkap kerosakan dan keperluan alat ganti telah dimasukkan ke dalam sistem giliran bengkel kami. Sila bawa kenderaan anda ke **Teraju Setia Enterprise di Kluang, Johor** pada masa yang ditetapkan."
+                   . "{$jumpLinkMd}\n\n"
                    . "Terima kasih kerana memilih Teraju Setia Enterprise! Pandu cermat! 🚗💨";
         } else {
             $reply = "🎉 **Appointment Successfully Confirmed!**\n\n"
                    . "• **Booking Reference**: `{$ref}`\n"
+                   . "• **Status**: **" . ($user ? 'Pending Workshop Review' : 'Confirmed') . "**\n"
                    . "• **Customer**: **{$appointment->walkin_name}** ({$appointment->walkin_contact})\n"
                    . "• **Vehicle**: **{$vehicle->plate_number}** ({$brandModel} {$vehicle->year})\n"
                    . "• **Service**: **{$appointment->service_type}**\n"
                    . "• **Scheduled Time**: **{$booking['date_label']}** at **{$booking['time_label']}**\n\n"
                    . "📋 **Mechanic Diagnostic Notes**:\n"
                    . "_{$booking['symptoms']}_\n\n"
-                   . "Your appointment and detailed diagnostic brief have been registered in our workshop queue. Please bring your vehicle to **Teraju Setia Enterprise in Kluang, Johor** at your scheduled time.\n\n"
+                   . "Your appointment and detailed diagnostic brief have been registered in our workshop queue. Please bring your vehicle to **Teraju Setia Enterprise in Kluang, Johor** at your scheduled time."
+                   . "{$jumpLinkEn}\n\n"
                    . "Thank you for choosing Teraju Setia Enterprise! Drive safe! 🚗💨";
         }
 
         return response()->json([
             'reply'             => $reply,
             'booking_confirmed' => true,
+            'appointment_id'    => $appointment->id,
+            'appointment_url'   => $targetUrl,
             'lang'              => $lang,
         ]);
     }
@@ -2601,6 +2675,11 @@ class ChatbotController extends Controller
     // ----------------------------------------------------------------
 
     private function isPlateOrAppointmentQuery(string $msg, ?array $userContext = null): bool {
+        // If message has explicit booking initiation verbs, don't treat as read-only plate status inquiry
+        if (preg_match('/\b(nak\s*book|nak\s*booking|nak\s*tempah|book\s*appointment|booking\s*servis|tempah\s*slot|tempah\s*servis)\b/i', $msg)) {
+            return false;
+        }
+
         // If an ordinary customer has an active booking intake in progress, don't interrupt their symptom intake
         if (session()->has('chatbot_intake') && empty($userContext['is_internal_staff'])) {
             return false;

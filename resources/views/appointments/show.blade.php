@@ -210,8 +210,11 @@
         </div>
         @endif
 
-        {{-- Actions --}}
-        @if(auth()->user()->role === 'admin')
+        {{-- Actions (Admin & Coordinator) --}}
+        @if(in_array(auth()->user()->role, ['admin', 'coordinator']))
+        @php
+            $actionPrefix = auth()->user()->role === 'coordinator' ? '/coordinator' : '/admin';
+        @endphp
         <div class="pt-5 border-t border-gray-100">
             @if($appointment->status === 'pending')
                 @php $hasViewed = session('viewed_appointment_' . $appointment->id, false); @endphp
@@ -223,13 +226,13 @@
                 </div>
 
                 <div class="flex items-center gap-3 flex-wrap">
-                    <form method="POST" action="/admin/appointments/{{ $appointment->id }}/confirm">
+                    <form method="POST" action="{{ $actionPrefix }}/appointments/{{ $appointment->id }}/confirm">
                         @csrf @method('PATCH')
                         <button class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 text-sm font-semibold transition shadow-xs flex items-center gap-2">
                             <i data-lucide="check" class="w-4 h-4"></i> Confirm Appointment
                         </button>
                     </form>
-                    <form method="POST" action="/admin/appointments/{{ $appointment->id }}/cancel">
+                    <form method="POST" action="{{ $actionPrefix }}/appointments/{{ $appointment->id }}/cancel">
                         @csrf @method('PATCH')
                         <button class="bg-white border border-gray-200 text-rose-600 px-5 py-2.5 rounded-xl hover:bg-rose-50 text-sm font-semibold transition shadow-xs flex items-center gap-2">
                             <i data-lucide="x" class="w-4 h-4"></i> Cancel Booking
@@ -238,19 +241,19 @@
                 </div>
             @elseif($appointment->status === 'confirmed')
                 <div class="flex items-center gap-3 flex-wrap">
-                    @if(!$appointment->jobCard)
+                    @if(!$appointment->jobCard && auth()->user()->role === 'admin')
                     <a href="/admin/job-cards/create?appointment_id={{ $appointment->id }}"
                         class="bg-purple-600 text-white px-5 py-2.5 rounded-xl hover:bg-purple-700 text-sm font-semibold transition shadow-xs flex items-center gap-2">
                         <i data-lucide="clipboard-plus" class="w-4 h-4"></i> Create Job Card
                     </a>
                     @endif
-                    <form method="POST" action="/admin/appointments/{{ $appointment->id }}/complete">
+                    <form method="POST" action="{{ $actionPrefix }}/appointments/{{ $appointment->id }}/complete">
                         @csrf @method('PATCH')
                         <button class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 text-sm font-semibold transition shadow-xs flex items-center gap-2">
                             <i data-lucide="check-circle" class="w-4 h-4"></i> Mark Completed
                         </button>
                     </form>
-                    <form method="POST" action="/admin/appointments/{{ $appointment->id }}/cancel">
+                    <form method="POST" action="{{ $actionPrefix }}/appointments/{{ $appointment->id }}/cancel">
                         @csrf @method('PATCH')
                         <button class="bg-white border border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl hover:bg-rose-50 hover:text-rose-600 text-sm font-semibold transition">
                             Cancel
@@ -262,6 +265,19 @@
                 This appointment record is marked as <strong class="text-gray-900">{{ $appointment->status }}</strong>.
             </p>
             @endif
+        </div>
+        @endif
+
+        {{-- Informational Notice for Customers & Corporate Clients --}}
+        @if(in_array(auth()->user()->role, ['individual', 'corporate']) && $appointment->status === 'pending')
+        <div class="pt-5 border-t border-gray-100">
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs font-medium text-amber-800 flex items-start gap-3">
+                <i data-lucide="clock" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+                <div>
+                    <strong class="font-bold block text-sm text-amber-900 mb-0.5">Appointment Pending Workshop Review</strong>
+                    Your service booking has been submitted. Our workshop team will confirm your bay reservation shortly. You will be notified via email and in-app once confirmed.
+                </div>
+            </div>
         </div>
         @endif
     </div>

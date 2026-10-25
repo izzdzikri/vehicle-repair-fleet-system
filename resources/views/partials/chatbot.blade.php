@@ -138,7 +138,7 @@ function chatbotComponent() {
             this.$nextTick(() => this.scrollToBottom());
         },
 
-        async send(customText = null, action = null) {
+        async send(customText = null, action = null, payload = null) {
             const userMsg = (customText !== null ? customText : this.input).trim();
             if (!userMsg || this.loading) return;
             if (customText === null) this.input = '';
@@ -154,6 +154,7 @@ function chatbotComponent() {
             const token = csrfMeta ? csrfMeta.content : '{{ csrf_token() }}';
 
             try {
+                const reqBody = Object.assign({ message: userMsg, action: action }, payload || {});
                 const res = await fetch('/chatbot/reply', {
                     method: 'POST',
                     headers: {
@@ -161,7 +162,7 @@ function chatbotComponent() {
                         'X-CSRF-TOKEN': token,
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ message: userMsg, action: action }),
+                    body: JSON.stringify(reqBody),
                 });
 
                 if (!res.ok) {
@@ -184,6 +185,8 @@ function chatbotComponent() {
                         text: data.reply,
                         action: data.action || null,
                         booking: data.booking || null,
+                        service_options: data.service_options || null,
+                        appointment_url: data.appointment_url || null,
                         show_calendar: data.show_calendar || (data.action === 'select_slot')
                     });
                 } else {
@@ -205,6 +208,11 @@ function chatbotComponent() {
                 this.scrollToBottom();
                 if (window.lucide) lucide.createIcons();
             });
+        },
+
+        pickServiceType(opt) {
+            const serviceName = this.lang === 'ms' ? opt.name_ms : opt.name_en;
+            this.send(serviceName, 'pick_service_type', { service_type: opt.name_en, symptoms: opt.symptoms });
         },
 
         confirmBooking() {
@@ -511,6 +519,38 @@ function chatbotComponent() {
                                         </template>
                                     </div>
                                 </div>
+                            </div>
+                        </template>
+
+                        {{-- Interactive Service Selection Chips --}}
+                        <template x-if="msg.action === 'select_service_type' && msg.service_options">
+                            <div class="mt-2.5 p-3 bg-white border border-slate-200 rounded-xl shadow-xs space-y-2 max-w-[95%]">
+                                <p class="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                                    <span>🛠️</span>
+                                    <span x-text="lang === 'ms' ? 'Pilih Servis Pantas:' : 'Select Common Service:'"></span>
+                                </p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    <template x-for="(opt, idx) in msg.service_options" :key="idx">
+                                        <button type="button"
+                                            @click="pickServiceType(opt)"
+                                            :disabled="loading"
+                                            class="text-left p-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50/50 transition active:scale-95 group">
+                                            <p class="text-xs font-bold text-slate-900 group-hover:text-blue-700" x-text="lang === 'ms' ? opt.name_ms : opt.name_en"></p>
+                                            <p class="text-[10px] text-gray-500 mt-0.5 line-clamp-1" x-text="opt.symptoms"></p>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Direct Link Button to Created Appointment --}}
+                        <template x-if="msg.appointment_url">
+                            <div class="mt-2.5 ml-1 flex items-center gap-2">
+                                <a :href="msg.appointment_url"
+                                    class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition active:scale-95">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    <span x-text="lang === 'ms' ? 'Lihat Butiran Temujanji di Sistem' : 'View Appointment in System'"></span>
+                                </a>
                             </div>
                         </template>
 

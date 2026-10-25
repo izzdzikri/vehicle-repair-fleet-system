@@ -268,6 +268,9 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
     Route::get('/appointments/walkin',                  [AppointmentController::class, 'walkinCreate'])->name('coordinator.appointments.walkin');
     Route::post('/appointments/walkin',                 [AppointmentController::class, 'walkinStore'])->name('coordinator.appointments.walkin.store');
     Route::get('/appointments/{appointment}',           [AppointmentController::class, 'show'])->name('coordinator.appointments.show');
+    Route::patch('/appointments/{appointment}/confirm', [AppointmentController::class, 'confirm'])->name('coordinator.appointments.confirm');
+    Route::patch('/appointments/{appointment}/cancel',  [AppointmentController::class, 'cancel'])->name('coordinator.appointments.cancel');
+    Route::patch('/appointments/{appointment}/complete',[AppointmentController::class, 'complete'])->name('coordinator.appointments.complete');
 
     Route::get('/job-cards',                          [CoordinatorController::class, 'jobCards'])->name('coordinator.job-cards');
     Route::get('/job-cards/{jobCard}',                [JobCardController::class, 'show'])->name('coordinator.job-cards.show');
