@@ -41,10 +41,18 @@
             <p class="text-sm text-gray-500 mt-1">Monitor component stock levels, barcodes, and workshop replenishment</p>
         </div>
         @if(auth()->user()->hasPermission('inventory.manage'))
-        <button @click="showAdd = true"
-            class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 transition shadow-xs flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> Add New Part
-        </button>
+        <div class="flex items-center gap-2">
+            @if(auth()->user()->role === 'admin')
+            <a href="/admin/purchase-orders"
+                class="bg-white border border-gray-200 text-gray-700 px-3.5 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition shadow-xs flex items-center gap-2">
+                <i data-lucide="shopping-cart" class="w-4 h-4 text-purple-600"></i> Purchase Orders
+            </a>
+            @endif
+            <button @click="showAdd = true"
+                class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 transition shadow-xs flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Add New Part
+            </button>
+        </div>
         @endif
     </div>
 

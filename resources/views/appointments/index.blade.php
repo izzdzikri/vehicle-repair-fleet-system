@@ -31,7 +31,7 @@
         </a>
         @else
         <a href="{{ request()->segment(1) === 'customer' ? '/customer/appointments/create' : '/client/appointments/create' }}"
-            class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition shadow-xs flex items-center gap-2">
+            class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-800 transition shadow-xs flex items-center gap-2">
             <i data-lucide="calendar-plus" class="w-4 h-4"></i> Book Appointment
         </a>
         @endif
@@ -213,11 +213,12 @@
 
                 {{-- ACTION COLUMN --}}
                 <td class="px-5 py-4 text-right">
-                    @if(auth()->user()->role === 'admin')
+                    @if(in_array(auth()->user()->role, ['admin', 'coordinator']))
+                        @php $rolePrefix = auth()->user()->role === 'coordinator' ? 'coordinator' : 'admin'; @endphp
                         <div class="flex items-center justify-end gap-1.5">
-                            <a href="/admin/appointments/{{ $apt->id }}"
-                                class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg shadow-xs transition">
-                                Details
+                            <a href="/{{ $rolePrefix }}/appointments/{{ $apt->id }}"
+                                class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-400"></i> Details
                             </a>
 
                             @if($apt->status !== 'completed' && $apt->status !== 'cancelled')
@@ -230,46 +231,42 @@
                                     class="absolute right-0 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-30 text-left"
                                     style="display:none">
                                     @if($apt->status === 'pending')
-                                        @php $hasViewed = session('viewed_appointment_' . $apt->id, false); @endphp
-                                        @if($hasViewed)
-                                        <form method="POST" action="/admin/appointments/{{ $apt->id }}/confirm">
+                                        <form method="POST" action="/{{ $rolePrefix }}/appointments/{{ $apt->id }}/confirm" onsubmit="return confirm('Confirm this appointment and reserve shop bay?');">
                                             @csrf @method('PATCH')
                                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50">
                                                 <i data-lucide="check-circle" class="w-4 h-4"></i> Confirm Appointment
                                             </button>
                                         </form>
-                                        @else
-                                        <a href="/admin/appointments/{{ $apt->id }}"
-                                            class="flex items-center gap-2 px-4 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50"
-                                            title="View appointment details first to unlock confirm">
-                                            <i data-lucide="eye" class="w-4 h-4"></i> View to Confirm
-                                        </a>
-                                        @endif
-                                        <form method="POST" action="/admin/appointments/{{ $apt->id }}/cancel">
+                                        <form method="POST" action="/{{ $rolePrefix }}/appointments/{{ $apt->id }}/cancel" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
                                             @csrf @method('PATCH')
                                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 border-t border-gray-100">
                                                 <i data-lucide="x-circle" class="w-4 h-4"></i> Cancel Booking
                                             </button>
                                         </form>
                                     @elseif($apt->status === 'confirmed')
-                                        @if(!$apt->jobCard)
+                                        @if(!$apt->jobCard && auth()->user()->role === 'admin')
                                         <a href="/admin/job-cards/create?appointment_id={{ $apt->id }}"
                                             class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50">
                                             <i data-lucide="clipboard-plus" class="w-4 h-4"></i> Create Job Card
                                         </a>
-                                        @else
-                                        <a href="/admin/job-cards/{{ $apt->jobCard->id }}"
+                                        @elseif($apt->jobCard)
+                                        @php
+                                            $jobCardLink = auth()->user()->role === 'coordinator'
+                                                ? "/coordinator/job-cards/{$apt->jobCard->id}"
+                                                : "/admin/job-cards/{$apt->jobCard->id}";
+                                        @endphp
+                                        <a href="{{ $jobCardLink }}"
                                             class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50">
                                             <i data-lucide="clipboard-list" class="w-4 h-4"></i> View Job #{{ $apt->jobCard->id }}
                                         </a>
                                         @endif
-                                        <form method="POST" action="/admin/appointments/{{ $apt->id }}/complete">
+                                        <form method="POST" action="/{{ $rolePrefix }}/appointments/{{ $apt->id }}/complete" onsubmit="return confirm('Mark this appointment as completed?');">
                                             @csrf @method('PATCH')
                                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
                                                 <i data-lucide="check-circle" class="w-4 h-4"></i> Mark Completed
                                             </button>
                                         </form>
-                                        <form method="POST" action="/admin/appointments/{{ $apt->id }}/cancel">
+                                        <form method="POST" action="/{{ $rolePrefix }}/appointments/{{ $apt->id }}/cancel" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
                                             @csrf @method('PATCH')
                                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 border-t border-gray-100">
                                                 <i data-lucide="x-circle" class="w-4 h-4"></i> Cancel Booking
@@ -280,11 +277,6 @@
                             </div>
                             @endif
                         </div>
-                    @elseif(auth()->user()->role === 'coordinator')
-                        <a href="/coordinator/appointments/{{ $apt->id }}"
-                            class="text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1.5">
-                            <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-400"></i> Details
-                        </a>
                     @else
                         @php
                             $detailUrl = auth()->user()->role === 'corporate'

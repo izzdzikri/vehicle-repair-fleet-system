@@ -180,7 +180,7 @@
             </div>
             @if(auth()->user()->status === 'active' && !auth()->user()->isSecondaryPic())
             <a href="/client/appointments/create"
-                class="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3.5 py-1.5 rounded-lg hover:bg-blue-700 text-xs font-semibold shadow-xs">
+                class="inline-flex items-center gap-1.5 bg-slate-900 text-white px-3.5 py-1.5 rounded-lg hover:bg-slate-800 text-xs font-semibold shadow-xs transition">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i> Book Appointment
             </a>
             @endif

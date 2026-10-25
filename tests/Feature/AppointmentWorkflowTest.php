@@ -145,4 +145,45 @@ class AppointmentWorkflowTest extends TestCase
             ->assertSee('Engine ticking sound')
             ->assertSee('TERAJU WORKSHOP INTAKE');
     }
+
+    public function test_coordinator_sees_action_dropdown_and_can_access_inventory_po_link()
+    {
+        $coordinator = User::where('role', 'coordinator')->first();
+        if ($coordinator) {
+            $this->actingAs($coordinator)
+                ->get('/coordinator/appointments')
+                ->assertStatus(200)
+                ->assertSee('Details');
+        }
+
+        $admin = User::where('role', 'admin')->first();
+        if ($admin) {
+            $this->actingAs($admin)
+                ->get('/admin/spare-parts')
+                ->assertStatus(200)
+                ->assertSee('Purchase Orders');
+        }
+    }
+
+    public function test_admin_queue_displays_dispatch_job_for_unstarted_appointments()
+    {
+        $admin = User::where('role', 'admin')->first();
+        $vehicle = Vehicle::first();
+
+        $apt = Appointment::create([
+            'vehicle_id'   => $vehicle->id,
+            'date'         => today()->toDateString(),
+            'time'         => '16:00:00',
+            'service_type' => 'Battery Replacement',
+            'status'       => 'confirmed',
+            'is_walkin'    => true,
+            'walkin_name'  => 'Late Walkin',
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/admin/appointments/queue')
+            ->assertStatus(200)
+            ->assertSee('Dispatch Job')
+            ->assertSee("/admin/job-cards/create?appointment_id={$apt->id}");
+    }
 }

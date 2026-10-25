@@ -91,9 +91,15 @@
                         #{{ $apt->jobCard->id }} &bull; {{ $apt->jobCard->staff->name ?? 'Unassigned' }}
                     </a>
                     @else
+                    @if(auth()->user()->role === 'admin')
+                    <a href="/admin/job-cards/create?appointment_id={{ $apt->id }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Dispatch Job
+                    </a>
+                    @else
                     <span class="inline-flex items-center gap-1 text-xs text-gray-400 font-medium">
                         <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span> Not started
                     </span>
+                    @endif
                     @endif
                 </td>
             </tr>
