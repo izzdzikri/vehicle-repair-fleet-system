@@ -21,7 +21,7 @@
         <div class="flex items-center gap-5 mb-6 pb-6 border-b border-gray-100 flex-wrap">
             <img src="{{ $user->avatar_url }}"
                 alt="Avatar"
-                class="w-20 h-20 rounded-full object-cover border-4 border-blue-500 shadow-xs"
+                class="w-20 h-20 rounded-full object-cover border-4 border-slate-100 shadow-md ring-1 ring-slate-200"
                 id="admin-avatar-preview">
             <div>
                 <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">{{ $user->name }}</h2>
@@ -61,7 +61,7 @@
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Update Profile Photo</label>
                 <input type="file" name="avatar" accept="image/*"
-                    class="w-full text-sm text-gray-500 border border-gray-300 rounded-lg px-3.5 py-2 bg-gray-50/50"
+                    class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer border border-gray-300 rounded-xl bg-white"
                     onchange="previewAdminAvatar(this)">
                 <p class="text-xs text-gray-400 mt-1">Accepts JPG or PNG (Maximum 2MB)</p>
             </div>
@@ -136,8 +136,8 @@
 
             <div class="pt-3">
                 <button type="submit"
-                    class="w-full bg-slate-900 text-white py-2.5 rounded-lg hover:bg-slate-800 text-sm font-semibold shadow-xs transition">
-                    Save User Profile Changes
+                    class="w-full bg-slate-900 text-white py-3 rounded-xl hover:bg-slate-800 text-xs font-bold uppercase tracking-wider shadow-sm transition flex items-center justify-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i> Save User Profile Changes
                 </button>
             </div>
         </form>
@@ -168,7 +168,7 @@
                     <label class="flex items-start gap-2.5 text-xs font-medium text-gray-700 p-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition">
                         <input type="checkbox" name="permissions[]" value="{{ $key }}"
                             {{ in_array($key, $user->permissions ?? []) ? 'checked' : '' }}
-                            class="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            class="mt-0.5 rounded border-gray-300 text-slate-900 focus:ring-slate-900">
                         <span>{{ $label }}</span>
                     </label>
                     @endforeach
@@ -176,8 +176,8 @@
             </div>
             <div class="pt-2">
                 <button type="submit"
-                    class="bg-slate-900 text-white px-5 py-2.5 rounded-lg hover:bg-slate-800 text-xs font-bold shadow-xs transition">
-                    Save Role & Permissions
+                    class="bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 text-xs font-bold shadow-xs transition inline-flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> Save Role & Permissions
                 </button>
             </div>
         </form>

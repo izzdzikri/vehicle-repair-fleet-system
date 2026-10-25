@@ -11,13 +11,18 @@
         <div class="relative shrink-0">
             <img src="{{ $user->avatar_url }}"
                 alt="Avatar"
-                class="w-24 h-24 rounded-full object-cover border-4 border-blue-500 shadow-xs"
+                class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-md ring-1 ring-slate-200"
                 id="avatar-preview">
         </div>
         <div>
             <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">{{ $user->name }}</h2>
             <div class="flex items-center gap-2 mt-1 flex-wrap">
-                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold
+                    {{ $user->role === 'admin'       ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                      ($user->role === 'staff'       ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                      ($user->role === 'coordinator' ? 'bg-cyan-50 text-cyan-700 border border-cyan-200' :
+                      ($user->role === 'corporate'   ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border border-emerald-200'))) }}">
                     {{ ucfirst($user->role) }}
                 </span>
                 <span class="text-xs font-mono text-gray-500">{{ $user->email }}</span>
@@ -42,7 +47,7 @@
             <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Change Profile Picture</label>
                 <input type="file" name="avatar" accept="image/*"
-                    class="w-full text-sm text-gray-500 border border-gray-300 rounded-lg px-3.5 py-2 bg-gray-50/50"
+                    class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer border border-gray-300 rounded-xl bg-white"
                     onchange="previewAvatar(this)">
                 <p class="text-xs text-gray-400 mt-1">Accepts JPG or PNG (Maximum 2MB)</p>
             </div>
@@ -98,8 +103,8 @@
 
             <div class="pt-3">
                 <button type="submit"
-                    class="w-full bg-slate-900 text-white py-2.5 rounded-lg hover:bg-slate-800 text-sm font-semibold shadow-xs transition">
-                    Save Profile Changes
+                    class="w-full bg-slate-900 text-white py-3 rounded-xl hover:bg-slate-800 text-xs font-bold uppercase tracking-wider shadow-sm transition flex items-center justify-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i> Save Profile Changes
                 </button>
             </div>
         </form>
@@ -224,8 +229,8 @@
         @elseif(!session('two_factor_setup'))
             <form method="POST" action="/profile/two-factor/enable" class="pt-2">
                 @csrf
-                <button type="submit" class="bg-slate-900 text-white px-5 py-2.5 rounded-lg text-xs font-bold hover:bg-slate-800 shadow-xs transition">
-                    Enable Two-Factor Authentication
+                <button type="submit" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 shadow-xs transition inline-flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> Enable Two-Factor Authentication
                 </button>
             </form>
         @endif

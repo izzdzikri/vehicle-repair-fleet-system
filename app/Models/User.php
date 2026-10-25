@@ -115,7 +115,7 @@ class User extends Authenticatable
             return asset('storage/' . $this->avatar);
         }
         $name = urlencode($this->name ?? 'User');
-        return "https://ui-avatars.com/api/?name={$name}&background=3B82F6&color=fff&size=128&bold=true";
+        return "https://ui-avatars.com/api/?name={$name}&background=0f172a&color=fff&size=128&bold=true";
     }
 
     // ----------------------------------------------------------------
