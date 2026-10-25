@@ -138,7 +138,7 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
     // Job Cards
     Route::get('/job-cards/schedule', [JobCardController::class, 'schedule'])->name('admin.job-cards.schedule');
     Route::get('/job-cards/board',    [JobCardController::class, 'board'])->name('admin.job-cards.board');
-    Route::resource('job-cards', JobCardController::class);
+    Route::resource('job-cards', JobCardController::class)->names('admin.job-cards');
     Route::patch('/job-cards/{jobCard}/stage',    [JobCardController::class, 'updateStage'])->name('job-cards.stage');
     Route::post('/job-cards/{jobCard}/parts',     [JobCardController::class, 'addPart'])->name('job-cards.add-part');
     Route::post('/job-cards/{jobCard}/symptoms',  [JobCardController::class, 'updateSymptoms'])->name('job-cards.symptoms');
@@ -151,7 +151,7 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
     Route::get('/spare-parts', [SparePartController::class, 'index'])->name('admin.spare-parts.index');
 
     // Vehicles & Trip Logs
-    Route::resource('vehicles', VehicleController::class);
+    Route::resource('vehicles', VehicleController::class)->names('admin.vehicles');
     Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('admin.trip-logs.index');
     Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('admin.trip-logs.store');
     Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('admin.trip-logs.destroy');
@@ -307,8 +307,8 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     // AppointmentController only implements index/create/store/show — no
     // edit/update/destroy — so the resource is restricted to those to avoid
     // registering routes that would 500 on a missing controller method.
-    Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show']);
-    Route::resource('vehicles',           VehicleController::class);
+    Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show'])->names('client.appointments');
+    Route::resource('vehicles',           VehicleController::class)->names('client.vehicles');
     Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('client.trip-logs.index');
     Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('client.trip-logs.store');
     Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('client.trip-logs.destroy');
@@ -329,8 +329,8 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     Route::middleware(['auth', 'role:individual'])->prefix('customer')->group(function () {
     Route::get('/dashboard',              [CustomerController::class, 'index'])->name('customer.dashboard');
     // Same AppointmentController method gap as the corporate group above.
-    Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show']);
-    Route::resource('vehicles',           VehicleController::class);
+    Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show'])->names('customer.appointments');
+    Route::resource('vehicles',           VehicleController::class)->names('customer.vehicles');
     Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('customer.trip-logs.index');
     Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('customer.trip-logs.store');
     Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('customer.trip-logs.destroy');
