@@ -153,7 +153,16 @@
                 <td class="px-5 py-4">
                     <span class="text-sm font-semibold text-gray-800">{{ $apt->service_type }}</span>
                     @if($apt->notes)
-                    <p class="text-xs text-gray-400 mt-0.5 line-clamp-1" title="{{ $apt->notes }}">{{ $apt->notes }}</p>
+                    @php
+                        $displayNote = $apt->notes;
+                        if (str_contains($displayNote, 'Customer Complaint & Symptoms:')) {
+                            $displayNote = \Illuminate\Support\Str::after($displayNote, 'Customer Complaint & Symptoms:');
+                            $displayNote = trim(explode('•', explode("\n", $displayNote)[0])[0]);
+                        }
+                    @endphp
+                    <p class="text-xs text-gray-500 mt-0.5 line-clamp-1" title="{{ $displayNote }}">
+                        <span class="font-semibold text-gray-600">Symptom:</span> {{ $displayNote }}
+                    </p>
                     @endif
                 </td>
                 <td class="px-5 py-4">

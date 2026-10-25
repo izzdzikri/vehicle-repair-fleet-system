@@ -31,12 +31,23 @@
         </div>
         @else
 
+        @php
+            $cleanNoteFn = function($notes) {
+                if (!$notes) return '';
+                if (str_contains($notes, 'Customer Complaint & Symptoms:')) {
+                    $extracted = \Illuminate\Support\Str::after($notes, 'Customer Complaint & Symptoms:');
+                    return trim(explode('•', explode("\n", $extracted)[0])[0]);
+                }
+                return $notes;
+            };
+        @endphp
+
         <form method="POST" action="/admin/job-cards" class="space-y-4"
             x-data="{
                 selectedJobType: '',
                 selectedAppointmentId: '{{ request('appointment_id', '') }}',
-                appointmentNotes: {{ $appointments->mapWithKeys(fn($a) => [(string)$a->id => $a->notes ?? ''])->toJson() }},
-                diagnosisText: {{ json_encode(old('diagnosis', $appointments->firstWhere('id', request('appointment_id'))?->notes ?? '')) }},
+                appointmentNotes: {{ $appointments->mapWithKeys(fn($a) => [(string)$a->id => $cleanNoteFn($a->notes)])->toJson() }},
+                diagnosisText: {{ json_encode(old('diagnosis', $cleanNoteFn($appointments->firstWhere('id', request('appointment_id'))?->notes))) }},
 
                 init() {
                     if (!this.diagnosisText && this.selectedAppointmentId && this.appointmentNotes[this.selectedAppointmentId]) {

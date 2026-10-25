@@ -141,10 +141,106 @@
                 </div>
             </div>
             @if($appointment->notes)
-            <div class="bg-gray-50/70 border border-gray-100 rounded-xl p-4 mt-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer Issue Notes / Symptoms</p>
-                <p class="text-sm text-gray-700 mt-1.5 leading-relaxed">{{ $appointment->notes }}</p>
+            @php
+                $rawNotes = trim($appointment->notes);
+                $isIntakeBrief = str_contains($rawNotes, 'TERAJU WORKSHOP INTAKE & DIAGNOSTIC BRIEF') || str_contains($rawNotes, 'Customer Complaint & Symptoms:');
+                $complaint = null;
+                $recommendedService = null;
+                $intakeSource = null;
+                $otherDetails = [];
+
+                if ($isIntakeBrief) {
+                    $lines = explode("\n", $rawNotes);
+                    foreach ($lines as $line) {
+                        $line = trim($line);
+                        if (str_starts_with($line, '•')) {
+                            $content = trim(mb_substr($line, 1));
+                            if (str_contains($content, ':')) {
+                                [$key, $val] = explode(':', $content, 2);
+                                $key = trim($key);
+                                $val = trim($val);
+                                if (str_contains(strtolower($key), 'complaint') || str_contains(strtolower($key), 'symptom')) {
+                                    $complaint = $val;
+                                } elseif (str_contains(strtolower($key), 'recommended service')) {
+                                    $recommendedService = $val;
+                                } elseif (str_contains(strtolower($key), 'intake source')) {
+                                    $intakeSource = $val;
+                                } elseif (!in_array($key, ['Vehicle', 'Registration Plate', 'Customer', 'Appointment'])) {
+                                    $otherDetails[$key] = $val;
+                                }
+                            }
+                        }
+                    }
+                    if (!$complaint && str_contains($rawNotes, 'Customer Complaint & Symptoms:')) {
+                        $part = \Illuminate\Support\Str::after($rawNotes, 'Customer Complaint & Symptoms:');
+                        $complaint = trim(explode('•', explode("\n", $part)[0])[0]);
+                    }
+                }
+            @endphp
+
+            @if($isIntakeBrief && $complaint)
+            <div class="bg-gray-50/70 border border-gray-200/80 rounded-2xl p-5 mt-4">
+                <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200/60 flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+                            <i data-lucide="bot" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">AI Intake Diagnostic Brief</h4>
+                            <p class="text-[11px] text-gray-500">Captured automatically during customer appointment booking</p>
+                        </div>
+                    </div>
+                    @if($intakeSource)
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                        {{ $intakeSource }}
+                    </span>
+                    @endif
+                </div>
+
+                {{-- Primary Symptom Callout --}}
+                <div class="bg-amber-50/90 border border-amber-200/80 rounded-xl p-4 mb-3">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-bold uppercase tracking-wider text-amber-900">Customer Reported Complaint & Symptoms</p>
+                            <p class="text-sm font-bold text-amber-950 mt-1 leading-relaxed">{{ $complaint }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                @if($recommendedService || count($otherDetails))
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    @if($recommendedService)
+                    <div class="bg-white border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+                        <span class="text-xs text-gray-500 font-medium">Recommended Service:</span>
+                        <span class="text-xs font-bold text-gray-900">{{ $recommendedService }}</span>
+                    </div>
+                    @endif
+                    @foreach($otherDetails as $label => $val)
+                    <div class="bg-white border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+                        <span class="text-xs text-gray-500 font-medium">{{ $label }}:</span>
+                        <span class="text-xs font-bold text-gray-900">{{ $val }}</span>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
             </div>
+            @else
+            <div class="bg-gray-50/70 border border-gray-200/80 rounded-2xl p-5 mt-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                    </div>
+                    <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wider">Customer Issue Notes / Symptoms</h4>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-gray-200 text-sm text-gray-800 leading-relaxed whitespace-pre-line font-medium">
+                    {{ $appointment->notes }}
+                </div>
+            </div>
+            @endif
             @endif
         </div>
 
@@ -243,19 +339,19 @@
                 <div class="flex items-center gap-3 flex-wrap">
                     @if(!$appointment->jobCard && auth()->user()->role === 'admin')
                     <a href="/admin/job-cards/create?appointment_id={{ $appointment->id }}"
-                        class="bg-purple-600 text-white px-5 py-2.5 rounded-xl hover:bg-purple-700 text-sm font-semibold transition shadow-xs flex items-center gap-2">
+                        class="bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 text-sm font-bold transition shadow-xs flex items-center gap-2">
                         <i data-lucide="clipboard-plus" class="w-4 h-4"></i> Create Job Card
                     </a>
                     @endif
                     <form method="POST" action="{{ $actionPrefix }}/appointments/{{ $appointment->id }}/complete">
                         @csrf @method('PATCH')
-                        <button class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 text-sm font-semibold transition shadow-xs flex items-center gap-2">
+                        <button class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 text-sm font-bold transition shadow-xs flex items-center gap-2">
                             <i data-lucide="check-circle" class="w-4 h-4"></i> Mark Completed
                         </button>
                     </form>
                     <form method="POST" action="{{ $actionPrefix }}/appointments/{{ $appointment->id }}/cancel">
                         @csrf @method('PATCH')
-                        <button class="bg-white border border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl hover:bg-rose-50 hover:text-rose-600 text-sm font-semibold transition">
+                        <button class="bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-sm font-semibold transition">
                             Cancel
                         </button>
                     </form>
