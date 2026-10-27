@@ -12,36 +12,55 @@ class FreshSeeder extends Seeder
     public function run(): void
     {
         // ----------------------------------------------------------------
-        // TRUNCATE ALL TABLES
+        // TRUNCATE ALL TABLES (Driver-Aware)
         // ----------------------------------------------------------------
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        DB::table('job_card_checkins')->truncate();
-        DB::table('notifications')->truncate();
-        DB::table('job_feedbacks')->truncate();
-        DB::table('activity_logs')->truncate();
-        DB::table('settings')->truncate();
-        DB::table('chat_sessions')->truncate();
-        DB::table('account_requests')->truncate();
-        DB::table('maintenance_alerts')->truncate();
-        DB::table('service_history')->truncate();
-        DB::table('labour_charges')->truncate();
-        DB::table('job_card_parts')->truncate();
-        DB::table('payments')->truncate();
-        DB::table('invoices')->truncate();
-        DB::table('purchase_orders')->truncate();
-        DB::table('salary_payments')->truncate();
-        DB::table('leave_requests')->truncate();
-        DB::table('staff_attendance')->truncate();
-        DB::table('job_cards')->truncate();
-        DB::table('appointments')->truncate();
-        DB::table('spare_parts')->truncate();
-        DB::table('job_types')->truncate();
-        DB::table('suppliers')->truncate();
-        DB::table('trip_logs')->truncate();
-        DB::table('vehicles')->truncate();
-        DB::table('users')->truncate();
-        DB::table('companies')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        $tables = [
+            'job_card_checkins',
+            'notifications',
+            'job_feedbacks',
+            'activity_logs',
+            'settings',
+            'chat_sessions',
+            'account_requests',
+            'maintenance_alerts',
+            'service_history',
+            'labour_charges',
+            'job_card_parts',
+            'payments',
+            'invoices',
+            'purchase_orders',
+            'salary_payments',
+            'leave_requests',
+            'staff_attendance',
+            'job_cards',
+            'appointments',
+            'spare_parts',
+            'job_types',
+            'suppliers',
+            'trip_logs',
+            'vehicles',
+            'users',
+            'companies',
+        ];
+
+        $driver = DB::getDriverName();
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            foreach ($tables as $table) {
+                DB::table($table)->truncate();
+            }
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        } elseif ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF');
+            foreach ($tables as $table) {
+                DB::table($table)->delete();
+            }
+            DB::statement('PRAGMA foreign_keys = ON');
+        } else {
+            foreach ($tables as $table) {
+                DB::table($table)->delete();
+            }
+        }
 
         // ----------------------------------------------------------------
         // 1. COMPANIES (6 Corporate Fleet Clients)

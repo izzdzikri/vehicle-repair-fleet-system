@@ -15,7 +15,7 @@ class AccountRequestController extends Controller
     // Admin views all pending requests
     public function index() {
         $requests = AccountRequest::with(['requester','company','targetUser'])
-            ->orderByRaw("FIELD(status,'pending','approved','rejected')")
+            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 WHEN 'rejected' THEN 3 ELSE 4 END")
             ->latest()->get();
         return view('admin.account-requests', compact('requests'));
     }

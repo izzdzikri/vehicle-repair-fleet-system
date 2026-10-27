@@ -30,7 +30,11 @@ class StaffManagementController extends Controller
     public function roster() {
         $staffList = User::whereIn('role', ['admin', 'coordinator', 'staff'])
             ->where('status', 'active')
-            ->orderByRaw("FIELD(role, 'admin', 'coordinator', 'staff')")
+            ->withCount([
+                'jobCards as active_jobs' => fn($q) => $q->where('current_stage', '!=', 'completed'),
+                'jobCards as completed_jobs' => fn($q) => $q->where('current_stage', 'completed'),
+            ])
+            ->orderByRaw("CASE role WHEN 'admin' THEN 1 WHEN 'coordinator' THEN 2 WHEN 'staff' THEN 3 ELSE 4 END")
             ->orderBy('name')
             ->get();
 
@@ -49,8 +53,6 @@ class StaffManagementController extends Controller
         ];
 
         foreach ($staffList as $s) {
-            $s->active_jobs = JobCard::where('staff_id', $s->id)->where('current_stage', '!=', 'completed')->count();
-            $s->completed_jobs = JobCard::where('staff_id', $s->id)->where('current_stage', 'completed')->count();
             $specIds = is_array($s->specialties) ? $s->specialties : [];
             $s->specialty_models = collect($specIds)->map(fn($id) => $jobTypes->get($id))->filter();
             $s->duties = $dutiesMap[$s->staff_role] ?? ($s->role === 'coordinator' ? 'Service desk reception, scheduling, and customer communication.' : 'Vehicle inspection, fault diagnosis, and mechanical repairs.');

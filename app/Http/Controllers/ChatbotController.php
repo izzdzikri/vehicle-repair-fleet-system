@@ -2049,7 +2049,7 @@ class ChatbotController extends Controller
             $activeJobs = JobCard::where('staff_id', $user->id)
                 ->where('current_stage', '!=', 'completed')
                 ->with(['vehicle', 'jobType', 'appointment'])
-                ->orderByRaw("FIELD(current_stage, 'repairing', 'waiting_parts', 'diagnosing', 'received', 'quality_check')")
+                ->orderByRaw("CASE current_stage WHEN 'repairing' THEN 1 WHEN 'waiting_parts' THEN 2 WHEN 'diagnosing' THEN 3 WHEN 'received' THEN 4 WHEN 'quality_check' THEN 5 ELSE 6 END")
                 ->get();
 
             if ($activeJobs->isEmpty()) {

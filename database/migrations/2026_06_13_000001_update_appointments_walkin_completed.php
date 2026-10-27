@@ -12,7 +12,9 @@ return new class extends Migration
         // MySQL: modify the enum to add 'completed'
         // We use a raw statement because Laravel's Blueprint doesn't support
         // changing an existing enum without dropping and recreating it.
-        DB::statement("ALTER TABLE appointments MODIFY COLUMN status ENUM('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE appointments MODIFY COLUMN status ENUM('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending'");
+        }
 
         Schema::table('appointments', function (Blueprint $table) {
             $table->boolean('is_walkin')->default(false)->after('notes');
@@ -31,6 +33,8 @@ return new class extends Migration
             $table->dropColumn(['is_walkin', 'walkin_name', 'walkin_contact']);
             $table->unsignedBigInteger('user_id')->nullable(false)->change();
         });
-        DB::statement("ALTER TABLE appointments MODIFY COLUMN status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE appointments MODIFY COLUMN status ENUM('pending','confirmed','cancelled') NOT NULL DEFAULT 'pending'");
+        }
     }
 };

@@ -30,7 +30,7 @@ class CustomerController extends Controller
         // Maintenance alerts for this customer's vehicles
         $maintenanceAlerts = MaintenanceAlert::with('vehicle')
             ->whereIn('vehicle_id', $vehicleIds)
-            ->orderByRaw("FIELD(urgency,'high','medium','low')")
+            ->orderByRaw("CASE urgency WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderBy('is_read')
             ->latest()
             ->get();

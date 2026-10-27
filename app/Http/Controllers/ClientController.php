@@ -52,7 +52,7 @@ class ClientController extends Controller
         // Maintenance alerts across the whole fleet
         $maintenanceAlerts = MaintenanceAlert::whereIn('vehicle_id', $vehicleIds)
             ->with('vehicle')
-            ->orderByRaw("FIELD(urgency,'high','medium','low')")
+            ->orderByRaw("CASE urgency WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderBy('is_read')
             ->latest()
             ->get();

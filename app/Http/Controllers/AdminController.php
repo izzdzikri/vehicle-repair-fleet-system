@@ -35,13 +35,19 @@ class AdminController extends Controller
             }])->get();
 
         $totalVehicles = Vehicle::count();
-        $urgentAlerts  = \App\Models\MaintenanceAlert::where('urgency', 'high')->where('is_read', false)->count();
-        $mediumAlerts  = \App\Models\MaintenanceAlert::where('urgency', 'medium')->where('is_read', false)->count();
-        $lowAlerts     = \App\Models\MaintenanceAlert::where('urgency', 'low')->where('is_read', false)->count();
+        $alertCounts   = \App\Models\MaintenanceAlert::where('is_read', false)
+            ->selectRaw("
+                sum(case when urgency = 'high' then 1 else 0 end) as urgent_cnt,
+                sum(case when urgency = 'medium' then 1 else 0 end) as medium_cnt,
+                sum(case when urgency = 'low' then 1 else 0 end) as low_cnt
+            ")->first();
+        $urgentAlerts  = (int) ($alertCounts->urgent_cnt ?? 0);
+        $mediumAlerts  = (int) ($alertCounts->medium_cnt ?? 0);
+        $lowAlerts     = (int) ($alertCounts->low_cnt ?? 0);
 
         $upcomingPredictions = \App\Models\MaintenanceAlert::with(['vehicle.owner', 'jobType'])
             ->where('is_read', false)
-            ->orderByRaw("FIELD(urgency, 'high', 'medium', 'low')")
+            ->orderByRaw("CASE urgency WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderBy('predicted_due_date')
             ->take(6)
             ->get();
@@ -426,7 +432,7 @@ class AdminController extends Controller
             });
         }
 
-        $alerts = $query->orderByRaw("FIELD(urgency, 'high', 'medium', 'low')")
+        $alerts = $query->orderByRaw("CASE urgency WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderBy('predicted_due_date')
             ->paginate(25)
             ->withQueryString();

@@ -13,19 +13,38 @@ class Psm2FeatureSeeder extends Seeder
     public function run(): void
     {
         // ----------------------------------------------------------------
-        // 1. TRUNCATE PSM2 FEATURE TABLES
+        // 1. TRUNCATE PSM2 FEATURE TABLES (Driver-Aware)
         // ----------------------------------------------------------------
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        DB::table('staff_attendance')->truncate();
-        DB::table('leave_requests')->truncate();
-        DB::table('salary_payments')->truncate();
-        DB::table('payments')->truncate();
-        DB::table('invoices')->truncate();
-        DB::table('purchase_orders')->truncate();
-        DB::table('suppliers')->truncate();
-        DB::table('activity_logs')->truncate();
-        DB::table('notifications')->truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        $tables = [
+            'staff_attendance',
+            'leave_requests',
+            'salary_payments',
+            'payments',
+            'invoices',
+            'purchase_orders',
+            'suppliers',
+            'activity_logs',
+            'notifications',
+        ];
+
+        $driver = DB::getDriverName();
+        if ($driver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            foreach ($tables as $table) {
+                DB::table($table)->truncate();
+            }
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        } elseif ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF');
+            foreach ($tables as $table) {
+                DB::table($table)->delete();
+            }
+            DB::statement('PRAGMA foreign_keys = ON');
+        } else {
+            foreach ($tables as $table) {
+                DB::table($table)->delete();
+            }
+        }
 
         // ----------------------------------------------------------------
         // 2. SUPPLIERS (5 Major Malaysian Automotive Distributors)
@@ -517,7 +536,11 @@ class Psm2FeatureSeeder extends Seeder
         // Run the prediction scanner dynamically across the 34 vehicles and 100+ trip logs!
         // Then verify and override a subset to populate the admin proofread screen.
         // ----------------------------------------------------------------
-        DB::table('maintenance_alerts')->truncate();
+        if (DB::getDriverName() === 'sqlite') {
+            DB::table('maintenance_alerts')->delete();
+        } else {
+            DB::table('maintenance_alerts')->truncate();
+        }
 
         // Run the prediction engine
         $predictionService = app(MaintenancePredictionService::class);

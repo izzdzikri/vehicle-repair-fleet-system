@@ -46,13 +46,29 @@ class JobCardController extends Controller
             });
         };
 
-        // Stage tab counts, independent of pagination.
+        // Stage tab counts, independent of pagination (single aggregate query).
         $countScope = JobCard::query();
         $applySearch($countScope);
-        $stageCounts = ['all' => (clone $countScope)->count()];
-        foreach (['received', 'diagnosing', 'waiting_parts', 'repairing', 'quality_check', 'completed'] as $stage) {
-            $stageCounts[$stage] = (clone $countScope)->where('current_stage', $stage)->count();
-        }
+        $rawCounts = (clone $countScope)
+            ->selectRaw("
+                count(*) as all_count,
+                sum(case when current_stage = 'received' then 1 else 0 end) as received,
+                sum(case when current_stage = 'diagnosing' then 1 else 0 end) as diagnosing,
+                sum(case when current_stage = 'waiting_parts' then 1 else 0 end) as waiting_parts,
+                sum(case when current_stage = 'repairing' then 1 else 0 end) as repairing,
+                sum(case when current_stage = 'quality_check' then 1 else 0 end) as quality_check,
+                sum(case when current_stage = 'completed' then 1 else 0 end) as completed
+            ")->first();
+
+        $stageCounts = [
+            'all'           => (int) ($rawCounts->all_count ?? 0),
+            'received'      => (int) ($rawCounts->received ?? 0),
+            'diagnosing'    => (int) ($rawCounts->diagnosing ?? 0),
+            'waiting_parts' => (int) ($rawCounts->waiting_parts ?? 0),
+            'repairing'     => (int) ($rawCounts->repairing ?? 0),
+            'quality_check' => (int) ($rawCounts->quality_check ?? 0),
+            'completed'     => (int) ($rawCounts->completed ?? 0),
+        ];
 
         $query = JobCard::with(['vehicle', 'staff', 'appointment', 'jobType']);
         if ($filterStage) {

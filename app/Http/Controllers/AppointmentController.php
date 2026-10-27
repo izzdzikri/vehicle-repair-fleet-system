@@ -40,12 +40,21 @@ class AppointmentController extends Controller
 
         $countScope = clone $base;
         $applySearch($countScope);
+        $counts = (clone $countScope)
+            ->selectRaw("
+                count(*) as all_count,
+                sum(case when status = 'pending' then 1 else 0 end) as pending_cnt,
+                sum(case when status = 'confirmed' then 1 else 0 end) as confirmed_cnt,
+                sum(case when status = 'completed' then 1 else 0 end) as completed_cnt,
+                sum(case when status = 'cancelled' then 1 else 0 end) as cancelled_cnt
+            ")->first();
+
         $statusCounts = [
-            'all'       => (clone $countScope)->count(),
-            'pending'   => (clone $countScope)->where('status', 'pending')->count(),
-            'confirmed' => (clone $countScope)->where('status', 'confirmed')->count(),
-            'completed' => (clone $countScope)->where('status', 'completed')->count(),
-            'cancelled' => (clone $countScope)->where('status', 'cancelled')->count(),
+            'all'       => (int) ($counts->all_count ?? 0),
+            'pending'   => (int) ($counts->pending_cnt ?? 0),
+            'confirmed' => (int) ($counts->confirmed_cnt ?? 0),
+            'completed' => (int) ($counts->completed_cnt ?? 0),
+            'cancelled' => (int) ($counts->cancelled_cnt ?? 0),
         ];
 
         $query = (clone $base)->with(['vehicle', 'user', 'jobCard']);
