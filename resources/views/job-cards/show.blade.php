@@ -488,13 +488,25 @@
             <div>
                 <span class="font-medium">{{ $p->sparePart->name ?? '—' }}</span>
                 <span class="text-gray-400 ml-2">× {{ $p->quantity }}</span>
-                @if($p->sparePart->brand)
+                @if($p->sparePart && $p->sparePart->brand)
                 <span class="text-xs text-gray-400 ml-1">({{ $p->sparePart->brand }})</span>
                 @endif
             </div>
-            <div class="text-right">
-                <span class="text-gray-600">RM {{ number_format($p->quantity * $p->unit_price, 2) }}</span>
-                <p class="text-xs text-gray-400">@ RM {{ number_format($p->unit_price, 2) }} each</p>
+            <div class="flex items-center gap-4 text-right">
+                <div>
+                    <span class="text-gray-600 font-medium">RM {{ number_format($p->quantity * $p->unit_price, 2) }}</span>
+                    <p class="text-xs text-gray-400">@ RM {{ number_format($p->unit_price, 2) }} each</p>
+                </div>
+                @if($canEdit && $jobCard->current_stage !== 'completed')
+                <form method="POST"
+                    action="/{{ $prefix }}/job-cards/{{ $jobCard->id }}/parts/{{ $p->id }}"
+                    onsubmit="return confirmSubmit(event, {title:'Return part to stock?', message:'This will remove &quot;{{ addslashes($p->sparePart->name ?? 'Part') }}&quot; ({{ $p->quantity }}x) from this job card and return {{ $p->quantity }} item(s) back to warehouse inventory.', confirmLabel:'Return to Stock'})">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="text-xs text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition" title="Remove part & restore stock">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                </form>
+                @endif
             </div>
         </div>
         @empty

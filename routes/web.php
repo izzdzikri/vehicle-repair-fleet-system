@@ -27,7 +27,7 @@
     use App\Http\Controllers\TwoFactorSettingsController;
 
     Route::get('/', fn() => redirect('/login'));
-    Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->name('chatbot.reply');
+    Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->middleware('throttle:60,1')->name('chatbot.reply');
     Route::get('/chatbot/schedule-availability', [ChatbotController::class, 'scheduleAvailability'])->name('chatbot.schedule-availability');
     Route::post('/chatbot/reset-session', [ChatbotController::class, 'resetSession'])->name('chatbot.reset-session');
 
@@ -141,6 +141,7 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
     Route::resource('job-cards', JobCardController::class)->names('admin.job-cards');
     Route::patch('/job-cards/{jobCard}/stage',    [JobCardController::class, 'updateStage'])->name('job-cards.stage');
     Route::post('/job-cards/{jobCard}/parts',     [JobCardController::class, 'addPart'])->name('job-cards.add-part');
+    Route::delete('/job-cards/{jobCard}/parts/{jobCardPart}', [JobCardController::class, 'removePart'])->name('job-cards.remove-part');
     Route::post('/job-cards/{jobCard}/symptoms',  [JobCardController::class, 'updateSymptoms'])->name('job-cards.symptoms');
     Route::post('/job-cards/{jobCard}/labour',              [JobCardController::class, 'addLabour'])->name('job-cards.add-labour');
     Route::delete('/job-cards/labour/{labourCharge}',       [JobCardController::class, 'removeLabour'])->name('job-cards.remove-labour');
@@ -227,6 +228,7 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
     Route::get('/job-cards/{jobCard}',               [JobCardController::class, 'show'])->name('staff.job-cards.show');
     Route::patch('/job-cards/{jobCard}/stage',       [JobCardController::class, 'updateStage'])->name('staff.job-cards.stage');
     Route::post('/job-cards/{jobCard}/parts',        [JobCardController::class, 'addPart'])->name('staff.job-cards.add-part');
+    Route::delete('/job-cards/{jobCard}/parts/{jobCardPart}', [JobCardController::class, 'removePart'])->name('staff.job-cards.remove-part');
     Route::post('/job-cards/{jobCard}/symptoms',     [JobCardController::class, 'updateSymptoms'])->name('staff.job-cards.symptoms');
     Route::get('/inventory',                         [SparePartController::class, 'index'])->name('staff.inventory');
 
@@ -278,6 +280,7 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
     Route::patch('/job-cards/{jobCard}/stage',        [JobCardController::class, 'updateStage'])->name('coordinator.job-cards.stage');
     Route::post('/job-cards/{jobCard}/symptoms',      [JobCardController::class, 'updateSymptoms'])->name('coordinator.job-cards.symptoms');
     Route::post('/job-cards/{jobCard}/parts',         [JobCardController::class, 'addPart'])->name('coordinator.job-cards.add-part');
+    Route::delete('/job-cards/{jobCard}/parts/{jobCardPart}', [JobCardController::class, 'removePart'])->name('coordinator.job-cards.remove-part');
     Route::post('/job-cards/{jobCard}/labour',        [JobCardController::class, 'addLabour'])->name('coordinator.job-cards.add-labour');
     Route::delete('/job-cards/labour/{labourCharge}', [JobCardController::class, 'removeLabour'])->name('coordinator.job-cards.remove-labour');
     Route::post('/job-cards/{jobCard}/photos',              [JobCardController::class, 'uploadPhoto'])->name('coordinator.job-cards.add-photo');

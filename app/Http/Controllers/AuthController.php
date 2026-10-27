@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -19,7 +21,18 @@ public function login(Request $request) {
         'password' => 'required',
     ]);
 
-    if (Auth::attempt($credentials)) {
+    $throttleKey = Str::transliterate(Str::lower($request->input('email')).'|'.$request->ip());
+
+    if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+        $seconds = RateLimiter::availableIn($throttleKey);
+        return back()->withErrors([
+            'email' => "Too many login attempts. Please try again in {$seconds} seconds."
+        ])->onlyInput('email');
+    }
+
+    if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        RateLimiter::clear($throttleKey);
+
         $user = Auth::user();
 
         // Check if account is active
@@ -50,7 +63,9 @@ public function login(Request $request) {
         };
     }
 
-    return back()->withErrors(['email' => 'Invalid credentials.']);
+    RateLimiter::hit($throttleKey, 60);
+
+    return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
 }
 
     public function showRegister() {

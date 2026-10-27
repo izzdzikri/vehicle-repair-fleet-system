@@ -14,3 +14,5 @@ Artisan::command('inspire', function () {
 // every admin dashboard load, and the "Run Predictions Now" button on
 // the Maintenance Alerts page triggers one on demand.
 Schedule::command('maintenance:predict')->daily();
+Schedule::command('auth:clear-resets')->daily();
+Schedule::command('queue:prune-failed --hours=48')->daily();

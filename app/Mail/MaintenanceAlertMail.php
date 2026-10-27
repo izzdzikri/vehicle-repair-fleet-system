@@ -5,10 +5,11 @@ use App\Models\Vehicle;
 use App\Models\JobType;
 use App\Models\MaintenanceAlert;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class MaintenanceAlertMail extends Mailable
+class MaintenanceAlertMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

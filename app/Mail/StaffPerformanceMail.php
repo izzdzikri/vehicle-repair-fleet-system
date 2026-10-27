@@ -2,10 +2,11 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class StaffPerformanceMail extends Mailable
+class StaffPerformanceMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 

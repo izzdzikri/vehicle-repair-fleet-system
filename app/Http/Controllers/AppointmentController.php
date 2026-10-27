@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\Notification;
 use App\Models\JobCard;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -231,31 +232,34 @@ class AppointmentController extends Controller
             'year'           => 'nullable|integer|min:1970|max:' . (date('Y') + 1),
         ]);
 
-        $vehicle = Vehicle::where('plate_number', strtoupper(trim($request->plate_number)))->first();
+        $appointment = DB::transaction(function () use ($request) {
+            $plate = strtoupper(trim($request->plate_number));
+            $vehicle = Vehicle::where('plate_number', $plate)->first();
 
-        if (!$vehicle) {
-            $vehicle = Vehicle::create([
-                'user_id'      => null,
-                'plate_number' => strtoupper(trim($request->plate_number)),
-                'brand'        => $request->brand,
-                'model'        => $request->model,
-                'year'         => $request->year,
-                'mileage'      => 0,
+            if (!$vehicle) {
+                $vehicle = Vehicle::create([
+                    'user_id'      => null,
+                    'plate_number' => $plate,
+                    'brand'        => $request->brand,
+                    'model'        => $request->model,
+                    'year'         => $request->year,
+                    'mileage'      => 0,
+                ]);
+            }
+
+            return Appointment::create([
+                'user_id'        => null,
+                'vehicle_id'     => $vehicle->id,
+                'date'           => $request->date,
+                'time'           => $request->time,
+                'service_type'   => $request->service_type,
+                'notes'          => $request->notes,
+                'status'         => 'confirmed',
+                'is_walkin'      => true,
+                'walkin_name'    => $request->walkin_name,
+                'walkin_contact' => $request->walkin_contact,
             ]);
-        }
-
-        $appointment = Appointment::create([
-            'user_id'        => null,
-            'vehicle_id'     => $vehicle->id,
-            'date'           => $request->date,
-            'time'           => $request->time,
-            'service_type'   => $request->service_type,
-            'notes'          => $request->notes,
-            'status'         => 'confirmed',
-            'is_walkin'      => true,
-            'walkin_name'    => $request->walkin_name,
-            'walkin_contact' => $request->walkin_contact,
-        ]);
+        });
 
         $rolePrefix = match(auth()->user()->role) {
             'coordinator' => 'coordinator',

@@ -282,19 +282,59 @@ class JobCardController extends Controller
             return back()->with('error', "Not enough stock. Available: {$part->stock}");
         }
 
-        $part->decrement('stock', $request->quantity);
+        DB::transaction(function () use ($jobCard, $part, $request) {
+            $part->decrement('stock', $request->quantity);
 
-        JobCardPart::create([
-            'job_card_id'   => $jobCard->id,
-            'spare_part_id' => $part->id,
-            'quantity'      => $request->quantity,
-            'unit_price'    => $part->unit_price,
-        ]);
+            JobCardPart::create([
+                'job_card_id'   => $jobCard->id,
+                'spare_part_id' => $part->id,
+                'quantity'      => $request->quantity,
+                'unit_price'    => $part->unit_price,
+            ]);
 
-        $total = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
-        $jobCard->update(['total_cost' => $total]);
+            $partsCost  = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
+            $labourCost = $jobCard->labourCharges()->sum('charge');
+            $jobCard->update(['total_cost' => $partsCost + $labourCost]);
 
-        return back()->with('success', "Added {$request->quantity}x {$part->name}. Stock deducted: {$part->stock} remaining.");
+            ActivityLog::record(
+                'job_card.part_added',
+                "Added {$request->quantity}x {$part->name} to Job #{$jobCard->id}.",
+                $jobCard
+            );
+        });
+
+        return back()->with('success', "Added {$request->quantity}x {$part->name}. Stock deducted: {$part->fresh()->stock} remaining.");
+    }
+
+    public function removePart(Request $request, JobCard $jobCard, JobCardPart $jobCardPart) {
+        $this->assertCanEdit($request, $jobCard);
+
+        if ($jobCardPart->job_card_id !== $jobCard->id) {
+            abort(404);
+        }
+
+        $partName = $jobCardPart->sparePart->name ?? 'Part';
+        $qty      = $jobCardPart->quantity;
+
+        DB::transaction(function () use ($jobCard, $jobCardPart, $partName, $qty) {
+            if ($jobCardPart->sparePart) {
+                $jobCardPart->sparePart->increment('stock', $jobCardPart->quantity);
+            }
+
+            $jobCardPart->delete();
+
+            $partsCost  = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
+            $labourCost = $jobCard->labourCharges()->sum('charge');
+            $jobCard->update(['total_cost' => $partsCost + $labourCost]);
+
+            ActivityLog::record(
+                'job_card.part_removed',
+                "Removed {$qty}x {$partName} from Job #{$jobCard->id} (stock restored to warehouse).",
+                $jobCard
+            );
+        });
+
+        return back()->with('success', "Removed {$partName} (×{$qty}). Stock has been restored to inventory.");
     }
 
     public function addLabour(Request $request, JobCard $jobCard) {
