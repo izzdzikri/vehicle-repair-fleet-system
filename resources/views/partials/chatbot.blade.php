@@ -431,7 +431,7 @@ function chatbotComponent() {
         </div>
 
         {{-- Chat Body --}}
-        <div x-ref="chatBody" class="flex-1 overflow-y-auto p-3.5 bg-slate-50">
+        <div x-ref="chatBody" class="flex-1 overflow-y-auto p-3.5 bg-slate-50 overscroll-contain">
             <div :class="isFullScreen ? 'max-w-4xl mx-auto space-y-3' : 'space-y-3'">
                 <template x-for="(msg, i) in messages" :key="i">
                     <div x-show="msg.text">
@@ -750,6 +750,7 @@ function chatbotComponent() {
             <div :class="isFullScreen ? 'max-w-4xl mx-auto flex gap-2 items-center' : 'flex gap-2 items-center'">
                 <input type="text" x-model="input"
                     @keydown.enter="send()"
+                    autocomplete="off" enterkeyhint="send"
                     :placeholder="lang === 'ms' ? 'Tanya masalah kenderaan, tugasan kerja, harga, atau tempah servis...' : 'Ask about vehicle issues, work tasks, pricing, or book...'"
                     class="flex-1 border border-gray-300 rounded-lg px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900 bg-gray-50 focus:bg-white transition">
                 

@@ -11,7 +11,18 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="shortcut icon" href="/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer fetchpriority="high"></script>
+    <style>
+        html { scrollbar-gutter: stable; }
+        h1, h2, h3 { text-wrap: balance; }
+        input:user-invalid, select:user-invalid, textarea:user-invalid {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+        input:user-valid:not(:placeholder-shown) {
+            border-color: #10b981 !important;
+        }
+    </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center py-10"
     style="background: linear-gradient(135deg, #0f1c3f 0%, #1a2f6e 50%, #0d1b4b 100%);">
@@ -44,6 +55,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                 <input type="text" name="name" value="{{ old('name') }}"
                     placeholder="Your full name"
+                    autocomplete="name" enterkeyhint="next"
                     class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-gray-50
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required>
@@ -52,14 +64,16 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input type="email" name="email" value="{{ old('email') }}"
                     placeholder="you@example.com"
+                    autocomplete="email" enterkeyhint="next"
                     class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-gray-50
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-                <input type="text" name="contact_no" value="{{ old('contact_no') }}"
+                <input type="tel" name="contact_no" value="{{ old('contact_no') }}"
                     placeholder="e.g. 011-12345678"
+                    autocomplete="tel" inputmode="tel" enterkeyhint="next"
                     class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-gray-50
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
@@ -80,6 +94,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input type="password" name="password"
                     placeholder="Min 6 characters"
+                    autocomplete="new-password" enterkeyhint="next"
                     class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-gray-50
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required>
@@ -88,6 +103,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
                 <input type="password" name="password_confirmation"
                     placeholder="Repeat password"
+                    autocomplete="new-password" enterkeyhint="done"
                     class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-gray-50
                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required>

@@ -11,8 +11,19 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="shortcut icon" href="/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer fetchpriority="low"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer fetchpriority="high"></script>
+    <style>
+        html { scrollbar-gutter: stable; }
+        h1, h2, h3 { text-wrap: balance; }
+        input:user-invalid, select:user-invalid, textarea:user-invalid {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+        input:user-valid:not(:placeholder-shown) {
+            border-color: #10b981 !important;
+        }
+    </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6"
     style="background: linear-gradient(135deg, #09132b 0%, #112352 50%, #071129 100%);">
@@ -163,6 +174,7 @@
                             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Email Address</label>
                             <input type="email" name="email" value="{{ old('email') }}"
                                 placeholder="you@example.com"
+                                autocomplete="email" enterkeyhint="next"
                                 class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm
                                        focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
                                        bg-gray-50 transition"
@@ -176,6 +188,7 @@
                             </div>
                             <input type="password" name="password"
                                 placeholder="••••••••"
+                                autocomplete="current-password" enterkeyhint="done"
                                 class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm
                                        focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
                                        bg-gray-50 transition"

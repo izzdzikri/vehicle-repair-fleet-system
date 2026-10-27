@@ -711,4 +711,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endpush
+
 @endsection

@@ -14,13 +14,36 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer fetchpriority="high"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer fetchpriority="low"></script>
     <style>
+        /* Modern Web Guidance: Stable scrollbar gutter to prevent layout shift */
+        html { scrollbar-gutter: stable; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Modern Web Guidance: Balanced headlines to prevent orphan words */
+        h1, h2, h3, .card-title { text-wrap: balance; }
+
+        /* Modern Web Guidance: Contain scroll chaining under modal dialogs & overlays */
+        dialog:modal, [role="dialog"], .modal-overlay, .modal-container {
+            overscroll-behavior: contain;
+        }
+
+        /* Modern Web Guidance: Show validation feedback only after user interaction/blur */
+        input:user-invalid, select:user-invalid, textarea:user-invalid {
+            border-color: #ef4444 !important;
+            background-color: #fffafb !important;
+        }
+        input:user-valid:not(:placeholder-shown):not([type="checkbox"]):not([type="radio"]) {
+            border-color: #10b981;
+        }
+
+        /* Modern slim scrollbar without legacy webkit hacks */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
         @media print {
             @page {
                 size: A4 portrait;
@@ -584,5 +607,6 @@
     </script>
 
     <script>lucide.createIcons();</script>
+    @stack('scripts')
 </body>
 </html>
