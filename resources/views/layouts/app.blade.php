@@ -65,7 +65,13 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen" x-data="{ sidebarOpen: false }">
+<body class="bg-gray-100 min-h-screen" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
+
+    {{-- Accessibility: Skip to Main Content Link --}}
+    <a href="#main-content"
+        class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2.5 focus:bg-slate-900 focus:text-white focus:rounded-xl focus:font-semibold focus:shadow-xl focus:ring-2 focus:ring-blue-400">
+        Skip to main content
+    </a>
 
     {{-- Mobile overlay --}}
     <div x-show="sidebarOpen"
@@ -111,7 +117,7 @@
                         if ($active && !empty($exclude) && request()->is(...(array) $exclude)) {
                             $active = false;
                         }
-                        $base   = 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition ';
+                        $base   = 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 transition ';
                         $base  .= $active ? 'bg-gray-800 text-white font-semibold' : 'text-gray-300';
                         $html   = '<a href="'.$href.'" class="'.$base.'">';
                         $html  .= '<i data-lucide="'.$icon.'" class="w-4 h-4 shrink-0"></i>';
@@ -368,7 +374,7 @@
 
                     <div class="min-w-0">
                         @if(count($crumbs) > 1)
-                        <nav class="flex items-center gap-1.5 text-xs text-gray-500 font-medium truncate mb-0.5">
+                        <nav class="hidden sm:flex items-center gap-1.5 text-xs text-gray-500 font-medium truncate mb-0.5">
                             @foreach($crumbs as $i => $crumb)
                                 @if($i > 0)<span class="text-gray-300">/</span>@endif
                                 @if($i === count($crumbs) - 1)
@@ -388,7 +394,7 @@
 
                     {{-- Notifications bell (admin — surfaces the same counts that badge the sidebar) --}}
                     @if(auth()->user()->role === 'admin')
-                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.stop="open = false">
                         <button @click="open = !open" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="Notifications">
                             <i data-lucide="bell" class="w-5 h-5"></i>
                             @php $totalAlerts = collect($sidebarCounts ?? [])->sum(); @endphp
@@ -450,7 +456,7 @@
                         $myNotifications = \App\Models\Notification::where('user_id', auth()->id())->latest()->take(8)->get();
                         $myUnreadCount   = \App\Models\Notification::where('user_id', auth()->id())->where('is_read', false)->count();
                     @endphp
-                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.stop="open = false">
                         <button @click="open = !open" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="Notifications">
                             <i data-lucide="bell" class="w-5 h-5"></i>
                             @if($myUnreadCount > 0)
@@ -490,7 +496,7 @@
                     @endif
 
                     {{-- Profile dropdown --}}
-                    <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.stop="open = false">
                         <button @click="open = !open" class="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5">
                             <img src="{{ auth()->user()->avatar_url }}"
                                 class="w-8 h-8 rounded-full object-cover border-2 border-blue-400">
@@ -522,20 +528,44 @@
 
             {{-- Flash messages --}}
             @if(session('success'))
-            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
-                class="mx-4 mt-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm border border-green-200 no-print">
-                {{ session('success') }}
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 -translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="mx-4 mt-4 p-3.5 bg-emerald-50 text-emerald-800 rounded-xl text-sm border border-emerald-200 no-print flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <span class="truncate font-medium">{{ session('success') }}</span>
+                </div>
+                <button type="button" @click="show = false" class="text-emerald-500 hover:text-emerald-800 p-1 rounded-md transition shrink-0 ml-2" title="Dismiss">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
             @endif
             @if(session('error'))
-            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
-                class="mx-4 mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm border border-red-200 no-print">
-                {{ session('error') }}
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 6000)"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 -translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="mx-4 mt-4 p-3.5 bg-rose-50 text-rose-800 rounded-xl text-sm border border-rose-200 no-print flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 shrink-0"></i>
+                    <span class="truncate font-medium">{{ session('error') }}</span>
+                </div>
+                <button type="button" @click="show = false" class="text-rose-500 hover:text-rose-800 p-1 rounded-md transition shrink-0 ml-2" title="Dismiss">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
             @endif
 
             {{-- Page content --}}
-            <main class="flex-1 overflow-y-auto p-4 lg:p-6">
+            <main id="main-content" class="flex-1 overflow-y-auto p-4 pb-24 lg:p-6 lg:pb-10 focus:outline-none" tabindex="-1">
                 @yield('content')
             </main>
         </div>
@@ -606,7 +636,11 @@
         }
     </script>
 
-    <script>lucide.createIcons();</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
     @stack('scripts')
 </body>
 </html>
