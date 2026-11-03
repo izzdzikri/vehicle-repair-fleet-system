@@ -22,22 +22,22 @@ Measurements were taken using `DB::listen` query profiling, `hrtime(true)` high-
 
 | Endpoint | Method | Role | Status | Queries | Query Time | Response Time | Peak Memory |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Admin Dashboard** | `GET /admin/dashboard` | Admin | 200 | **165,198** | **43,753.23 ms** | **24,718.42 ms** | 105.56 MB |
-| **Staff Dashboard** | `GET /staff/dashboard` | Staff | 200 | 48 | 96.84 ms | 306.63 ms | 105.56 MB |
-| **Coordinator Dashboard** | `GET /coordinator/dashboard` | Coordinator | 200 | 65 | 250.75 ms | 485.72 ms | 105.56 MB |
-| **Corporate Client Dashboard** | `GET /client/dashboard` | Corporate PIC | 200 | 168 | 53.34 ms | 19.95 ms | 105.56 MB |
-| **Customer Dashboard** | `GET /customer/dashboard` | Customer | 200 | 119 | 42.14 ms | 13.80 ms | 105.56 MB |
-| **Admin Job Cards List** | `GET /admin/job-cards` | Admin | 200 | 272 | 174.48 ms | 37.00 ms | 105.56 MB |
-| **Coordinator Job Cards List** | `GET /coordinator/job-cards` | Coordinator | 200 | 90 | 460.17 ms | 1,430.86 ms | 105.56 MB |
-| **Job Card Detail (Show)** | `GET /admin/job-cards/{id}` | Admin | 200 | 170 | 46.80 ms | 31.96 ms | 105.56 MB |
-| **Admin Vehicles List** | `GET /admin/vehicles` | Admin | 200 | 77 | 26.84 ms | 7.97 ms | 105.56 MB |
-| **Corporate Vehicles List** | `GET /client/vehicles` | Corporate PIC | 200 | 108 | 29.16 ms | 6.72 ms | 105.56 MB |
-| **Corporate Company View** | `GET /client/company` | Corporate PIC | 200 | 104 | 27.43 ms | 6.99 ms | 105.56 MB |
-| **Corporate Trip Logs View** | `GET /client/trip-logs` | Corporate PIC | 200 | **658** | 160.16 ms | 28.49 ms | 105.56 MB |
-| **Corporate Fleet Statement** | `GET /client/statement` | Corporate PIC | 200 | 150 | 42.30 ms | 8.16 ms | 105.56 MB |
-| **Admin Reports & Charts** | `GET /admin/reports` | Admin | 200 | **592** | **1,368.00 ms** | 103.59 ms | 105.56 MB |
-| **Chatbot Reply Endpoint** | `POST /chatbot/reply` | Guest | 419* | 34 | 10.37 ms | 10.23 ms | 105.56 MB |
-| **Login Page** | `GET /login` | Guest | 200 | 3 | 1.99 ms | 27.33 ms | 6.49 MB |
+| **Admin Dashboard** | `GET /admin/dashboard` | Admin | 200 | **55,067** | **18,467.93 ms** | **30,080.68 ms** | 63.08 MB |
+| **Staff Dashboard** | `GET /staff/dashboard` | Staff | 200 | 12 | 32.57 ms | 376.42 ms | 74.70 MB |
+| **Coordinator Dashboard** | `GET /coordinator/dashboard` | Coordinator | 200 | 14 | 58.53 ms | 599.03 ms | 74.70 MB |
+| **Corporate Client Dashboard** | `GET /client/dashboard` | Corporate PIC | 200 | 28 | 10.95 ms | 24.32 ms | 74.70 MB |
+| **Customer Dashboard** | `GET /customer/dashboard` | Customer | 200 | 18 | 6.96 ms | 13.33 ms | 74.70 MB |
+| **Admin Job Cards List** | `GET /admin/job-cards` | Admin | 200 | 34 | 23.96 ms | 39.19 ms | 74.70 MB |
+| **Coordinator Job Cards List** | `GET /coordinator/job-cards` | Coordinator | 200 | 10 | 59.93 ms | **1,727.64 ms** | 91.19 MB |
+| **Job Card Detail (Show)** | `GET /admin/job-cards/{id}` | Admin | 200 | 17 | 6.63 ms | 38.01 ms | 91.19 MB |
+| **Admin Vehicles List** | `GET /admin/vehicles` | Admin | 200 | 7 | 3.16 ms | 8.95 ms | 91.19 MB |
+| **Corporate Vehicles List** | `GET /client/vehicles` | Corporate PIC | 200 | 9 | 2.59 ms | 7.34 ms | 91.19 MB |
+| **Corporate Company View** | `GET /client/company` | Corporate PIC | 200 | 9 | 2.70 ms | 6.87 ms | 91.19 MB |
+| **Corporate Trip Logs View** | `GET /client/trip-logs` | Corporate PIC | 200 | 47 | 13.84 ms | 31.81 ms | 91.19 MB |
+| **Corporate Fleet Statement** | `GET /client/statement` | Corporate PIC | 200 | 10 | 3.48 ms | 10.19 ms | 91.19 MB |
+| **Admin Reports & Charts** | `GET /admin/reports` | Admin | 200 | 37 | 90.25 ms | 109.44 ms | 91.19 MB |
+| **Chatbot Diagnostic Engine** | `POST /chatbot/reply` | Guest | 419* | 2 | 0.74 ms | 12.76 ms | 91.19 MB |
+| **Login Page** | `GET /login` | Guest | 200 | 3 | 2.12 ms | 28.71 ms | 6.48 MB |
 | **Login Action** | `POST /login` | Guest | 419* | 4 | 1.40 ms | 6.53 ms | 6.73 MB |
 
 *\*419 on raw POST indicates CSRF middleware verification active.*
