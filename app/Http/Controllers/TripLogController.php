@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\TripLog;
-use App\Models\Vehicle;
-use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\TripLog;
+use App\Models\User;
+use App\Models\Vehicle;
 use App\Services\MaintenancePredictionService;
 use Illuminate\Http\Request;
 
@@ -26,6 +27,7 @@ class TripLogController extends Controller
             $vehicles = Vehicle::with('owner')->orderBy('plate_number')->get();
             $baseRoute = '/admin';
         } elseif ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             $vehicles = Vehicle::whereIn('user_id', $companyUserIds)
                 ->with('owner')
@@ -61,7 +63,7 @@ class TripLogController extends Controller
         $tripLogs = $query->latest('trip_date')->latest('id')->paginate(15)->withQueryString();
 
         // Calculate aggregate statistics
-        $totalTrips    = TripLog::whereIn('vehicle_id', $vehicleIds)->count();
+        $totalTrips = TripLog::whereIn('vehicle_id', $vehicleIds)->count();
         $totalDistance = (float) TripLog::whereIn('vehicle_id', $vehicleIds)->sum('distance_km');
 
         // Usage rates per vehicle (for transparency in the predictive engine)
@@ -104,11 +106,11 @@ class TripLogController extends Controller
         }
 
         $request->validate([
-            'vehicle_id'   => 'required|exists:vehicles,id',
-            'trip_date'    => 'required|date|before_or_equal:today',
-            'distance_km'  => 'required|numeric|min:0.1|max:5000',
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'trip_date' => 'required|date|before_or_equal:today',
+            'distance_km' => 'required|numeric|min:0.1|max:5000',
             'terrain_type' => 'required|string|in:urban,highway,rural,mountain,mixed',
-            'notes'        => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         $vehicle = Vehicle::findOrFail($request->vehicle_id);
@@ -117,11 +119,11 @@ class TripLogController extends Controller
         $this->authorizeVehicleAccess($vehicle);
 
         $tripLog = TripLog::create([
-            'vehicle_id'   => $vehicle->id,
-            'trip_date'    => $request->trip_date,
-            'distance_km'  => $request->distance_km,
+            'vehicle_id' => $vehicle->id,
+            'trip_date' => $request->trip_date,
+            'distance_km' => $request->distance_km,
             'terrain_type' => $request->terrain_type,
-            'notes'        => $request->notes,
+            'notes' => $request->notes,
         ]);
 
         // Automatically update odometer/mileage on the vehicle if requested
@@ -158,7 +160,7 @@ class TripLogController extends Controller
         $this->authorizeVehicleAccess($vehicle);
 
         $plate = $vehicle->plate_number ?? 'vehicle';
-        $dist  = $tripLog->distance_km;
+        $dist = $tripLog->distance_km;
 
         $tripLog->delete();
 
@@ -186,8 +188,10 @@ class TripLogController extends Controller
         }
 
         if ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             abort_unless($companyUserIds->contains($vehicle->user_id), 403, 'You do not have access to this vehicle.');
+
             return;
         }
 

@@ -1,13 +1,15 @@
 <?php
+
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RecordPaymentRequest;
 use App\Mail\InvoiceMail;
+use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\JobCard;
+use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\User;
-use App\Models\ActivityLog;
-use App\Models\Notification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,24 +18,26 @@ use Illuminate\Support\Facades\Mail;
 
 class InvoiceController extends Controller
 {
-    public function index(Request $request) {
-        $user    = auth()->user();
-        $search  = trim((string) $request->input('search'));
+    public function index(Request $request)
+    {
+        $user = auth()->user();
+        $search = trim((string) $request->input('search'));
         $perPage = 15;
 
         if (in_array($user->role, ['admin', 'staff', 'coordinator'])) {
             $base = Invoice::query();
         } elseif ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
-            $base = Invoice::whereHas('jobCard.appointment', fn($q) => $q->whereIn('user_id', $companyUserIds));
+            $base = Invoice::whereHas('jobCard.appointment', fn ($q) => $q->whereIn('user_id', $companyUserIds));
         } else {
-            $base = Invoice::whereHas('jobCard.appointment', fn($q) => $q->where('user_id', $user->id));
+            $base = Invoice::whereHas('jobCard.appointment', fn ($q) => $q->where('user_id', $user->id));
         }
 
         if ($search !== '') {
             $base->where(function ($q) use ($search) {
                 $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%");
+                    ->orWhere('customer_name', 'like', "%{$search}%");
             });
         }
 
@@ -52,24 +56,14 @@ class InvoiceController extends Controller
         return view('invoices.index', compact('invoices', 'pendingJobCards', 'search'));
     }
 
-    public function show(Invoice $invoice) {
-        $user = auth()->user();
+    public function show(Invoice $invoice)
+    {
+        abort_unless(auth()->user()->can('view', $invoice), 403);
+
         $invoice->load([
             'jobCard.vehicle', 'jobCard.appointment.user', 'jobCard.staff',
             'jobCard.parts.sparePart', 'jobCard.labourCharges', 'payments.recorder',
         ]);
-
-        if (!in_array($user->role, ['admin', 'staff', 'coordinator'])) {
-            $ownerId = $invoice->jobCard->appointment->user_id ?? null;
-            $allowed = $ownerId === $user->id;
-
-            if ($user->role === 'corporate' && $ownerId) {
-                $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
-                $allowed = $companyUserIds->contains($ownerId);
-            }
-
-            abort_unless($allowed, 403);
-        }
 
         return view('invoices.show', compact('invoice'));
     }
@@ -78,40 +72,34 @@ class InvoiceController extends Controller
      * Download invoice as a PDF using dompdf.
      * Applies the same scope/ownership guard as show().
      */
-    public function downloadPdf(Invoice $invoice) {
-        $user = auth()->user();
+    public function downloadPdf(Invoice $invoice)
+    {
+        abort_unless(auth()->user()->can('view', $invoice), 403);
+
         $invoice->load([
             'jobCard.vehicle', 'jobCard.appointment.user', 'jobCard.staff',
             'jobCard.parts.sparePart', 'jobCard.labourCharges', 'payments.recorder',
             'jobCard.jobType',
         ]);
 
-        if (!in_array($user->role, ['admin', 'staff', 'coordinator'])) {
-            $ownerId = $invoice->jobCard->appointment->user_id ?? null;
-            $allowed = $ownerId === $user->id;
-            if ($user->role === 'corporate' && $ownerId) {
-                $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
-                $allowed = $companyUserIds->contains($ownerId);
-            }
-            abort_unless($allowed, 403);
-        }
-
         $pdf = Pdf::loadView('invoices.pdf', compact('invoice'))
             ->setPaper('a4', 'portrait');
 
-        $filename = 'Invoice-' . $invoice->invoice_number . '.pdf';
+        $filename = 'Invoice-'.$invoice->invoice_number.'.pdf';
+
         return $pdf->download($filename);
     }
 
-    public function generate(Request $request) {
-        if (!auth()->user()->hasPermission('invoice.manage')) {
+    public function generate(Request $request)
+    {
+        if (! auth()->user()->hasPermission('invoice.manage')) {
             return back()->with('error', 'You do not have permission to generate invoices. Contact an admin or the assigned accountant.');
         }
 
         $request->validate([
             'job_card_id' => 'required|exists:job_cards,id',
-            'tax_rate'    => 'nullable|numeric|min:0|max:100',
-            'due_date'    => 'nullable|date',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'due_date' => 'nullable|date',
         ]);
 
         $jobCard = JobCard::findOrFail($request->job_card_id);
@@ -124,90 +112,119 @@ class InvoiceController extends Controller
             return back()->with('error', 'This job card already has an invoice.');
         }
 
-        $partsCost  = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
+        $partsCost = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
         $labourCost = $jobCard->labourCharges()->sum('charge');
-        $subtotal   = $partsCost + $labourCost;
+        $subtotal = $partsCost + $labourCost;
 
-        $taxRate   = (float) $request->input('tax_rate', 0);
+        $taxRate = (float) $request->input('tax_rate', 0);
         $taxAmount = round($subtotal * ($taxRate / 100), 2);
-        $total     = $subtotal + $taxAmount;
+        $total = $subtotal + $taxAmount;
 
         $customerName = $jobCard->appointment && $jobCard->appointment->is_walkin
             ? ($jobCard->appointment->walkin_name ?? 'Walk-in Customer')
             : ($jobCard->appointment->user->name ?? '—');
 
-        $invoice = Invoice::create([
-            'job_card_id'    => $jobCard->id,
-            'invoice_number' => 'PENDING',
-            'customer_name'  => $customerName,
-            'subtotal'       => $subtotal,
-            'tax_rate'       => $taxRate,
-            'tax_amount'     => $taxAmount,
-            'total'          => $total,
-            'due_date'       => $request->input('due_date'),
-            'generated_by'   => auth()->id(),
-        ]);
+        try {
+            $invoice = DB::transaction(function () use ($jobCard, $subtotal, $taxRate, $taxAmount, $total, $customerName, $request) {
+                $lockedJobCard = JobCard::where('id', $jobCard->id)->lockForUpdate()->firstOrFail();
 
-        $invoice->update([
-            'invoice_number' => 'INV-' . now()->format('Y') . '-' . str_pad($invoice->id, 5, '0', STR_PAD_LEFT),
-        ]);
+                if ($lockedJobCard->invoice()->exists()) {
+                    throw new \InvalidArgumentException('This job card already has an invoice.');
+                }
 
-        $invoice->recalculate();
+                $tempNumber = 'TMP-'.Str::upper(Str::random(12));
+
+                $createdInvoice = Invoice::create([
+                    'job_card_id' => $lockedJobCard->id,
+                    'invoice_number' => $tempNumber,
+                    'customer_name' => $customerName,
+                    'subtotal' => $subtotal,
+                    'tax_rate' => $taxRate,
+                    'tax_amount' => $taxAmount,
+                    'total' => $total,
+                    'due_date' => $request->input('due_date'),
+                    'generated_by' => auth()->id(),
+                ]);
+
+                $createdInvoice->update([
+                    'invoice_number' => 'INV-'.now()->format('Y').'-'.str_pad($createdInvoice->id, 5, '0', STR_PAD_LEFT),
+                ]);
+
+                $createdInvoice->recalculate();
+
+                return $createdInvoice;
+            });
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
         $this->sendInvoiceEmail($invoice);
 
         $ownerId = $jobCard->appointment->user_id ?? null;
         if ($ownerId) {
-            $owner  = User::find($ownerId);
+            $owner = User::find($ownerId);
             $prefix = ($owner && $owner->role === 'corporate') ? '/client' : '/customer';
             Notification::send(
                 $ownerId,
                 'New Invoice',
-                "Invoice {$invoice->invoice_number} for RM".number_format($invoice->total,2)." is ready.",
+                "Invoice {$invoice->invoice_number} for RM".number_format($invoice->total, 2).' is ready.',
                 "{$prefix}/invoices/{$invoice->id}"
             );
         }
 
         ActivityLog::record(
             'invoice.generated',
-            "Generated invoice {$invoice->invoice_number} for {$invoice->customer_name} (RM".number_format($invoice->total,2).")",
+            "Generated invoice {$invoice->invoice_number} for {$invoice->customer_name} (RM".number_format($invoice->total, 2).')',
             $invoice
         );
 
         $prefix = auth()->user()->role === 'admin' ? 'admin' : 'staff';
+
         return redirect("/{$prefix}/invoices/{$invoice->id}")->with('success', 'Invoice generated and emailed to the customer.');
     }
 
-    public function addPayment(Request $request, Invoice $invoice) {
-        if (!auth()->user()->hasPermission('invoice.manage')) {
+    public function addPayment(RecordPaymentRequest $request, Invoice $invoice)
+    {
+        if (! auth()->user()->hasPermission('invoice.manage')) {
             return back()->with('error', 'You do not have permission to record payments. Contact an admin or the assigned accountant.');
         }
 
         $request->validate([
-            'amount'       => 'required|numeric|min:0.01',
-            'method'       => 'required|in:cash,bank_transfer,card,online',
+            'amount' => 'required|numeric|min:0.01',
+            'method' => 'required|in:cash,bank_transfer,card,online',
             'reference_no' => 'nullable|string|max:100',
-            'paid_at'      => 'nullable|date',
+            'paid_at' => 'nullable|date',
         ]);
 
-        if ($request->amount > $invoice->balance) {
-            return back()->with('error', 'Payment exceeds the outstanding balance.');
+        try {
+            DB::transaction(function () use ($invoice, $request) {
+                $lockedInvoice = Invoice::where('id', $invoice->id)->lockForUpdate()->firstOrFail();
+
+                if ($request->amount > $lockedInvoice->balance) {
+                    throw new \InvalidArgumentException('Payment exceeds the outstanding balance.');
+                }
+
+                Payment::create([
+                    'invoice_id' => $lockedInvoice->id,
+                    'amount' => $request->amount,
+                    'method' => $request->method,
+                    'reference_no' => $request->reference_no,
+                    'paid_at' => $request->paid_at ?? now(),
+                    'recorded_by' => auth()->id(),
+                ]);
+
+                $lockedInvoice->recalculate();
+            });
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        Payment::create([
-            'invoice_id'   => $invoice->id,
-            'amount'       => $request->amount,
-            'method'       => $request->method,
-            'reference_no' => $request->reference_no,
-            'paid_at'      => $request->paid_at ?? now(),
-            'recorded_by'  => auth()->id(),
-        ]);
-
-        $invoice->recalculate();
+        $invoice->refresh();
         $this->sendInvoiceEmail($invoice);
 
         ActivityLog::record(
             'invoice.payment',
-            "Recorded RM".number_format($request->amount,2)." payment for invoice {$invoice->invoice_number}",
+            'Recorded RM'.number_format($request->amount, 2)." payment for invoice {$invoice->invoice_number}",
             $invoice
         );
 
@@ -217,31 +234,40 @@ class InvoiceController extends Controller
     /**
      * Manually re-send an invoice email (e.g. customer says they never got it).
      */
-    public function resend(Invoice $invoice) {
+    public function resend(Invoice $invoice)
+    {
+        abort_unless(auth()->user()->hasPermission('invoice.manage'), 403, 'You do not have permission to resend invoices.');
+
         $invoice->load('jobCard.appointment.user');
         $email = $invoice->jobCard->appointment->user->email ?? null;
 
-        if (!$email) {
+        if (! $email) {
             return back()->with('error', 'This customer has no email on file (walk-in customer or missing email address).');
         }
 
         try {
             Mail::to($email)->send(new InvoiceMail($invoice));
+
             return back()->with('success', "Invoice emailed to {$email}.");
         } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to send email: ' . $e->getMessage());
+            Log::error('Invoice email resend failed: '.$e->getMessage(), ['invoice_id' => $invoice->id]);
+
+            return back()->with('error', 'Unable to send invoice email at this time. Please check the mail server configuration.');
         }
     }
 
-    private function sendInvoiceEmail(Invoice $invoice): void {
+    private function sendInvoiceEmail(Invoice $invoice): void
+    {
         $invoice->load('jobCard.appointment.user');
         $email = $invoice->jobCard->appointment->user->email ?? null;
-        if (!$email) return;
+        if (! $email) {
+            return;
+        }
 
         try {
             Mail::to($email)->send(new InvoiceMail($invoice));
         } catch (\Throwable $e) {
-            Log::warning('Invoice email failed: ' . $e->getMessage());
+            Log::warning('Invoice email failed: '.$e->getMessage());
         }
     }
 }

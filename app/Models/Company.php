@@ -1,20 +1,26 @@
 <?php
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Company extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'name', 'registration_no', 'address',
         'phone', 'email', 'person_in_charge', 'status',
     ];
 
-    public function representatives() {
+    public function representatives()
+    {
         return $this->hasMany(User::class);
     }
 
-    public function vehicles() {
+    public function vehicles()
+    {
         return $this->hasManyThrough(Vehicle::class, User::class);
     }
 }

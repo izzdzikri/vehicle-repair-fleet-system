@@ -1,11 +1,15 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\AccountRequest;
-use App\Models\User;
-use App\Models\Company;
 use App\Models\ActivityLog;
+use App\Models\Company;
+use App\Models\Invoice;
+use App\Models\JobCard;
 use App\Models\Notification;
+use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -13,15 +17,18 @@ use Illuminate\Validation\Rule;
 class AccountRequestController extends Controller
 {
     // Admin views all pending requests
-    public function index() {
-        $requests = AccountRequest::with(['requester','company','targetUser'])
+    public function index()
+    {
+        $requests = AccountRequest::with(['requester', 'company', 'targetUser'])
             ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 WHEN 'rejected' THEN 3 ELSE 4 END")
             ->latest()->get();
+
         return view('admin.account-requests', compact('requests'));
     }
 
     // Corporate PIC submits a request
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $user = auth()->user();
 
         // Secondary PIC cannot submit account management requests
@@ -34,34 +41,34 @@ class AccountRequestController extends Controller
         // requester's own company so a PIC can't target an account outside
         // their own company (e.g. another company's PIC, or an admin).
         $request->validate([
-            'type'           => 'required|in:add_pic,remove_pic,close_account',
-            'pic_role'       => 'required_if:type,add_pic|nullable|in:primary,secondary',
-            'target_name'    => 'required_if:type,add_pic|nullable|string|max:100',
-            'target_email'   => 'required_if:type,add_pic|nullable|email|unique:users,email',
-            'target_phone'   => 'nullable|string|max:20',
+            'type' => 'required|in:add_pic,remove_pic,close_account',
+            'pic_role' => 'required_if:type,add_pic|nullable|in:primary,secondary',
+            'target_name' => 'required_if:type,add_pic|nullable|string|max:100',
+            'target_email' => 'required_if:type,add_pic|nullable|email|unique:users,email',
+            'target_phone' => 'nullable|string|max:20',
             'target_user_id' => [
                 'required_if:type,remove_pic',
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) use ($user) {
                     $query->where('company_id', $user->company_id)
-                          ->where('role', 'corporate');
+                        ->where('role', 'corporate');
                 }),
             ],
-            'notes'          => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:500',
         ]);
 
         // Enforce PIC limits before submitting add_pic request
         if ($request->type === 'add_pic') {
             $companyId = $user->company_id;
 
-            $currentPrimary   = User::where('company_id', $companyId)
-                                ->where('role', 'corporate')
-                                ->where('pic_role', 'primary')
-                                ->count();
+            $currentPrimary = User::where('company_id', $companyId)
+                ->where('role', 'corporate')
+                ->where('pic_role', 'primary')
+                ->count();
             $currentSecondary = User::where('company_id', $companyId)
-                                ->where('role', 'corporate')
-                                ->where('pic_role', 'secondary')
-                                ->count();
+                ->where('role', 'corporate')
+                ->where('pic_role', 'secondary')
+                ->count();
             $total = $currentPrimary + $currentSecondary;
 
             if ($total >= 12) {
@@ -95,23 +102,24 @@ class AccountRequestController extends Controller
         }
 
         AccountRequest::create([
-            'requested_by'   => $user->id,
-            'company_id'     => $user->company_id,
-            'type'           => $request->type,
-            'pic_role'       => $request->pic_role,   // stored for approval
-            'target_name'    => $request->target_name,
-            'target_email'   => $request->target_email,
-            'target_phone'   => $request->target_phone,
+            'requested_by' => $user->id,
+            'company_id' => $user->company_id,
+            'type' => $request->type,
+            'pic_role' => $request->pic_role,   // stored for approval
+            'target_name' => $request->target_name,
+            'target_email' => $request->target_email,
+            'target_phone' => $request->target_phone,
             'target_user_id' => $request->target_user_id,
-            'notes'          => $request->notes,
-            'status'         => 'pending',
+            'notes' => $request->notes,
+            'status' => 'pending',
         ]);
 
         return back()->with('success', 'Request submitted. Awaiting admin approval.');
     }
 
     // Admin approves
-    public function approve(AccountRequest $accountRequest) {
+    public function approve(AccountRequest $accountRequest)
+    {
         if ($accountRequest->status !== 'pending') {
             return back()->with('error', 'Request already processed.');
         }
@@ -120,14 +128,14 @@ class AccountRequestController extends Controller
             case 'add_pic':
                 $companyId = $accountRequest->company_id;
 
-                $currentPrimary   = \App\Models\User::where('company_id', $companyId)
-                                    ->where('role', 'corporate')
-                                    ->where('pic_role', 'primary')
-                                    ->count();
-                $currentSecondary = \App\Models\User::where('company_id', $companyId)
-                                    ->where('role', 'corporate')
-                                    ->where('pic_role', 'secondary')
-                                    ->count();
+                $currentPrimary = User::where('company_id', $companyId)
+                    ->where('role', 'corporate')
+                    ->where('pic_role', 'primary')
+                    ->count();
+                $currentSecondary = User::where('company_id', $companyId)
+                    ->where('role', 'corporate')
+                    ->where('pic_role', 'secondary')
+                    ->count();
                 $total = $currentPrimary + $currentSecondary;
 
                 if ($total >= 12) {
@@ -143,26 +151,26 @@ class AccountRequestController extends Controller
                     return back()->with('error', 'Cannot approve — already has 10 Secondary PICs.');
                 }
 
-                \App\Models\User::create([
-                    'name'       => $accountRequest->target_name,
-                    'email'      => $accountRequest->target_email,
-                    'password'   => \Illuminate\Support\Facades\Hash::make('password123'),
-                    'role'       => 'corporate',
-                    'status'     => 'active',
+                User::create([
+                    'name' => $accountRequest->target_name,
+                    'email' => $accountRequest->target_email,
+                    'password' => Hash::make('password123'),
+                    'role' => 'corporate',
+                    'status' => 'active',
                     'contact_no' => $accountRequest->target_phone,
                     'company_id' => $companyId,
-                    'pic_role'   => $requestedRole,
+                    'pic_role' => $requestedRole,
                 ]);
                 break;
 
             case 'remove_pic':
-                if (!$accountRequest->target_user_id) {
+                if (! $accountRequest->target_user_id) {
                     return back()->with('error', 'No target user set for this removal request.');
                 }
 
-                $target = \App\Models\User::find($accountRequest->target_user_id);
+                $target = User::find($accountRequest->target_user_id);
 
-                if (!$target) {
+                if (! $target) {
                     return back()->with('error', 'Target user no longer exists.');
                 }
 
@@ -187,7 +195,7 @@ class AccountRequestController extends Controller
                 break;
 
             case 'close_account':
-                \App\Models\User::where('company_id', $accountRequest->company_id)
+                User::where('company_id', $accountRequest->company_id)
                     ->where('role', 'corporate')
                     ->update(['status' => 'inactive']);
                 break;
@@ -204,7 +212,7 @@ class AccountRequestController extends Controller
         Notification::send(
             $accountRequest->requested_by,
             'Account Request Approved',
-            "Your ".str_replace('_',' ',$accountRequest->type)." request has been approved.",
+            'Your '.str_replace('_', ' ', $accountRequest->type).' request has been approved.',
             '/client/company'
         );
 
@@ -212,7 +220,8 @@ class AccountRequestController extends Controller
     }
 
     // Admin rejects
-    public function reject(AccountRequest $accountRequest) {
+    public function reject(AccountRequest $accountRequest)
+    {
         $accountRequest->update(['status' => 'rejected']);
 
         ActivityLog::record(
@@ -224,7 +233,7 @@ class AccountRequestController extends Controller
         Notification::send(
             $accountRequest->requested_by,
             'Account Request Rejected',
-            "Your ".str_replace('_',' ',$accountRequest->type)." request has been rejected.",
+            'Your '.str_replace('_', ' ', $accountRequest->type).' request has been rejected.',
             '/client/company'
         );
 
@@ -232,7 +241,8 @@ class AccountRequestController extends Controller
     }
 
     // Individual user: delete their own account
-    public function deleteOwnAccount(Request $request) {
+    public function deleteOwnAccount(Request $request)
+    {
         $request->validate([
             'confirmation' => [
                 'required',
@@ -240,20 +250,34 @@ class AccountRequestController extends Controller
                     if (strtolower(trim($value)) !== 'delete my account') {
                         $fail('You must type exactly: delete my account');
                     }
-                }
-            ]
+                },
+            ],
         ]);
 
         $user = auth()->user();
 
+        // Prevent deleting account if there are active repairs or unpaid invoices
+        $userVehicleIds = Vehicle::where('user_id', $user->id)->pluck('id');
+        $hasActiveJobs = JobCard::whereIn('vehicle_id', $userVehicleIds)->where('current_stage', '!=', 'completed')->exists();
+        if ($hasActiveJobs) {
+            return back()->with('error', 'Cannot delete account while you have active vehicle repairs in progress.');
+        }
+
+        $hasUnpaidInvoices = Invoice::whereHas('jobCard.vehicle', fn ($q) => $q->where('user_id', $user->id))
+            ->where('status', '!=', 'paid')
+            ->exists();
+        if ($hasUnpaidInvoices) {
+            return back()->with('error', 'Cannot delete account with outstanding unpaid invoices.');
+        }
+
         // Create a logged record then delete
         AccountRequest::create([
-            'requested_by'   => $user->id,
-            'company_id'     => null,
-            'type'           => 'delete_account',
+            'requested_by' => $user->id,
+            'company_id' => null,
+            'type' => 'delete_account',
             'target_user_id' => $user->id,
-            'status'         => 'approved',
-            'notes'          => 'Self-deletion confirmed by user.',
+            'status' => 'approved',
+            'notes' => 'Self-deletion confirmed by user.',
         ]);
 
         auth()->logout();

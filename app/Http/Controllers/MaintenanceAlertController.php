@@ -1,54 +1,58 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\MaintenanceAlert;
-use App\Models\Vehicle;
-use App\Models\User;
 use App\Models\Notification;
+use App\Models\User;
+use App\Models\Vehicle;
 use App\Services\MaintenancePredictionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class MaintenanceAlertController extends Controller
 {
-    public function index() {
-    $user = auth()->user();
+    public function index()
+    {
+        $user = auth()->user();
 
-    if ($user->role === 'admin') {
-        $alerts   = MaintenanceAlert::with('vehicle.owner')->latest()->get();
-        $vehicles = Vehicle::with('owner')->orderBy('plate_number')->get();
+        if ($user->role === 'admin') {
+            $alerts = MaintenanceAlert::with('vehicle.owner')->latest()->get();
+            $vehicles = Vehicle::with('owner')->orderBy('plate_number')->get();
 
-    } elseif ($user->role === 'corporate') {
-        $companyUserIds = \App\Models\User::where('company_id', $user->company_id)->pluck('id');
-        $vehicleIds     = Vehicle::whereIn('user_id', $companyUserIds)->pluck('id');
-        $alerts         = MaintenanceAlert::with('vehicle')
-                            ->whereIn('vehicle_id', $vehicleIds)
-                            ->latest()->get();
-        $vehicles       = Vehicle::whereIn('user_id', $companyUserIds)
-                            ->orderBy('plate_number')->get();
+        } elseif ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
+            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
+            $vehicleIds = Vehicle::whereIn('user_id', $companyUserIds)->pluck('id');
+            $alerts = MaintenanceAlert::with('vehicle')
+                ->whereIn('vehicle_id', $vehicleIds)
+                ->latest()->get();
+            $vehicles = Vehicle::whereIn('user_id', $companyUserIds)
+                ->orderBy('plate_number')->get();
 
-    } else {
-        // individual
-        $vehicleIds = Vehicle::where('user_id', $user->id)->pluck('id');
-        $alerts     = MaintenanceAlert::with('vehicle')
-                        ->whereIn('vehicle_id', $vehicleIds)
-                        ->latest()->get();
-        $vehicles   = Vehicle::where('user_id', $user->id)->get();
+        } else {
+            // individual
+            $vehicleIds = Vehicle::where('user_id', $user->id)->pluck('id');
+            $alerts = MaintenanceAlert::with('vehicle')
+                ->whereIn('vehicle_id', $vehicleIds)
+                ->latest()->get();
+            $vehicles = Vehicle::where('user_id', $user->id)->get();
+        }
+
+        return view('maintenance.alerts', compact('alerts', 'vehicles'));
     }
 
-    return view('maintenance.alerts', compact('alerts', 'vehicles'));
-    }
-
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $request->validate([
-            'vehicle_id'     => 'required|exists:vehicles,id',
-            'alert_type'     => 'required|string|max:100',
-            'urgency'        => 'required|in:low,medium,high',
+            'vehicle_id' => 'required|exists:vehicles,id',
+            'alert_type' => 'required|string|max:100',
+            'urgency' => 'required|in:low,medium,high',
             'recommendation' => 'required|string|max:500',
         ]);
 
         $alert = MaintenanceAlert::create($request->only([
-            'vehicle_id', 'alert_type', 'urgency', 'recommendation'
+            'vehicle_id', 'alert_type', 'urgency', 'recommendation',
         ]) + ['source' => 'manual']);
 
         $vehicle = Vehicle::with('owner')->find($request->vehicle_id);
@@ -65,7 +69,8 @@ class MaintenanceAlertController extends Controller
         return back()->with('success', 'Maintenance alert created.');
     }
 
-    public function markRead(MaintenanceAlert $alert) {
+    public function markRead(MaintenanceAlert $alert)
+    {
         $user = auth()->user();
 
         if ($user->role !== 'admin') {
@@ -74,6 +79,7 @@ class MaintenanceAlertController extends Controller
 
             if ($vehicle) {
                 if ($user->role === 'corporate') {
+                    abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
                     $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
                     $allowed = $companyUserIds->contains($vehicle->user_id);
                 } else {
@@ -85,6 +91,7 @@ class MaintenanceAlertController extends Controller
         }
 
         $alert->update(['is_read' => true]);
+
         return back()->with('success', 'Alert marked as read.');
     }
 
@@ -94,7 +101,8 @@ class MaintenanceAlertController extends Controller
      * updated job type intervals) shows up immediately without waiting
      * for the next throttled window or scheduled run.
      */
-    public function runPredictions() {
+    public function runPredictions()
+    {
         $touched = app(MaintenancePredictionService::class)->runAll();
         Cache::forget('maintenance_predictions_autorun');
 

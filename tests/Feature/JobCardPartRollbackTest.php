@@ -31,7 +31,7 @@ class JobCardPartRollbackTest extends TestCase
         $qty = 2;
         $response = $this->post("/admin/job-cards/{$jobCard->id}/parts", [
             'spare_part_id' => $part->id,
-            'quantity'      => $qty,
+            'quantity' => $qty,
         ]);
 
         $response->assertSessionHas('success');
@@ -62,10 +62,8 @@ class JobCardPartRollbackTest extends TestCase
         $individual = User::where('role', 'individual')->first();
         $this->actingAs($individual);
 
-        $jobCardPart = JobCardPart::first();
-        if ($jobCardPart) {
-            $response = $this->delete("/admin/job-cards/{$jobCardPart->job_card_id}/parts/{$jobCardPart->id}");
-            $response->assertStatus(403);
-        }
+        $jobCardPart = JobCardPart::first() ?? JobCardPart::factory()->create();
+        $response = $this->delete("/admin/job-cards/{$jobCardPart->job_card_id}/parts/{$jobCardPart->id}");
+        $response->assertStatus(403);
     }
 }

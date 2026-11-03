@@ -1,58 +1,58 @@
 <?php
 
-    use Illuminate\Support\Facades\Route;
-    use App\Http\Controllers\AuthController;
-    use App\Http\Controllers\AdminController;
-    use App\Http\Controllers\StaffController;
-    use App\Http\Controllers\CoordinatorController;
-    use App\Http\Controllers\ClientController;
-    use App\Http\Controllers\CustomerController;
-    use App\Http\Controllers\AppointmentController;
-    use App\Http\Controllers\JobCardController;
-    use App\Http\Controllers\SparePartController;
-    use App\Http\Controllers\VehicleController;
-    use App\Http\Controllers\ReportController;
-    use App\Http\Controllers\MaintenanceAlertController;
-    use App\Http\Controllers\ChatbotController;
-    use App\Http\Controllers\AccountRequestController;
-    use App\Http\Controllers\ProfileController;
-    use App\Http\Controllers\InvoiceController;
-    use App\Http\Controllers\StaffManagementController;
-    use App\Http\Controllers\SupplierController;
-    use App\Http\Controllers\PurchaseOrderController;
-    use App\Http\Controllers\FeedbackController;
-    use App\Http\Controllers\NotificationController;
-    use App\Http\Controllers\TripLogController;
-    use App\Http\Controllers\TwoFactorChallengeController;
-    use App\Http\Controllers\TwoFactorSettingsController;
+use App\Http\Controllers\AccountRequestController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CoordinatorController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\JobCardController;
+use App\Http\Controllers\MaintenanceAlertController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SparePartController;
+use App\Http\Controllers\StaffController;
+use App\Http\Controllers\StaffManagementController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\TripLogController;
+use App\Http\Controllers\TwoFactorChallengeController;
+use App\Http\Controllers\TwoFactorSettingsController;
+use App\Http\Controllers\VehicleController;
+use Illuminate\Support\Facades\Route;
 
-    Route::get('/', fn() => redirect('/login'));
-    Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->middleware('throttle:60,1')->name('chatbot.reply');
-    Route::get('/chatbot/schedule-availability', [ChatbotController::class, 'scheduleAvailability'])->name('chatbot.schedule-availability');
-    Route::post('/chatbot/reset-session', [ChatbotController::class, 'resetSession'])->name('chatbot.reset-session');
+Route::get('/', fn () => redirect('/login'));
+Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->middleware('throttle:60,1')->name('chatbot.reply');
+Route::get('/chatbot/schedule-availability', [ChatbotController::class, 'scheduleAvailability'])->middleware('throttle:60,1')->name('chatbot.schedule-availability');
+Route::post('/chatbot/reset-session', [ChatbotController::class, 'resetSession'])->middleware('throttle:30,1')->name('chatbot.reset-session');
 
-    // Auth
-    Route::get('/login',    [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login',   [AuthController::class, 'login']);
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register',[AuthController::class, 'register']);
-    Route::post('/logout',  [AuthController::class, 'logout'])->name('logout');
+// Auth
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // Forgot / Reset Password
-    Route::get('/forgot-password',       [AuthController::class, 'showForgotPassword'])->name('password.request');
-    Route::post('/forgot-password',      [AuthController::class, 'sendResetLink'])->name('password.email');
-    Route::get('/reset-password/{token}',[AuthController::class, 'showResetPassword'])->name('password.reset');
-    Route::post('/reset-password',       [AuthController::class, 'resetPassword'])->name('password.update');
+// Forgot / Reset Password
+Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:6,1')->name('password.email');
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1')->name('password.update');
 
-    // Two-Factor login challenge — deliberately NOT behind 'auth'
-    // middleware, since the user is not fully authenticated yet at
-    // this point (see AuthController::login()).
-    Route::get('/two-factor-challenge',  [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
-    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->name('two-factor.verify');
+// Two-Factor login challenge — deliberately NOT behind 'auth'
+// middleware, since the user is not fully authenticated yet at
+// this point (see AuthController::login()).
+Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->name('two-factor.verify');
 
-    // Profile + Notifications + Feedback (all roles)
-    Route::middleware(['auth'])->group(function () {
-    Route::get('/profile',  [ProfileController::class, 'show'])->name('profile');
+// Profile + Notifications + Feedback (all roles)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/feedback/{jobCard}', [FeedbackController::class, 'store'])->name('feedback.store');
 
@@ -60,11 +60,11 @@
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
 
     // Two-Factor settings — enable/confirm/disable/recovery codes
-    Route::post('/profile/two-factor/enable',         [TwoFactorSettingsController::class, 'enable'])->name('two-factor.enable');
-    Route::post('/profile/two-factor/confirm',        [TwoFactorSettingsController::class, 'confirm'])->name('two-factor.confirm');
-    Route::post('/profile/two-factor/disable',        [TwoFactorSettingsController::class, 'disable'])->name('two-factor.disable');
+    Route::post('/profile/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])->name('two-factor.enable');
+    Route::post('/profile/two-factor/confirm', [TwoFactorSettingsController::class, 'confirm'])->name('two-factor.confirm');
+    Route::post('/profile/two-factor/disable', [TwoFactorSettingsController::class, 'disable'])->name('two-factor.disable');
     Route::post('/profile/two-factor/recovery-codes', [TwoFactorSettingsController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery-codes');
-    });
+});
 
 // ----------------------------------------------------------------
 // Permission-gated actions — available to admin automatically, and to
@@ -74,8 +74,8 @@
 // non-admin roles with the right permission can also reach it.
 // ----------------------------------------------------------------
 Route::middleware(['auth', 'permission:inventory.manage'])->group(function () {
-    Route::post('/inventory/spare-parts',              [SparePartController::class, 'store'])->name('inventory.spare-parts.store');
-    Route::put('/inventory/spare-parts/{sparePart}',    [SparePartController::class, 'update'])->name('inventory.spare-parts.update');
+    Route::post('/inventory/spare-parts', [SparePartController::class, 'store'])->name('inventory.spare-parts.store');
+    Route::put('/inventory/spare-parts/{sparePart}', [SparePartController::class, 'update'])->name('inventory.spare-parts.update');
     Route::delete('/inventory/spare-parts/{sparePart}', [SparePartController::class, 'destroy'])->name('inventory.spare-parts.destroy');
 });
 
@@ -83,9 +83,9 @@ Route::middleware(['auth', 'permission:inventory.manage'])->group(function () {
 // listing page itself is gated too, since it's an internal pricing
 // config page, not something every staff member needs to see.
 Route::middleware(['auth', 'permission:pricing.manage'])->prefix('pricing')->group(function () {
-    Route::get('/job-types',              [AdminController::class, 'jobTypes'])->name('pricing.job-types');
-    Route::post('/job-types',             [AdminController::class, 'storeJobType'])->name('pricing.job-types.store');
-    Route::put('/job-types/{jobType}',    [AdminController::class, 'updateJobType'])->name('pricing.job-types.update');
+    Route::get('/job-types', [AdminController::class, 'jobTypes'])->name('pricing.job-types');
+    Route::post('/job-types', [AdminController::class, 'storeJobType'])->name('pricing.job-types.store');
+    Route::put('/job-types/{jobType}', [AdminController::class, 'updateJobType'])->name('pricing.job-types.update');
     Route::delete('/job-types/{jobType}', [AdminController::class, 'deleteJobType'])->name('pricing.job-types.destroy');
 });
 
@@ -93,7 +93,7 @@ Route::middleware(['auth', 'permission:pricing.manage'])->prefix('pricing')->gro
 // log and review salary without needing full admin access. Same
 // permission as invoicing, since salary is an accounting function.
 Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-management')->group(function () {
-    Route::get('/salary',  [StaffManagementController::class, 'salary'])->name('staff-management.salary');
+    Route::get('/salary', [StaffManagementController::class, 'salary'])->name('staff-management.salary');
     Route::post('/salary', [StaffManagementController::class, 'storeSalaryPayment'])->name('staff-management.salary.store');
 });
 
@@ -103,62 +103,62 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
 // ----------------------------------------------------------------
 // Admin
 // ----------------------------------------------------------------
-    Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::post('/users/{user}/specialties', [AdminController::class, 'updateSpecialties'])->name('admin.users.specialties');
-    Route::post('/users/{user}/role',        [AdminController::class, 'updateRole'])->name('admin.users.role');
+    Route::post('/users/{user}/role', [AdminController::class, 'updateRole'])->name('admin.users.role');
 
     // Users
-    Route::get('/users',                 [AdminController::class, 'users'])->name('admin.users');
-    Route::post('/users',                [AdminController::class, 'storeUser'])->name('admin.users.store');
-    Route::get('/users/{user}',          [AdminController::class, 'showUser'])->name('admin.users.show');
-    Route::post('/users/{user}',         [AdminController::class, 'updateUser'])->name('admin.users.update');
+    Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
+    Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+    Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('admin.users.show');
+    Route::post('/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
     Route::patch('/users/{user}/toggle', [AdminController::class, 'toggleStatus'])->name('admin.users.toggle');
-    Route::delete('/users/{user}',       [AdminController::class, 'deleteUser'])->name('admin.users.destroy');
+    Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.destroy');
 
     // Companies
-    Route::get('/companies',             [AdminController::class, 'companies'])->name('admin.companies');
-    Route::post('/companies',            [AdminController::class, 'storeCompany'])->name('admin.companies.store');
-    Route::get('/companies/{company}',   [AdminController::class, 'showCompany'])->name('admin.companies.show');
-    Route::get('/account-requests',                      [AccountRequestController::class, 'index'])->name('admin.account-requests');
+    Route::get('/companies', [AdminController::class, 'companies'])->name('admin.companies');
+    Route::post('/companies', [AdminController::class, 'storeCompany'])->name('admin.companies.store');
+    Route::get('/companies/{company}', [AdminController::class, 'showCompany'])->name('admin.companies.show');
+    Route::get('/account-requests', [AccountRequestController::class, 'index'])->name('admin.account-requests');
     Route::patch('/account-requests/{accountRequest}/approve', [AccountRequestController::class, 'approve'])->name('admin.account-requests.approve');
-    Route::patch('/account-requests/{accountRequest}/reject',  [AccountRequestController::class, 'reject'])->name('admin.account-requests.reject');
+    Route::patch('/account-requests/{accountRequest}/reject', [AccountRequestController::class, 'reject'])->name('admin.account-requests.reject');
 
     // Appointments (regular + walk-in + complete + capacity)
-    Route::get('/appointments',                         [AppointmentController::class, 'index'])->name('admin.appointments');
-    Route::get('/appointments/queue',                   [AppointmentController::class, 'queue'])->name('admin.appointments.queue');
-    Route::get('/appointments/walkin',                  [AppointmentController::class, 'walkinCreate'])->name('admin.appointments.walkin');
-    Route::post('/appointments/walkin',                 [AppointmentController::class, 'walkinStore'])->name('admin.appointments.walkin.store');
-    Route::post('/appointments/capacity',                [AppointmentController::class, 'updateCapacity'])->name('admin.appointments.capacity');
-    Route::get('/appointments/{appointment}',           [AppointmentController::class, 'show'])->name('admin.appointments.show');
+    Route::get('/appointments', [AppointmentController::class, 'index'])->name('admin.appointments');
+    Route::get('/appointments/queue', [AppointmentController::class, 'queue'])->name('admin.appointments.queue');
+    Route::get('/appointments/walkin', [AppointmentController::class, 'walkinCreate'])->name('admin.appointments.walkin');
+    Route::post('/appointments/walkin', [AppointmentController::class, 'walkinStore'])->name('admin.appointments.walkin.store');
+    Route::post('/appointments/capacity', [AppointmentController::class, 'updateCapacity'])->name('admin.appointments.capacity');
+    Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])->name('admin.appointments.show');
     Route::patch('/appointments/{appointment}/confirm', [AppointmentController::class, 'confirm'])->name('admin.appointments.confirm');
-    Route::patch('/appointments/{appointment}/cancel',  [AppointmentController::class, 'cancel'])->name('admin.appointments.cancel');
-    Route::patch('/appointments/{appointment}/complete',[AppointmentController::class, 'complete'])->name('admin.appointments.complete');
+    Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('admin.appointments.cancel');
+    Route::patch('/appointments/{appointment}/complete', [AppointmentController::class, 'complete'])->name('admin.appointments.complete');
 
     // Job Cards
     Route::get('/job-cards/schedule', [JobCardController::class, 'schedule'])->name('admin.job-cards.schedule');
-    Route::get('/job-cards/board',    [JobCardController::class, 'board'])->name('admin.job-cards.board');
-    Route::resource('job-cards', JobCardController::class)->names('admin.job-cards');
-    Route::patch('/job-cards/{jobCard}/stage',    [JobCardController::class, 'updateStage'])->name('job-cards.stage');
-    Route::post('/job-cards/{jobCard}/parts',     [JobCardController::class, 'addPart'])->name('job-cards.add-part');
+    Route::get('/job-cards/board', [JobCardController::class, 'board'])->name('admin.job-cards.board');
+    Route::resource('job-cards', JobCardController::class)->only(['index', 'create', 'store', 'show'])->names('admin.job-cards');
+    Route::patch('/job-cards/{jobCard}/stage', [JobCardController::class, 'updateStage'])->name('job-cards.stage');
+    Route::post('/job-cards/{jobCard}/parts', [JobCardController::class, 'addPart'])->name('job-cards.add-part');
     Route::delete('/job-cards/{jobCard}/parts/{jobCardPart}', [JobCardController::class, 'removePart'])->name('job-cards.remove-part');
-    Route::post('/job-cards/{jobCard}/symptoms',  [JobCardController::class, 'updateSymptoms'])->name('job-cards.symptoms');
-    Route::post('/job-cards/{jobCard}/labour',              [JobCardController::class, 'addLabour'])->name('job-cards.add-labour');
-    Route::delete('/job-cards/labour/{labourCharge}',       [JobCardController::class, 'removeLabour'])->name('job-cards.remove-labour');
-    Route::post('/job-cards/{jobCard}/photos',              [JobCardController::class, 'uploadPhoto'])->name('job-cards.add-photo');
-    Route::delete('/job-cards/{jobCard}/photos/{photoId}',  [JobCardController::class, 'removePhoto'])->name('job-cards.remove-photo');
+    Route::post('/job-cards/{jobCard}/symptoms', [JobCardController::class, 'updateSymptoms'])->name('job-cards.symptoms');
+    Route::post('/job-cards/{jobCard}/labour', [JobCardController::class, 'addLabour'])->name('job-cards.add-labour');
+    Route::delete('/job-cards/labour/{labourCharge}', [JobCardController::class, 'removeLabour'])->name('job-cards.remove-labour');
+    Route::post('/job-cards/{jobCard}/photos', [JobCardController::class, 'uploadPhoto'])->name('job-cards.add-photo');
+    Route::delete('/job-cards/{jobCard}/photos/{photoId}', [JobCardController::class, 'removePhoto'])->name('job-cards.remove-photo');
 
     // Inventory (view only here — add/edit/delete handled by the permission-gated group above)
     Route::get('/spare-parts', [SparePartController::class, 'index'])->name('admin.spare-parts.index');
 
     // Vehicles & Trip Logs
     Route::resource('vehicles', VehicleController::class)->names('admin.vehicles');
-    Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('admin.trip-logs.index');
-    Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('admin.trip-logs.store');
+    Route::get('/trip-logs', [TripLogController::class, 'index'])->name('admin.trip-logs.index');
+    Route::post('/trip-logs', [TripLogController::class, 'store'])->name('admin.trip-logs.store');
     Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('admin.trip-logs.destroy');
 
     // Reports
-    Route::get('/reports',        [ReportController::class, 'index'])->name('admin.reports');
+    Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
 
     // Activity Log
@@ -168,91 +168,91 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
     Route::get('/gemini/status', [ChatbotController::class, 'geminiStatus'])->name('admin.gemini.status');
 
     // Maintenance & Prediction Proofreading
-    Route::get('/maintenance',                  [MaintenanceAlertController::class, 'index'])->name('admin.maintenance');
-    Route::post('/maintenance',                 [MaintenanceAlertController::class, 'store'])->name('admin.maintenance.store');
-    Route::patch('/maintenance/{alert}/read',   [MaintenanceAlertController::class, 'markRead'])->name('admin.maintenance.read');
-    Route::post('/maintenance/predict',         [MaintenanceAlertController::class, 'runPredictions'])->name('admin.maintenance.predict');
-    Route::get('/predictions/proofread',        [AdminController::class, 'proofreadPredictions'])->name('admin.predictions.proofread');
-    Route::post('/predictions/{alert}/verify',  [AdminController::class, 'verifyPrediction'])->name('admin.predictions.verify');
-    Route::post('/predictions/{alert}/adjust',  [AdminController::class, 'adjustPrediction'])->name('admin.predictions.adjust');
-    Route::post('/predictions/draft-po',        [AdminController::class, 'draftForecastPurchaseOrder'])->name('admin.predictions.draft-po');
+    Route::get('/maintenance', [MaintenanceAlertController::class, 'index'])->name('admin.maintenance');
+    Route::post('/maintenance', [MaintenanceAlertController::class, 'store'])->name('admin.maintenance.store');
+    Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('admin.maintenance.read');
+    Route::post('/maintenance/predict', [MaintenanceAlertController::class, 'runPredictions'])->name('admin.maintenance.predict');
+    Route::get('/predictions/proofread', [AdminController::class, 'proofreadPredictions'])->name('admin.predictions.proofread');
+    Route::post('/predictions/{alert}/verify', [AdminController::class, 'verifyPrediction'])->name('admin.predictions.verify');
+    Route::post('/predictions/{alert}/adjust', [AdminController::class, 'adjustPrediction'])->name('admin.predictions.adjust');
+    Route::post('/predictions/draft-po', [AdminController::class, 'draftForecastPurchaseOrder'])->name('admin.predictions.draft-po');
 
     // Invoices & Payments
-    Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('admin.invoices');
-    Route::post('/invoices/generate',            [InvoiceController::class, 'generate'])->name('admin.invoices.generate');
-    Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('admin.invoices.show');
-    Route::get('/invoices/{invoice}/pdf',        [InvoiceController::class, 'downloadPdf'])->name('admin.invoices.pdf');
-    Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('admin.invoices.payments');
-    Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('admin.invoices.resend');
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('admin.invoices');
+    Route::post('/invoices/generate', [InvoiceController::class, 'generate'])->name('admin.invoices.generate');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('admin.invoices.show');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('admin.invoices.pdf');
+    Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'addPayment'])->name('admin.invoices.payments');
+    Route::post('/invoices/{invoice}/resend', [InvoiceController::class, 'resend'])->name('admin.invoices.resend');
 
     // Staff Management — roster directory, attendance, leave, performance (salary in permission group + admin)
-    Route::get('/staff-management/roster',                       [StaffManagementController::class, 'roster'])->name('admin.staff-management.roster');
-    Route::get('/staff-management/attendance',                   [StaffManagementController::class, 'attendance'])->name('admin.staff-management.attendance');
-    Route::post('/staff-management/attendance/record',           [StaffManagementController::class, 'recordAttendance'])->name('admin.staff-management.attendance.record');
-    Route::get('/staff-management/attendance/export',            [StaffManagementController::class, 'exportAttendance'])->name('admin.staff-management.attendance.export');
-    Route::get('/staff-management/leave',                        [StaffManagementController::class, 'leave'])->name('admin.staff-management.leave');
+    Route::get('/staff-management/roster', [StaffManagementController::class, 'roster'])->name('admin.staff-management.roster');
+    Route::get('/staff-management/attendance', [StaffManagementController::class, 'attendance'])->name('admin.staff-management.attendance');
+    Route::post('/staff-management/attendance/record', [StaffManagementController::class, 'recordAttendance'])->name('admin.staff-management.attendance.record');
+    Route::get('/staff-management/attendance/export', [StaffManagementController::class, 'exportAttendance'])->name('admin.staff-management.attendance.export');
+    Route::get('/staff-management/leave', [StaffManagementController::class, 'leave'])->name('admin.staff-management.leave');
     Route::patch('/staff-management/leave/{leaveRequest}/approve', [StaffManagementController::class, 'approveLeave'])->name('admin.staff-management.leave.approve');
-    Route::patch('/staff-management/leave/{leaveRequest}/reject',  [StaffManagementController::class, 'rejectLeave'])->name('admin.staff-management.leave.reject');
-    Route::get('/staff-management/performance',                  [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
-    Route::get('/staff-management/performance/export',           [StaffManagementController::class, 'exportPerformance'])->name('admin.staff-management.performance.export');
-    Route::post('/staff-management/performance/email',           [StaffManagementController::class, 'emailPerformanceReport'])->name('admin.staff-management.performance.email');
+    Route::patch('/staff-management/leave/{leaveRequest}/reject', [StaffManagementController::class, 'rejectLeave'])->name('admin.staff-management.leave.reject');
+    Route::get('/staff-management/performance', [StaffManagementController::class, 'performance'])->name('admin.staff-management.performance');
+    Route::get('/staff-management/performance/export', [StaffManagementController::class, 'exportPerformance'])->name('admin.staff-management.performance.export');
+    Route::post('/staff-management/performance/email', [StaffManagementController::class, 'emailPerformanceReport'])->name('admin.staff-management.performance.email');
 
     // Suppliers & Purchase Orders
-    Route::get('/suppliers',               [SupplierController::class, 'index'])->name('admin.suppliers');
-    Route::post('/suppliers',              [SupplierController::class, 'store'])->name('admin.suppliers.store');
-    Route::put('/suppliers/{supplier}',    [SupplierController::class, 'update'])->name('admin.suppliers.update');
+    Route::get('/suppliers', [SupplierController::class, 'index'])->name('admin.suppliers');
+    Route::post('/suppliers', [SupplierController::class, 'store'])->name('admin.suppliers.store');
+    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('admin.suppliers.update');
     Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('admin.suppliers.destroy');
-    Route::get('/purchase-orders',                        [PurchaseOrderController::class, 'index'])->name('admin.purchase-orders');
-    Route::post('/purchase-orders',                       [PurchaseOrderController::class, 'store'])->name('admin.purchase-orders.store');
-    Route::post('/purchase-orders/batch-order',           [PurchaseOrderController::class, 'batchOrder'])->name('admin.purchase-orders.batch-order');
+    Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('admin.purchase-orders');
+    Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('admin.purchase-orders.store');
+    Route::post('/purchase-orders/batch-order', [PurchaseOrderController::class, 'batchOrder'])->name('admin.purchase-orders.batch-order');
     Route::patch('/purchase-orders/{purchaseOrder}/order', [PurchaseOrderController::class, 'markOrdered'])->name('admin.purchase-orders.order');
-    Route::patch('/purchase-orders/{purchaseOrder}/receive',[PurchaseOrderController::class, 'markReceived'])->name('admin.purchase-orders.receive');
+    Route::patch('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'markReceived'])->name('admin.purchase-orders.receive');
     Route::patch('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('admin.purchase-orders.cancel');
-    Route::get('/purchase-orders/{purchaseOrder}/invoice',  [PurchaseOrderController::class, 'invoice'])->name('admin.purchase-orders.invoice');
-    Route::get('/purchase-orders/{purchaseOrder}/pdf',      [PurchaseOrderController::class, 'downloadPdf'])->name('admin.purchase-orders.pdf');
+    Route::get('/purchase-orders/{purchaseOrder}/invoice', [PurchaseOrderController::class, 'invoice'])->name('admin.purchase-orders.invoice');
+    Route::get('/purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'downloadPdf'])->name('admin.purchase-orders.pdf');
 });
 
 // ----------------------------------------------------------------
 // Staff
 // ----------------------------------------------------------------
-    Route::middleware(['auth', 'role:staff'])->prefix('staff')->group(function () {
-    Route::get('/dashboard',                         [StaffController::class, 'index'])->name('staff.dashboard');
+Route::middleware(['auth', 'role:staff'])->prefix('staff')->group(function () {
+    Route::get('/dashboard', [StaffController::class, 'index'])->name('staff.dashboard');
 
     // Walk-in appointment (staff can create too)
-    Route::get('/appointments/walkin',               [AppointmentController::class, 'walkinCreate'])->name('staff.appointments.walkin');
-    Route::post('/appointments/walkin',              [AppointmentController::class, 'walkinStore'])->name('staff.appointments.walkin.store');
-    Route::get('/appointments/queue',                [AppointmentController::class, 'queue'])->name('staff.appointments.queue');
+    Route::get('/appointments/walkin', [AppointmentController::class, 'walkinCreate'])->name('staff.appointments.walkin');
+    Route::post('/appointments/walkin', [AppointmentController::class, 'walkinStore'])->name('staff.appointments.walkin.store');
+    Route::get('/appointments/queue', [AppointmentController::class, 'queue'])->name('staff.appointments.queue');
 
-    Route::get('/job-cards/schedule',                [JobCardController::class, 'schedule'])->name('staff.job-cards.schedule');
-    Route::get('/job-cards/board',                   [JobCardController::class, 'board'])->name('staff.job-cards.board');
-    Route::get('/job-cards/{jobCard}',               [JobCardController::class, 'show'])->name('staff.job-cards.show');
-    Route::patch('/job-cards/{jobCard}/stage',       [JobCardController::class, 'updateStage'])->name('staff.job-cards.stage');
-    Route::post('/job-cards/{jobCard}/parts',        [JobCardController::class, 'addPart'])->name('staff.job-cards.add-part');
+    Route::get('/job-cards/schedule', [JobCardController::class, 'schedule'])->name('staff.job-cards.schedule');
+    Route::get('/job-cards/board', [JobCardController::class, 'board'])->name('staff.job-cards.board');
+    Route::get('/job-cards/{jobCard}', [JobCardController::class, 'show'])->name('staff.job-cards.show');
+    Route::patch('/job-cards/{jobCard}/stage', [JobCardController::class, 'updateStage'])->name('staff.job-cards.stage');
+    Route::post('/job-cards/{jobCard}/parts', [JobCardController::class, 'addPart'])->name('staff.job-cards.add-part');
     Route::delete('/job-cards/{jobCard}/parts/{jobCardPart}', [JobCardController::class, 'removePart'])->name('staff.job-cards.remove-part');
-    Route::post('/job-cards/{jobCard}/symptoms',     [JobCardController::class, 'updateSymptoms'])->name('staff.job-cards.symptoms');
-    Route::get('/inventory',                         [SparePartController::class, 'index'])->name('staff.inventory');
+    Route::post('/job-cards/{jobCard}/symptoms', [JobCardController::class, 'updateSymptoms'])->name('staff.job-cards.symptoms');
+    Route::get('/inventory', [SparePartController::class, 'index'])->name('staff.inventory');
 
     // Job Cards
-    Route::post('/job-cards/{jobCard}/labour',              [JobCardController::class, 'addLabour'])->name('staff.job-cards.add-labour');
-    Route::delete('/job-cards/labour/{labourCharge}',       [JobCardController::class, 'removeLabour'])->name('staff.job-cards.remove-labour');
-    Route::post('/job-cards/{jobCard}/photos',              [JobCardController::class, 'uploadPhoto'])->name('staff.job-cards.add-photo');
-    Route::delete('/job-cards/{jobCard}/photos/{photoId}',  [JobCardController::class, 'removePhoto'])->name('staff.job-cards.remove-photo');
+    Route::post('/job-cards/{jobCard}/labour', [JobCardController::class, 'addLabour'])->name('staff.job-cards.add-labour');
+    Route::delete('/job-cards/labour/{labourCharge}', [JobCardController::class, 'removeLabour'])->name('staff.job-cards.remove-labour');
+    Route::post('/job-cards/{jobCard}/photos', [JobCardController::class, 'uploadPhoto'])->name('staff.job-cards.add-photo');
+    Route::delete('/job-cards/{jobCard}/photos/{photoId}', [JobCardController::class, 'removePhoto'])->name('staff.job-cards.remove-photo');
 
     // Invoices & Payments
-    Route::get('/invoices',                      [InvoiceController::class, 'index'])->name('staff.invoices');
-    Route::post('/invoices/generate',            [InvoiceController::class, 'generate'])->name('staff.invoices.generate');
-    Route::get('/invoices/{invoice}',            [InvoiceController::class, 'show'])->name('staff.invoices.show');
-    Route::get('/invoices/{invoice}/pdf',        [InvoiceController::class, 'downloadPdf'])->name('staff.invoices.pdf');
-    Route::post('/invoices/{invoice}/payments',  [InvoiceController::class, 'addPayment'])->name('staff.invoices.payments');
-    Route::post('/invoices/{invoice}/resend',    [InvoiceController::class, 'resend'])->name('staff.invoices.resend');
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('staff.invoices');
+    Route::post('/invoices/generate', [InvoiceController::class, 'generate'])->name('staff.invoices.generate');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('staff.invoices.show');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('staff.invoices.pdf');
+    Route::post('/invoices/{invoice}/payments', [InvoiceController::class, 'addPayment'])->name('staff.invoices.payments');
+    Route::post('/invoices/{invoice}/resend', [InvoiceController::class, 'resend'])->name('staff.invoices.resend');
 
     // Staff Management — own attendance, leave & salary payslips
-    Route::get('/staff-management/attendance',              [StaffManagementController::class, 'attendance'])->name('staff.staff-management.attendance');
-    Route::post('/staff-management/attendance/clock-in',    [StaffManagementController::class, 'clockIn'])->name('staff.staff-management.clock-in');
-    Route::post('/staff-management/attendance/clock-out',   [StaffManagementController::class, 'clockOut'])->name('staff.staff-management.clock-out');
-    Route::get('/staff-management/leave',                   [StaffManagementController::class, 'leave'])->name('staff.staff-management.leave');
-    Route::post('/staff-management/leave',                  [StaffManagementController::class, 'storeLeave'])->name('staff.staff-management.leave.store');
-    Route::get('/staff-management/salary',                 [StaffManagementController::class, 'selfSalary'])->name('staff.staff-management.salary');
+    Route::get('/staff-management/attendance', [StaffManagementController::class, 'attendance'])->name('staff.staff-management.attendance');
+    Route::post('/staff-management/attendance/clock-in', [StaffManagementController::class, 'clockIn'])->name('staff.staff-management.clock-in');
+    Route::post('/staff-management/attendance/clock-out', [StaffManagementController::class, 'clockOut'])->name('staff.staff-management.clock-out');
+    Route::get('/staff-management/leave', [StaffManagementController::class, 'leave'])->name('staff.staff-management.leave');
+    Route::post('/staff-management/leave', [StaffManagementController::class, 'storeLeave'])->name('staff.staff-management.leave.store');
+    Route::get('/staff-management/salary', [StaffManagementController::class, 'selfSalary'])->name('staff.staff-management.salary');
 });
 
 // ----------------------------------------------------------------
@@ -262,85 +262,85 @@ Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/paysl
 // job cards. See CoordinatorController's class-level doc-comment for the
 // full design rationale.
 // ----------------------------------------------------------------
-    Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->group(function () {
-    Route::get('/dashboard',                          [CoordinatorController::class, 'dashboard'])->name('coordinator.dashboard');
+Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->group(function () {
+    Route::get('/dashboard', [CoordinatorController::class, 'dashboard'])->name('coordinator.dashboard');
 
     // Appointments & Walk-in & Queue
-    Route::get('/appointments',                         [AppointmentController::class, 'index'])->name('coordinator.appointments');
-    Route::get('/appointments/queue',                   [AppointmentController::class, 'queue'])->name('coordinator.appointments.queue');
-    Route::get('/appointments/walkin',                  [AppointmentController::class, 'walkinCreate'])->name('coordinator.appointments.walkin');
-    Route::post('/appointments/walkin',                 [AppointmentController::class, 'walkinStore'])->name('coordinator.appointments.walkin.store');
-    Route::get('/appointments/{appointment}',           [AppointmentController::class, 'show'])->name('coordinator.appointments.show');
+    Route::get('/appointments', [AppointmentController::class, 'index'])->name('coordinator.appointments');
+    Route::get('/appointments/queue', [AppointmentController::class, 'queue'])->name('coordinator.appointments.queue');
+    Route::get('/appointments/walkin', [AppointmentController::class, 'walkinCreate'])->name('coordinator.appointments.walkin');
+    Route::post('/appointments/walkin', [AppointmentController::class, 'walkinStore'])->name('coordinator.appointments.walkin.store');
+    Route::get('/appointments/{appointment}', [AppointmentController::class, 'show'])->name('coordinator.appointments.show');
     Route::patch('/appointments/{appointment}/confirm', [AppointmentController::class, 'confirm'])->name('coordinator.appointments.confirm');
-    Route::patch('/appointments/{appointment}/cancel',  [AppointmentController::class, 'cancel'])->name('coordinator.appointments.cancel');
-    Route::patch('/appointments/{appointment}/complete',[AppointmentController::class, 'complete'])->name('coordinator.appointments.complete');
+    Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('coordinator.appointments.cancel');
+    Route::patch('/appointments/{appointment}/complete', [AppointmentController::class, 'complete'])->name('coordinator.appointments.complete');
 
-    Route::get('/job-cards',                          [CoordinatorController::class, 'jobCards'])->name('coordinator.job-cards');
-    Route::get('/job-cards/{jobCard}',                [JobCardController::class, 'show'])->name('coordinator.job-cards.show');
-    Route::patch('/job-cards/{jobCard}/stage',        [JobCardController::class, 'updateStage'])->name('coordinator.job-cards.stage');
-    Route::post('/job-cards/{jobCard}/symptoms',      [JobCardController::class, 'updateSymptoms'])->name('coordinator.job-cards.symptoms');
-    Route::post('/job-cards/{jobCard}/parts',         [JobCardController::class, 'addPart'])->name('coordinator.job-cards.add-part');
+    Route::get('/job-cards', [CoordinatorController::class, 'jobCards'])->name('coordinator.job-cards');
+    Route::get('/job-cards/{jobCard}', [JobCardController::class, 'show'])->name('coordinator.job-cards.show');
+    Route::patch('/job-cards/{jobCard}/stage', [JobCardController::class, 'updateStage'])->name('coordinator.job-cards.stage');
+    Route::post('/job-cards/{jobCard}/symptoms', [JobCardController::class, 'updateSymptoms'])->name('coordinator.job-cards.symptoms');
+    Route::post('/job-cards/{jobCard}/parts', [JobCardController::class, 'addPart'])->name('coordinator.job-cards.add-part');
     Route::delete('/job-cards/{jobCard}/parts/{jobCardPart}', [JobCardController::class, 'removePart'])->name('coordinator.job-cards.remove-part');
-    Route::post('/job-cards/{jobCard}/labour',        [JobCardController::class, 'addLabour'])->name('coordinator.job-cards.add-labour');
+    Route::post('/job-cards/{jobCard}/labour', [JobCardController::class, 'addLabour'])->name('coordinator.job-cards.add-labour');
     Route::delete('/job-cards/labour/{labourCharge}', [JobCardController::class, 'removeLabour'])->name('coordinator.job-cards.remove-labour');
-    Route::post('/job-cards/{jobCard}/photos',              [JobCardController::class, 'uploadPhoto'])->name('coordinator.job-cards.add-photo');
-    Route::delete('/job-cards/{jobCard}/photos/{photoId}',  [JobCardController::class, 'removePhoto'])->name('coordinator.job-cards.remove-photo');
-    Route::post('/job-cards/{jobCard}/checkin',       [CoordinatorController::class, 'storeCheckin'])->name('coordinator.job-cards.checkin');
-    Route::get('/inventory',                          [SparePartController::class, 'index'])->name('coordinator.inventory');
+    Route::post('/job-cards/{jobCard}/photos', [JobCardController::class, 'uploadPhoto'])->name('coordinator.job-cards.add-photo');
+    Route::delete('/job-cards/{jobCard}/photos/{photoId}', [JobCardController::class, 'removePhoto'])->name('coordinator.job-cards.remove-photo');
+    Route::post('/job-cards/{jobCard}/checkin', [CoordinatorController::class, 'storeCheckin'])->name('coordinator.job-cards.checkin');
+    Route::get('/inventory', [SparePartController::class, 'index'])->name('coordinator.inventory');
 
     // Invoices & Billing
-    Route::get('/invoices',                           [InvoiceController::class, 'index'])->name('coordinator.invoices');
-    Route::get('/invoices/{invoice}',                 [InvoiceController::class, 'show'])->name('coordinator.invoices.show');
-    Route::get('/invoices/{invoice}/pdf',             [InvoiceController::class, 'downloadPdf'])->name('coordinator.invoices.pdf');
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('coordinator.invoices');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('coordinator.invoices.show');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('coordinator.invoices.pdf');
 
     // Staff Management — own attendance, leave & salary payslips
-    Route::get('/staff-management/attendance',              [StaffManagementController::class, 'attendance'])->name('coordinator.staff-management.attendance');
-    Route::post('/staff-management/attendance/clock-in',    [StaffManagementController::class, 'clockIn'])->name('coordinator.staff-management.clock-in');
-    Route::post('/staff-management/attendance/clock-out',   [StaffManagementController::class, 'clockOut'])->name('coordinator.staff-management.clock-out');
-    Route::get('/staff-management/leave',                   [StaffManagementController::class, 'leave'])->name('coordinator.staff-management.leave');
-    Route::post('/staff-management/leave',                  [StaffManagementController::class, 'storeLeave'])->name('coordinator.staff-management.leave.store');
-    Route::get('/staff-management/salary',                 [StaffManagementController::class, 'selfSalary'])->name('coordinator.staff-management.salary');
+    Route::get('/staff-management/attendance', [StaffManagementController::class, 'attendance'])->name('coordinator.staff-management.attendance');
+    Route::post('/staff-management/attendance/clock-in', [StaffManagementController::class, 'clockIn'])->name('coordinator.staff-management.clock-in');
+    Route::post('/staff-management/attendance/clock-out', [StaffManagementController::class, 'clockOut'])->name('coordinator.staff-management.clock-out');
+    Route::get('/staff-management/leave', [StaffManagementController::class, 'leave'])->name('coordinator.staff-management.leave');
+    Route::post('/staff-management/leave', [StaffManagementController::class, 'storeLeave'])->name('coordinator.staff-management.leave.store');
+    Route::get('/staff-management/salary', [StaffManagementController::class, 'selfSalary'])->name('coordinator.staff-management.salary');
 });
 
 // ----------------------------------------------------------------
 // Corporate
 // ----------------------------------------------------------------
 Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function () {
-    Route::get('/dashboard',              [ClientController::class, 'index'])->name('client.dashboard');
+    Route::get('/dashboard', [ClientController::class, 'index'])->name('client.dashboard');
     // AppointmentController only implements index/create/store/show — no
     // edit/update/destroy — so the resource is restricted to those to avoid
     // registering routes that would 500 on a missing controller method.
-    Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show'])->names('client.appointments');
-    Route::resource('vehicles',           VehicleController::class)->names('client.vehicles');
-    Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('client.trip-logs.index');
-    Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('client.trip-logs.store');
+    Route::resource('appointments', AppointmentController::class)->only(['index', 'create', 'store', 'show'])->names('client.appointments');
+    Route::resource('vehicles', VehicleController::class)->names('client.vehicles');
+    Route::get('/trip-logs', [TripLogController::class, 'index'])->name('client.trip-logs.index');
+    Route::post('/trip-logs', [TripLogController::class, 'store'])->name('client.trip-logs.store');
     Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('client.trip-logs.destroy');
-    Route::get('/maintenance',            [MaintenanceAlertController::class, 'index'])->name('client.maintenance');
+    Route::get('/maintenance', [MaintenanceAlertController::class, 'index'])->name('client.maintenance');
     Route::post('/account-requests', [AccountRequestController::class, 'store'])->name('client.account-requests.store');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('client.maintenance.read');
     Route::get('/company', [ClientController::class, 'company'])->name('client.company');
-    Route::get('/invoices',           [InvoiceController::class, 'index'])->name('client.invoices');
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('client.invoices');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('client.invoices.show');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('client.invoices.pdf');
-    Route::get('/statement',          [ClientController::class, 'statement'])->name('client.statement');
-    Route::get('/statement/pdf',      [ClientController::class, 'statement'])->name('client.statement.pdf');
+    Route::get('/statement', [ClientController::class, 'statement'])->name('client.statement');
+    Route::get('/statement/pdf', [ClientController::class, 'statement'])->name('client.statement.pdf');
 });
 
 // ----------------------------------------------------------------
 // Individual
 // ----------------------------------------------------------------
-    Route::middleware(['auth', 'role:individual'])->prefix('customer')->group(function () {
-    Route::get('/dashboard',              [CustomerController::class, 'index'])->name('customer.dashboard');
+Route::middleware(['auth', 'role:individual'])->prefix('customer')->group(function () {
+    Route::get('/dashboard', [CustomerController::class, 'index'])->name('customer.dashboard');
     // Same AppointmentController method gap as the corporate group above.
-    Route::resource('appointments',       AppointmentController::class)->only(['index','create','store','show'])->names('customer.appointments');
-    Route::resource('vehicles',           VehicleController::class)->names('customer.vehicles');
-    Route::get('/trip-logs',              [TripLogController::class, 'index'])->name('customer.trip-logs.index');
-    Route::post('/trip-logs',             [TripLogController::class, 'store'])->name('customer.trip-logs.store');
+    Route::resource('appointments', AppointmentController::class)->only(['index', 'create', 'store', 'show'])->names('customer.appointments');
+    Route::resource('vehicles', VehicleController::class)->names('customer.vehicles');
+    Route::get('/trip-logs', [TripLogController::class, 'index'])->name('customer.trip-logs.index');
+    Route::post('/trip-logs', [TripLogController::class, 'store'])->name('customer.trip-logs.store');
     Route::delete('/trip-logs/{tripLog}', [TripLogController::class, 'destroy'])->name('customer.trip-logs.destroy');
     Route::delete('/account/delete', [AccountRequestController::class, 'deleteOwnAccount'])->name('customer.account.delete');
-    Route::get('/maintenance',            [MaintenanceAlertController::class, 'index'])->name('customer.maintenance');
+    Route::get('/maintenance', [MaintenanceAlertController::class, 'index'])->name('customer.maintenance');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('customer.maintenance.read');
-    Route::get('/invoices',           [InvoiceController::class, 'index'])->name('customer.invoices');
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('customer.invoices');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('customer.invoices.show');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('customer.invoices.pdf');
 });

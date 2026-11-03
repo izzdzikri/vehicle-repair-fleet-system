@@ -1,8 +1,14 @@
 <?php
+
 namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Appointment extends Model {
+class Appointment extends Model
+{
+    use HasFactory;
+
     protected $fillable = [
         'user_id', 'vehicle_id', 'date', 'time',
         'service_type', 'status', 'notes',
@@ -11,38 +17,45 @@ class Appointment extends Model {
 
     protected $casts = [
         'is_walkin' => 'boolean',
-        'date'      => 'date',
+        'date' => 'date',
     ];
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 
-    public function vehicle() {
+    public function vehicle()
+    {
         return $this->belongsTo(Vehicle::class);
     }
 
-    public function jobCard() {
+    public function jobCard()
+    {
         return $this->hasOne(JobCard::class);
     }
 
     /**
      * Customer display name — works for both registered and walk-in.
      */
-    public function getCustomerNameAttribute(): string {
+    public function getCustomerNameAttribute(): string
+    {
         if ($this->is_walkin) {
             return $this->walkin_name ?? 'Walk-in Customer';
         }
+
         return $this->user->name ?? '—';
     }
 
     /**
      * Customer contact — works for both registered and walk-in.
      */
-    public function getCustomerContactAttribute(): string {
+    public function getCustomerContactAttribute(): string
+    {
         if ($this->is_walkin) {
             return $this->walkin_contact ?? '—';
         }
+
         return $this->user->contact_no ?? $this->user->email ?? '—';
     }
 }
