@@ -236,12 +236,16 @@ function chatbotComponent() {
             if (!text) return '';
             let html = this.escapeHtml(text);
 
-            // Replace markdown links: [link text](url)
+            // Replace markdown links: [link text](url) - sanitize protocol against javascript: / data: XSS
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, title, url) => {
+                const cleanUrl = url.trim();
+                if (!/^(?:https?:\/\/|\/|#)/i.test(cleanUrl)) {
+                    return `${title} (${cleanUrl})`;
+                }
                 const linkClass = role === 'user'
                     ? 'text-blue-200 underline hover:text-white font-semibold'
                     : 'text-blue-600 underline hover:text-blue-800 font-semibold';
-                return `<a href="${url}" class="${linkClass}">${title} &rarr;</a>`;
+                return `<a href="${cleanUrl}" class="${linkClass}">${title} &rarr;</a>`;
             });
 
             // Replace bold: **text**
