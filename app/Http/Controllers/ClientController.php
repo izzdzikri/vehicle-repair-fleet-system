@@ -20,6 +20,7 @@ class ClientController extends Controller
     public function index()
     {
         $user = auth()->user();
+        abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
         $companyId = $user->company_id;
 
         // All PICs under the same company
@@ -74,6 +75,7 @@ class ClientController extends Controller
     public function company()
     {
         $user = auth()->user();
+        abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
         $companyId = $user->company_id;
 
         $company = Company::find($companyId);
@@ -93,6 +95,7 @@ class ClientController extends Controller
     public function statement(Request $request)
     {
         $user = auth()->user();
+        abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
         $companyId = $user->company_id;
         $company = $companyId ? Company::find($companyId) : null;
 

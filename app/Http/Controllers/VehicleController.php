@@ -17,6 +17,7 @@ class VehicleController extends Controller
         if ($user->role === 'admin') {
             $query = Vehicle::with(['owner.company'])->orderBy('plate_number');
         } elseif ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             $query = Vehicle::whereIn('user_id', $companyUserIds)->with(['owner.company'])->orderBy('plate_number');
         } else {
