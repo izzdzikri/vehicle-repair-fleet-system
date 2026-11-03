@@ -60,20 +60,16 @@ class TripLogController extends Controller
             $selectedTerrain = null;
         }
 
-        $tripLogs = $query->latest('trip_date')->latest('id')->paginate(15)->withQueryString();
+        $tripLogs = $query->with('vehicle.owner')->latest('trip_date')->latest('id')->paginate(15)->withQueryString();
 
         // Calculate aggregate statistics
         $totalTrips = TripLog::whereIn('vehicle_id', $vehicleIds)->count();
         $totalDistance = (float) TripLog::whereIn('vehicle_id', $vehicleIds)->sum('distance_km');
 
-        // Usage rates per vehicle (for transparency in the predictive engine)
-        $vehicleStats = [];
-        foreach ($vehicles as $v) {
-            $vehicleStats[$v->id] = $predictionService->getUsageStats($v);
-        }
-
+        // Usage rates calculated on-demand for the active/selected vehicle to prevent N+1 queries across large fleets
         $selectedVehicle = $selectedVehicleId ? $vehicles->firstWhere('id', $selectedVehicleId) : null;
-        $activeUsageStats = $selectedVehicle ? ($vehicleStats[$selectedVehicle->id] ?? null) : null;
+        $activeUsageStats = $selectedVehicle ? $predictionService->getUsageStats($selectedVehicle) : null;
+        $vehicleStats = $activeUsageStats && $selectedVehicle ? [$selectedVehicle->id => $activeUsageStats] : [];
 
         $isSecondaryPic = $user->role === 'corporate' && $user->isSecondaryPic();
 

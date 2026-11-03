@@ -75,7 +75,7 @@ class JobCardController extends Controller
             'completed' => (int) ($rawCounts->completed ?? 0),
         ];
 
-        $query = JobCard::with(['vehicle', 'staff', 'appointment', 'jobType']);
+        $query = JobCard::with(['vehicle.owner.company', 'staff', 'appointment', 'jobType']);
         if ($filterStage) {
             $query->where('current_stage', $filterStage);
         }

@@ -102,5 +102,11 @@
             </tbody>
         </table>
     </div>
+
+    @if($jobs->hasPages())
+        <div class="px-4 py-3 border-t border-gray-200">
+            {{ $jobs->links() }}
+        </div>
+    @endif
 </div>
 @endsection

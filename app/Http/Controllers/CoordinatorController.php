@@ -79,7 +79,7 @@ class CoordinatorController extends Controller
             $activeFilter = null;
         }
 
-        $query = JobCard::with(['vehicle', 'staff', 'jobType'])
+        $query = JobCard::with(['vehicle.owner.company', 'staff', 'jobType'])
             ->where('current_stage', '!=', 'completed');
 
         if ($activeFilter === 'stale') {
@@ -88,13 +88,18 @@ class CoordinatorController extends Controller
             $query->whereNotNull('estimated_completion')->where('estimated_completion', '<', now());
         }
 
-        $jobs = $query->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')->get();
+        $jobs = $query->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')->paginate(25)->withQueryString();
 
-        $totalActive = JobCard::where('current_stage', '!=', 'completed')->count();
-        $staleTotal = JobCard::where('current_stage', '!=', 'completed')
-            ->where('updated_at', '<', now()->subHours(3))->count();
-        $overdueTotal = JobCard::where('current_stage', '!=', 'completed')
-            ->whereNotNull('estimated_completion')->where('estimated_completion', '<', now())->count();
+        $counts = JobCard::where('current_stage', '!=', 'completed')
+            ->selectRaw('
+                count(*) as total_active,
+                sum(case when updated_at < ? then 1 else 0 end) as stale_total,
+                sum(case when estimated_completion is not null and estimated_completion < ? then 1 else 0 end) as overdue_total
+            ', [now()->subHours(3), now()])->first();
+
+        $totalActive = (int) ($counts->total_active ?? 0);
+        $staleTotal = (int) ($counts->stale_total ?? 0);
+        $overdueTotal = (int) ($counts->overdue_total ?? 0);
 
         return view('coordinator.job-cards', compact('jobs', 'totalActive', 'staleTotal', 'overdueTotal', 'activeFilter'));
     }

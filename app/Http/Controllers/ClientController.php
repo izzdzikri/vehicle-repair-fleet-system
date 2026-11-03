@@ -49,13 +49,18 @@ class ClientController extends Controller
             ->take(10)
             ->get();
 
-        $totalServices = ServiceHistory::whereIn('vehicle_id', $vehicleIds)->count();
+        $historyStats = $vehicleIds->isEmpty()
+            ? (object) ['total_services' => 0, 'total_spent' => 0]
+            : ServiceHistory::whereIn('vehicle_id', $vehicleIds)
+                ->selectRaw('count(*) as total_services, coalesce(sum(cost), 0) as total_spent')
+                ->first();
 
-        $totalSpent = ServiceHistory::whereIn('vehicle_id', $vehicleIds)->sum('cost');
+        $totalServices = (int) ($historyStats->total_services ?? 0);
+        $totalSpent = (float) ($historyStats->total_spent ?? 0);
 
         // Maintenance alerts across the whole fleet
         $maintenanceAlerts = MaintenanceAlert::whereIn('vehicle_id', $vehicleIds)
-            ->with('vehicle')
+            ->with(['vehicle.owner', 'jobType'])
             ->orderByRaw("CASE urgency WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderBy('is_read')
             ->latest()
