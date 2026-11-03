@@ -116,7 +116,7 @@ class VehicleController extends Controller
 
     public function edit(Vehicle $vehicle)
     {
-        $this->authorizeVehicleAccess($vehicle);
+        abort_unless(auth()->user()->can('update', $vehicle), 403, 'You do not have permission to edit this vehicle.');
         $vehicle->load('owner.company');
 
         $owners = null;
