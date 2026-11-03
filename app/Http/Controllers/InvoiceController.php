@@ -27,6 +27,7 @@ class InvoiceController extends Controller
         if (in_array($user->role, ['admin', 'staff', 'coordinator'])) {
             $base = Invoice::query();
         } elseif ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             $base = Invoice::whereHas('jobCard.appointment', fn ($q) => $q->whereIn('user_id', $companyUserIds));
         } else {

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\JobCard;
@@ -8,9 +9,10 @@ use Illuminate\Http\Request;
 
 class FeedbackController extends Controller
 {
-    public function store(Request $request, JobCard $jobCard) {
+    public function store(Request $request, JobCard $jobCard)
+    {
         $request->validate([
-            'rating'  => 'required|integer|min:1|max:5',
+            'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
         ]);
 
@@ -22,6 +24,7 @@ class FeedbackController extends Controller
         if ($user->role === 'individual') {
             $allowed = $ownerId === $user->id;
         } elseif ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             $allowed = $ownerId && $companyUserIds->contains($ownerId);
         }

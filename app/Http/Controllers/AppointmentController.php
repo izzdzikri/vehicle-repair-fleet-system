@@ -27,6 +27,7 @@ class AppointmentController extends Controller
         if (in_array($user->role, ['admin', 'coordinator'])) {
             $base = Appointment::query();
         } elseif ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             $base = Appointment::whereIn('user_id', $companyUserIds);
         } else {
@@ -149,6 +150,7 @@ class AppointmentController extends Controller
         }
 
         if ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             $vehicles = Vehicle::whereIn('user_id', $companyUserIds)->orderBy('plate_number')->get();
         } else {
@@ -402,6 +404,7 @@ class AppointmentController extends Controller
     private function authorizeAppointmentAccess(Appointment $appointment, $user): void
     {
         if ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             abort_unless($companyUserIds->contains($appointment->user_id), 403,
                 'You do not have access to this appointment.');
