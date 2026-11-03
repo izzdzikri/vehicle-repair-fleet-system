@@ -178,20 +178,10 @@ class AppointmentController extends Controller
             'service_type' => 'required|string|max:100',
         ]);
 
-        // Daily booking capacity check — prevents overbooking a given date.
-        $capacity = (int) Setting::get('daily_appointment_capacity', 20);
-        $existingCount = Appointment::whereDate('date', $request->date)
-            ->whereIn('status', ['pending', 'confirmed'])
-            ->count();
-
-        if ($existingCount >= $capacity) {
-            return back()->with('error',
-                'Sorry, this date is fully booked. Please choose another date.')->withInput();
-        }
-
         $vehicle = Vehicle::findOrFail($request->vehicle_id);
 
         if ($user->role === 'corporate') {
+            abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             abort_unless($companyUserIds->contains($vehicle->user_id), 403,
                 'You can only book appointments for vehicles in your company fleet.');
@@ -200,16 +190,44 @@ class AppointmentController extends Controller
                 'You can only book appointments for your own vehicles.');
         }
 
-        $appointment = Appointment::create([
-            'user_id' => $user->id,
-            'vehicle_id' => $request->vehicle_id,
-            'date' => $request->date,
-            'time' => $request->time,
-            'service_type' => $request->service_type,
-            'notes' => $request->notes,
-            'status' => 'pending',
-            'is_walkin' => false,
-        ]);
+        // Prevent double booking the same vehicle on the same date
+        $alreadyBooked = Appointment::where('vehicle_id', $request->vehicle_id)
+            ->whereDate('date', $request->date)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->exists();
+
+        if ($alreadyBooked) {
+            return back()->with('error',
+                'This vehicle already has a scheduled appointment on this date.')->withInput();
+        }
+
+        // Daily booking capacity check with atomic transaction lock
+        try {
+            $appointment = DB::transaction(function () use ($user, $request) {
+                $capacity = (int) Setting::get('daily_appointment_capacity', 20);
+                $existingCount = Appointment::whereDate('date', $request->date)
+                    ->whereIn('status', ['pending', 'confirmed'])
+                    ->lockForUpdate()
+                    ->count();
+
+                if ($existingCount >= $capacity) {
+                    throw new \OverflowException('Sorry, this date is fully booked. Please choose another date.');
+                }
+
+                return Appointment::create([
+                    'user_id' => $user->id,
+                    'vehicle_id' => $request->vehicle_id,
+                    'date' => $request->date,
+                    'time' => $request->time,
+                    'service_type' => $request->service_type,
+                    'notes' => $request->notes,
+                    'status' => 'pending',
+                    'is_walkin' => false,
+                ]);
+            });
+        } catch (\OverflowException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
 
         $this->notifyStatus($appointment, 'Submitted');
 
@@ -246,34 +264,48 @@ class AppointmentController extends Controller
             'year' => 'nullable|integer|min:1970|max:'.(date('Y') + 1),
         ]);
 
-        $appointment = DB::transaction(function () use ($request) {
-            $plate = strtoupper(trim($request->plate_number));
-            $vehicle = Vehicle::where('plate_number', $plate)->first();
+        try {
+            $appointment = DB::transaction(function () use ($request) {
+                $capacity = (int) Setting::get('daily_appointment_capacity', 20);
+                $existingCount = Appointment::whereDate('date', $request->date)
+                    ->whereIn('status', ['pending', 'confirmed'])
+                    ->lockForUpdate()
+                    ->count();
 
-            if (! $vehicle) {
-                $vehicle = Vehicle::create([
+                if ($existingCount >= $capacity) {
+                    throw new \OverflowException('Workshop daily capacity reached for this date.');
+                }
+
+                $plate = strtoupper(trim($request->plate_number));
+                $vehicle = Vehicle::where('plate_number', $plate)->first();
+
+                if (! $vehicle) {
+                    $vehicle = Vehicle::create([
+                        'user_id' => null,
+                        'plate_number' => $plate,
+                        'brand' => $request->brand,
+                        'model' => $request->model,
+                        'year' => $request->year,
+                        'mileage' => 0,
+                    ]);
+                }
+
+                return Appointment::create([
                     'user_id' => null,
-                    'plate_number' => $plate,
-                    'brand' => $request->brand,
-                    'model' => $request->model,
-                    'year' => $request->year,
-                    'mileage' => 0,
+                    'vehicle_id' => $vehicle->id,
+                    'date' => $request->date,
+                    'time' => $request->time,
+                    'service_type' => $request->service_type,
+                    'notes' => $request->notes,
+                    'status' => 'confirmed',
+                    'is_walkin' => true,
+                    'walkin_name' => $request->walkin_name,
+                    'walkin_contact' => $request->walkin_contact,
                 ]);
-            }
-
-            return Appointment::create([
-                'user_id' => null,
-                'vehicle_id' => $vehicle->id,
-                'date' => $request->date,
-                'time' => $request->time,
-                'service_type' => $request->service_type,
-                'notes' => $request->notes,
-                'status' => 'confirmed',
-                'is_walkin' => true,
-                'walkin_name' => $request->walkin_name,
-                'walkin_contact' => $request->walkin_contact,
-            ]);
-        });
+            });
+        } catch (\OverflowException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
 
         $rolePrefix = match (auth()->user()->role) {
             'coordinator' => 'coordinator',
