@@ -28,8 +28,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect('/login'));
 Route::post('/chatbot/reply', [ChatbotController::class, 'reply'])->middleware('throttle:60,1')->name('chatbot.reply');
-Route::get('/chatbot/schedule-availability', [ChatbotController::class, 'scheduleAvailability'])->name('chatbot.schedule-availability');
-Route::post('/chatbot/reset-session', [ChatbotController::class, 'resetSession'])->name('chatbot.reset-session');
+Route::get('/chatbot/schedule-availability', [ChatbotController::class, 'scheduleAvailability'])->middleware('throttle:60,1')->name('chatbot.schedule-availability');
+Route::post('/chatbot/reset-session', [ChatbotController::class, 'resetSession'])->middleware('throttle:30,1')->name('chatbot.reset-session');
 
 // Auth
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -40,9 +40,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Forgot / Reset Password
 Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
-Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:6,1')->name('password.email');
 Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
-Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1')->name('password.update');
 
 // Two-Factor login challenge — deliberately NOT behind 'auth'
 // middleware, since the user is not fully authenticated yet at
