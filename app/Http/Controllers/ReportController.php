@@ -1,18 +1,19 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\JobCard;
 use App\Models\Appointment;
-use App\Models\SparePart;
-use App\Models\ServiceHistory;
-use App\Models\Vehicle;
-use App\Models\User;
-use App\Models\Invoice;
-use App\Models\JobType;
 use App\Models\Company;
+use App\Models\Invoice;
+use App\Models\JobCard;
+use App\Models\JobType;
+use App\Models\ServiceHistory;
+use App\Models\SparePart;
+use App\Models\User;
+use App\Models\Vehicle;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ReportController extends Controller
 {
@@ -22,45 +23,54 @@ class ReportController extends Controller
 
         // Resolve time horizon
         $startDate = match ($period) {
-            '30days'  => now()->subDays(30),
-            '90days'  => now()->subDays(90),
+            '30days' => now()->subDays(30),
+            '90days' => now()->subDays(90),
             '6months' => now()->subMonths(6),
-            'ytd'     => now()->startOfYear(),
-            'all'     => null,
-            default   => now()->subMonths(6),
+            'ytd' => now()->startOfYear(),
+            'all' => null,
+            default => now()->subMonths(6),
         };
 
-        // 1. Job cards by stage (Live workshop workload)
+        // 1. Job cards by stage (Live workshop workload) - single aggregated query
         $stages = ['received', 'diagnosing', 'waiting_parts', 'repairing', 'quality_check', 'completed'];
+        $rawStageCounts = JobCard::query()
+            ->selectRaw('current_stage, count(*) as count')
+            ->groupBy('current_stage')
+            ->pluck('count', 'current_stage');
+
         $stageCounts = [];
         foreach ($stages as $stage) {
-            $stageCounts[$stage] = JobCard::where('current_stage', $stage)->count();
+            $stageCounts[$stage] = (int) ($rawStageCounts[$stage] ?? 0);
         }
 
-        // 2. Monthly revenue inflow (Dynamic 6 to 12 months)
+        // 2. Monthly revenue inflow (Dynamic 6 to 12 months) - single aggregated query
         $numMonths = match ($period) {
-            'ytd'   => max(6, now()->month),
-            'all'   => 12,
+            'ytd' => max(6, now()->month),
+            'all' => 12,
             default => 6,
         };
 
-        $months      = [];
-        $revenue     = [];
+        $cutoffDate = now()->subMonths($numMonths - 1)->startOfMonth()->toDateString();
+        $monthlyAggregates = ServiceHistory::where('service_date', '>=', $cutoffDate)
+            ->selectRaw("DATE_FORMAT(service_date, '%Y-%m') as ym, SUM(cost) as total_cost, COUNT(*) as jobs_count")
+            ->groupBy('ym')
+            ->get()
+            ->keyBy('ym');
+
+        $months = [];
+        $revenue = [];
         $monthlyJobs = [];
         for ($i = $numMonths - 1; $i >= 0; $i--) {
-            $date          = now()->subMonths($i);
-            $months[]      = $date->format('M Y');
-            $revenue[]     = (float) ServiceHistory::whereYear('service_date', $date->year)
-                ->whereMonth('service_date', $date->month)
-                ->sum('cost');
-            $monthlyJobs[] = ServiceHistory::whereYear('service_date', $date->year)
-                ->whereMonth('service_date', $date->month)
-                ->count();
+            $date = now()->subMonths($i);
+            $ymKey = $date->format('Y-m');
+            $months[] = $date->format('M Y');
+            $revenue[] = (float) ($monthlyAggregates[$ymKey]->total_cost ?? 0);
+            $monthlyJobs[] = (int) ($monthlyAggregates[$ymKey]->jobs_count ?? 0);
         }
 
         // 3. Appointment Lifecycle & Intake Channels
-        $apptQuery = Appointment::when($startDate, fn($q) => $q->where('date', '>=', $startDate->toDateString()));
-        $apptPending   = (clone $apptQuery)->where('status', 'pending')->count();
+        $apptQuery = Appointment::when($startDate, fn ($q) => $q->where('date', '>=', $startDate->toDateString()));
+        $apptPending = (clone $apptQuery)->where('status', 'pending')->count();
         $apptConfirmed = (clone $apptQuery)->where('status', 'confirmed')->count();
         $apptCompleted = (clone $apptQuery)->where('status', 'completed')->count();
         $apptCancelled = (clone $apptQuery)->where('status', 'cancelled')->count();
@@ -69,12 +79,12 @@ class ReportController extends Controller
         $bookedCount = (clone $apptQuery)->where('is_walkin', false)->count();
 
         // 4. Financial & Operational KPIs
-        $historyQuery = ServiceHistory::when($startDate, fn($q) => $q->where('service_date', '>=', $startDate->toDateString()));
+        $historyQuery = ServiceHistory::when($startDate, fn ($q) => $q->where('service_date', '>=', $startDate->toDateString()));
         $totalRevenue = (float) (clone $historyQuery)->sum('cost');
         $allTimeRevenue = (float) ServiceHistory::sum('cost');
 
         $completedJobsQuery = JobCard::where('current_stage', 'completed')
-            ->when($startDate, fn($q) => $q->where('updated_at', '>=', $startDate));
+            ->when($startDate, fn ($q) => $q->where('updated_at', '>=', $startDate));
         $completedJobs = (clone $completedJobsQuery)->count();
         $allTimeCompleted = JobCard::where('current_stage', 'completed')->count();
 
@@ -83,24 +93,24 @@ class ReportController extends Controller
         // Turnaround Time (in hours)
         $avgTurnaroundMinutes = JobCard::where('current_stage', 'completed')
             ->whereNotNull('completed_at')
-            ->when($startDate, fn($q) => $q->where('completed_at', '>=', $startDate))
+            ->when($startDate, fn ($q) => $q->where('completed_at', '>=', $startDate))
             ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, completed_at)) as avg_min')
             ->value('avg_min') ?: 120;
         $avgTurnaroundHours = round($avgTurnaroundMinutes / 60, 1);
 
         // Invoicing & Receivables
-        $invQuery = Invoice::when($startDate, fn($q) => $q->where('created_at', '>=', $startDate));
-        $totalInvoiced    = (float) (clone $invQuery)->sum('total');
-        $totalCollected   = (float) (clone $invQuery)->sum('amount_paid');
+        $invQuery = Invoice::when($startDate, fn ($q) => $q->where('created_at', '>=', $startDate));
+        $totalInvoiced = (float) (clone $invQuery)->sum('total');
+        $totalCollected = (float) (clone $invQuery)->sum('amount_paid');
         $totalOutstanding = max(0, $totalInvoiced - $totalCollected);
-        $collectionRate   = $totalInvoiced > 0 ? round(($totalCollected / $totalInvoiced) * 100, 1) : 100.0;
+        $collectionRate = $totalInvoiced > 0 ? round(($totalCollected / $totalInvoiced) * 100, 1) : 100.0;
         $unpaidInvoicesCount = (clone $invQuery)->where('status', 'unpaid')->count();
         $partialInvoicesCount = (clone $invQuery)->where('status', 'partial')->count();
 
         // 5. Total counts for vehicle & accounts
-        $totalVehicles  = Vehicle::count();
+        $totalVehicles = Vehicle::count();
         $totalCustomers = User::whereIn('role', ['individual', 'corporate'])->count();
-        $fleetVehiclesCount = Vehicle::whereHas('owner', fn($q) => $q->where('role', 'corporate'))->count();
+        $fleetVehiclesCount = Vehicle::whereHas('owner', fn ($q) => $q->where('role', 'corporate'))->count();
         $individualVehiclesCount = $totalVehicles - $fleetVehiclesCount;
 
         // 6. Revenue by Service Category
@@ -109,7 +119,7 @@ class ReportController extends Controller
             ->selectRaw('COALESCE(SUM(job_cards.total_cost), 0) as total_revenue')
             ->join('job_cards', 'job_types.id', '=', 'job_cards.job_type_id')
             ->where('job_cards.current_stage', 'completed')
-            ->when($startDate, fn($q) => $q->where('job_cards.updated_at', '>=', $startDate))
+            ->when($startDate, fn ($q) => $q->where('job_cards.updated_at', '>=', $startDate))
             ->groupBy('job_types.category')
             ->orderByDesc('total_revenue')
             ->get();
@@ -117,6 +127,7 @@ class ReportController extends Controller
         $catTotal = $categoryBreakdown->sum('total_revenue');
         $categoryBreakdown->transform(function ($item) use ($catTotal) {
             $item->percentage = $catTotal > 0 ? round(($item->total_revenue / $catTotal) * 100, 1) : 0;
+
             return $item;
         });
 
@@ -125,49 +136,61 @@ class ReportController extends Controller
             ->withCount([
                 'jobCards as completed_count' => function ($q) use ($startDate) {
                     $q->where('current_stage', 'completed')
-                      ->when($startDate, fn($sq) => $sq->where('updated_at', '>=', $startDate));
+                        ->when($startDate, fn ($sq) => $sq->where('updated_at', '>=', $startDate));
                 },
                 'jobCards as active_count' => function ($q) {
                     $q->where('current_stage', '!=', 'completed');
-                }
+                },
             ])
             ->withSum([
                 'jobCards as revenue_generated' => function ($q) use ($startDate) {
                     $q->where('current_stage', 'completed')
-                      ->when($startDate, fn($sq) => $sq->where('updated_at', '>=', $startDate));
-                }
+                        ->when($startDate, fn ($sq) => $sq->where('updated_at', '>=', $startDate));
+                },
             ], 'total_cost')
             ->orderByDesc('revenue_generated')
             ->get();
 
-        // 8. Top Corporate Fleet Accounts
-        $topFleetClients = Company::withCount('vehicles')
-            ->get()
-            ->map(function ($company) use ($startDate) {
-                $vehicleIds = Vehicle::whereHas('owner', fn($q) => $q->where('company_id', $company->id))->pluck('id');
-                $jobsCount = JobCard::whereIn('vehicle_id', $vehicleIds)
-                    ->where('current_stage', 'completed')
-                    ->when($startDate, fn($q) => $q->where('updated_at', '>=', $startDate))
-                    ->count();
-                $totalSpend = (float) JobCard::whereIn('vehicle_id', $vehicleIds)
-                    ->where('current_stage', 'completed')
-                    ->when($startDate, fn($q) => $q->where('updated_at', '>=', $startDate))
-                    ->sum('total_cost');
-                $activeJobs = JobCard::whereIn('vehicle_id', $vehicleIds)
-                    ->where('current_stage', '!=', 'completed')
-                    ->count();
+        // 8. Top Corporate Fleet Accounts - aggregated without N+1 query loop
+        $companies = Company::withCount('vehicles')->get();
+        $companyIds = $companies->pluck('id');
 
-                return (object) [
-                    'id'               => $company->id,
-                    'name'             => $company->name,
-                    'person_in_charge' => $company->person_in_charge,
-                    'phone'            => $company->phone,
-                    'vehicles_count'   => $company->vehicles_count,
-                    'jobs_count'       => $jobsCount,
-                    'total_spend'      => $totalSpend,
-                    'active_jobs'      => $activeJobs,
-                ];
-            })
+        $jobStatsQuery = JobCard::query()
+            ->join('vehicles', 'vehicles.id', '=', 'job_cards.vehicle_id')
+            ->join('users', 'users.id', '=', 'vehicles.user_id')
+            ->whereIn('users.company_id', $companyIds);
+
+        if ($startDate) {
+            $startDateStr = $startDate->toDateTimeString();
+            $jobStatsQuery->select('users.company_id')
+                ->selectRaw("COUNT(DISTINCT CASE WHEN job_cards.current_stage = 'completed' AND job_cards.updated_at >= '{$startDateStr}' THEN job_cards.id END) as jobs_count")
+                ->selectRaw("COALESCE(SUM(CASE WHEN job_cards.current_stage = 'completed' AND job_cards.updated_at >= '{$startDateStr}' THEN job_cards.total_cost ELSE 0 END), 0) as total_spend")
+                ->selectRaw("COUNT(DISTINCT CASE WHEN job_cards.current_stage != 'completed' THEN job_cards.id END) as active_jobs");
+        } else {
+            $jobStatsQuery->select('users.company_id')
+                ->selectRaw("COUNT(DISTINCT CASE WHEN job_cards.current_stage = 'completed' THEN job_cards.id END) as jobs_count")
+                ->selectRaw("COALESCE(SUM(CASE WHEN job_cards.current_stage = 'completed' THEN job_cards.total_cost ELSE 0 END), 0) as total_spend")
+                ->selectRaw("COUNT(DISTINCT CASE WHEN job_cards.current_stage != 'completed' THEN job_cards.id END) as active_jobs");
+        }
+
+        $jobStats = $jobStatsQuery->groupBy('users.company_id')
+            ->get()
+            ->keyBy('company_id');
+
+        $topFleetClients = $companies->map(function ($company) use ($jobStats) {
+            $stats = $jobStats->get($company->id);
+
+            return (object) [
+                'id' => $company->id,
+                'name' => $company->name,
+                'person_in_charge' => $company->person_in_charge,
+                'phone' => $company->phone,
+                'vehicles_count' => $company->vehicles_count,
+                'jobs_count' => (int) ($stats->jobs_count ?? 0),
+                'total_spend' => (float) ($stats->total_spend ?? 0),
+                'active_jobs' => (int) ($stats->active_jobs ?? 0),
+            ];
+        })
             ->sortByDesc('total_spend')
             ->values();
 
@@ -175,7 +198,7 @@ class ReportController extends Controller
         $lowStockParts = SparePart::whereColumn('stock', '<=', 'min_stock')
             ->orderBy('stock')
             ->get();
-        $totalPartsCount   = SparePart::count();
+        $totalPartsCount = SparePart::count();
         $totalInventoryVal = (float) SparePart::sum(DB::raw('stock * unit_price'));
 
         // 10. Recent Completed Jobs
@@ -210,25 +233,25 @@ class ReportController extends Controller
      */
     public function export(Request $request)
     {
-        $type   = $request->get('type', 'summary');
+        $type = $request->get('type', 'summary');
         $period = $request->get('period', 'all');
 
         $startDate = match ($period) {
-            '30days'  => now()->subDays(30),
-            '90days'  => now()->subDays(90),
+            '30days' => now()->subDays(30),
+            '90days' => now()->subDays(90),
             '6months' => now()->subMonths(6),
-            'ytd'     => now()->startOfYear(),
-            default   => null,
+            'ytd' => now()->startOfYear(),
+            default => null,
         };
 
         $timestamp = now()->format('Ymd_His');
 
         return match ($type) {
-            'invoices'  => $this->exportInvoices($startDate, $timestamp),
-            'jobs'      => $this->exportJobs($startDate, $timestamp),
+            'invoices' => $this->exportInvoices($startDate, $timestamp),
+            'jobs' => $this->exportJobs($startDate, $timestamp),
             'inventory' => $this->exportInventory($timestamp),
-            'fleet'     => $this->exportFleetHistory($startDate, $timestamp),
-            default     => $this->exportExecutiveSummary($startDate, $timestamp),
+            'fleet' => $this->exportFleetHistory($startDate, $timestamp),
+            default => $this->exportExecutiveSummary($startDate, $timestamp),
         };
     }
 
@@ -237,7 +260,7 @@ class ReportController extends Controller
      */
     protected function putCsvRow($out, array $row): void
     {
-        fputcsv($out, $row, ',', '"', "\\");
+        fputcsv($out, $row, ',', '"', '\\');
     }
 
     /**
@@ -246,8 +269,8 @@ class ReportController extends Controller
     protected function exportExecutiveSummary($startDate, string $timestamp)
     {
         $filename = "teraju_workshop_executive_summary_{$timestamp}.csv";
-        $headers  = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
@@ -257,26 +280,26 @@ class ReportController extends Controller
 
             $this->putCsvRow($out, ['TERAJU SETIA WORKSHOP — EXECUTIVE MANAGEMENT REPORT']);
             $this->putCsvRow($out, ['Generated At', now()->format('d M Y, h:i A')]);
-            $this->putCsvRow($out, ['Scope', $startDate ? 'From ' . $startDate->format('d M Y') . ' to ' . now()->format('d M Y') : 'All Time Historical Data']);
+            $this->putCsvRow($out, ['Scope', $startDate ? 'From '.$startDate->format('d M Y').' to '.now()->format('d M Y') : 'All Time Historical Data']);
             $this->putCsvRow($out, []);
 
             // Financial & Core Workshop Metrics
-            $totalRev      = (float) ServiceHistory::when($startDate, fn($q) => $q->where('service_date', '>=', $startDate))->sum('cost');
-            $completedJobs = JobCard::where('current_stage', 'completed')->when($startDate, fn($q) => $q->where('updated_at', '>=', $startDate))->count();
-            $avgTicket     = $completedJobs > 0 ? ($totalRev / $completedJobs) : 0;
-            $invoiced      = (float) Invoice::when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))->sum('total');
-            $collected     = (float) Invoice::when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))->sum('amount_paid');
-            $outstanding   = max(0, $invoiced - $collected);
-            $collRate      = $invoiced > 0 ? round(($collected / $invoiced) * 100, 1) : 100.0;
+            $totalRev = (float) ServiceHistory::when($startDate, fn ($q) => $q->where('service_date', '>=', $startDate))->sum('cost');
+            $completedJobs = JobCard::where('current_stage', 'completed')->when($startDate, fn ($q) => $q->where('updated_at', '>=', $startDate))->count();
+            $avgTicket = $completedJobs > 0 ? ($totalRev / $completedJobs) : 0;
+            $invoiced = (float) Invoice::when($startDate, fn ($q) => $q->where('created_at', '>=', $startDate))->sum('total');
+            $collected = (float) Invoice::when($startDate, fn ($q) => $q->where('created_at', '>=', $startDate))->sum('amount_paid');
+            $outstanding = max(0, $invoiced - $collected);
+            $collRate = $invoiced > 0 ? round(($collected / $invoiced) * 100, 1) : 100.0;
             $totalVehicles = Vehicle::count();
-            $fleetVehicles = Vehicle::whereHas('owner', fn($q) => $q->where('role', 'corporate'))->count();
+            $fleetVehicles = Vehicle::whereHas('owner', fn ($q) => $q->where('role', 'corporate'))->count();
 
             $this->putCsvRow($out, ['--- KEY PERFORMANCE INDICATORS ---']);
             $this->putCsvRow($out, ['Gross Workshop Revenue (RM)', number_format($totalRev, 2, '.', '')]);
             $this->putCsvRow($out, ['Total Invoiced Billing (RM)', number_format($invoiced, 2, '.', '')]);
             $this->putCsvRow($out, ['Total Revenue Collected (RM)', number_format($collected, 2, '.', '')]);
             $this->putCsvRow($out, ['Outstanding Receivables (RM)', number_format($outstanding, 2, '.', '')]);
-            $this->putCsvRow($out, ['Invoice Collection Rate (%)', $collRate . '%']);
+            $this->putCsvRow($out, ['Invoice Collection Rate (%)', $collRate.'%']);
             $this->putCsvRow($out, ['Completed Work Orders', $completedJobs]);
             $this->putCsvRow($out, ['Average Repair Ticket (RM)', number_format($avgTicket, 2, '.', '')]);
             $this->putCsvRow($out, ['Total Serviced Vehicles on Record', $totalVehicles]);
@@ -302,14 +325,14 @@ class ReportController extends Controller
                 ->selectRaw('COUNT(job_cards.id) as jobs_count, COALESCE(SUM(job_cards.total_cost), 0) as total_revenue')
                 ->join('job_cards', 'job_types.id', '=', 'job_cards.job_type_id')
                 ->where('job_cards.current_stage', 'completed')
-                ->when($startDate, fn($q) => $q->where('job_cards.updated_at', '>=', $startDate))
+                ->when($startDate, fn ($q) => $q->where('job_cards.updated_at', '>=', $startDate))
                 ->groupBy('job_types.category')
                 ->orderByDesc('total_revenue')
                 ->get();
 
             foreach ($categories as $cat) {
                 $pct = $totalRev > 0 ? round(($cat->total_revenue / $totalRev) * 100, 1) : 0;
-                $this->putCsvRow($out, [$cat->category, $cat->jobs_count, number_format($cat->total_revenue, 2, '.', ''), $pct . '%']);
+                $this->putCsvRow($out, [$cat->category, $cat->jobs_count, number_format($cat->total_revenue, 2, '.', ''), $pct.'%']);
             }
             $this->putCsvRow($out, []);
 
@@ -327,9 +350,9 @@ class ReportController extends Controller
             $this->putCsvRow($out, ['Company Name', 'Contact Person', 'Phone', 'Fleet Size', 'Completed Jobs', 'Total Spend (RM)']);
             $companies = Company::withCount('vehicles')->get();
             foreach ($companies as $comp) {
-                $vIds = Vehicle::whereHas('owner', fn($q) => $q->where('company_id', $comp->id))->pluck('id');
-                $cJobs = JobCard::whereIn('vehicle_id', $vIds)->where('current_stage', 'completed')->when($startDate, fn($q) => $q->where('updated_at', '>=', $startDate))->count();
-                $cSpend = (float) JobCard::whereIn('vehicle_id', $vIds)->where('current_stage', 'completed')->when($startDate, fn($q) => $q->where('updated_at', '>=', $startDate))->sum('total_cost');
+                $vIds = Vehicle::whereHas('owner', fn ($q) => $q->where('company_id', $comp->id))->pluck('id');
+                $cJobs = JobCard::whereIn('vehicle_id', $vIds)->where('current_stage', 'completed')->when($startDate, fn ($q) => $q->where('updated_at', '>=', $startDate))->count();
+                $cSpend = (float) JobCard::whereIn('vehicle_id', $vIds)->where('current_stage', 'completed')->when($startDate, fn ($q) => $q->where('updated_at', '>=', $startDate))->sum('total_cost');
                 $this->putCsvRow($out, [
                     $comp->name,
                     $comp->person_in_charge ?? '-',
@@ -350,8 +373,8 @@ class ReportController extends Controller
     protected function exportInvoices($startDate, string $timestamp)
     {
         $filename = "teraju_invoices_ledger_{$timestamp}.csv";
-        $headers  = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
@@ -377,13 +400,13 @@ class ReportController extends Controller
             ]);
 
             $invoices = Invoice::with(['payments', 'jobCard.vehicle.owner.company'])
-                ->when($startDate, fn($q) => $q->where('created_at', '>=', $startDate))
+                ->when($startDate, fn ($q) => $q->where('created_at', '>=', $startDate))
                 ->latest('created_at')
                 ->get();
 
             foreach ($invoices as $inv) {
-                $payMethod = $inv->payments->pluck('method')->map(fn($m) => ucwords(str_replace('_', ' ', $m)))->join(', ') ?: '-';
-                $payRef    = $inv->payments->pluck('reference_no')->filter()->join(', ') ?: '-';
+                $payMethod = $inv->payments->pluck('method')->map(fn ($m) => ucwords(str_replace('_', ' ', $m)))->join(', ') ?: '-';
+                $payRef = $inv->payments->pluck('reference_no')->filter()->join(', ') ?: '-';
 
                 $this->putCsvRow($out, [
                     $inv->invoice_number,
@@ -391,7 +414,7 @@ class ReportController extends Controller
                     $inv->due_date ? Carbon::parse($inv->due_date)->format('Y-m-d') : '-',
                     $inv->customer_name,
                     number_format($inv->subtotal, 2, '.', ''),
-                    number_format($inv->tax_rate, 2, '.', '') . '%',
+                    number_format($inv->tax_rate, 2, '.', '').'%',
                     number_format($inv->tax_amount, 2, '.', ''),
                     number_format($inv->total, 2, '.', ''),
                     number_format($inv->amount_paid, 2, '.', ''),
@@ -413,8 +436,8 @@ class ReportController extends Controller
     protected function exportJobs($startDate, string $timestamp)
     {
         $filename = "teraju_job_cards_report_{$timestamp}.csv";
-        $headers  = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
@@ -443,15 +466,15 @@ class ReportController extends Controller
             ]);
 
             $jobs = JobCard::with(['vehicle.owner.company', 'staff', 'jobType', 'parts', 'labourCharges'])
-                ->when($startDate, fn($q) => $q->where('updated_at', '>=', $startDate))
+                ->when($startDate, fn ($q) => $q->where('updated_at', '>=', $startDate))
                 ->latest('id')
                 ->get();
 
             foreach ($jobs as $job) {
-                $veh        = $job->vehicle;
+                $veh = $job->vehicle;
                 $clientName = $veh?->owner?->company?->name ?? $veh?->owner?->name ?? 'Walk-in';
-                $acctType   = $veh?->isFleet() ? 'Corporate Fleet' : 'Individual Retail';
-                $partsCost  = $job->parts->sum(fn($p) => $p->quantity * $p->unit_price);
+                $acctType = $veh?->isFleet() ? 'Corporate Fleet' : 'Individual Retail';
+                $partsCost = $job->parts->sum(fn ($p) => $p->quantity * $p->unit_price);
                 $labourCost = $job->labourCharges->sum('charge');
 
                 $tatHours = '-';
@@ -460,9 +483,9 @@ class ReportController extends Controller
                 }
 
                 $this->putCsvRow($out, [
-                    '#JC-' . str_pad($job->id, 5, '0', STR_PAD_LEFT),
+                    '#JC-'.str_pad($job->id, 5, '0', STR_PAD_LEFT),
                     $veh->plate_number ?? '-',
-                    ($veh ? trim(($veh->brand ?? '') . ' ' . ($veh->model ?? '')) : '-'),
+                    ($veh ? trim(($veh->brand ?? '').' '.($veh->model ?? '')) : '-'),
                     $clientName,
                     $acctType,
                     $job->jobType->name ?? 'General Service',
@@ -490,8 +513,8 @@ class ReportController extends Controller
     protected function exportInventory(string $timestamp)
     {
         $filename = "teraju_spare_parts_inventory_{$timestamp}.csv";
-        $headers  = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
@@ -552,8 +575,8 @@ class ReportController extends Controller
     protected function exportFleetHistory($startDate, string $timestamp)
     {
         $filename = "teraju_fleet_maintenance_history_{$timestamp}.csv";
-        $headers  = [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
@@ -575,7 +598,7 @@ class ReportController extends Controller
             ]);
 
             $histories = ServiceHistory::with(['vehicle.owner.company', 'jobCard.staff'])
-                ->when($startDate, fn($q) => $q->where('service_date', '>=', $startDate->toDateString()))
+                ->when($startDate, fn ($q) => $q->where('service_date', '>=', $startDate->toDateString()))
                 ->latest('service_date')
                 ->get();
 
@@ -588,12 +611,12 @@ class ReportController extends Controller
                     $v->plate_number ?? '-',
                     $comp?->name ?? ($v?->owner?->name ?? 'Individual Customer'),
                     $comp?->person_in_charge ?? ($v?->owner?->name ?? '-'),
-                    $v ? trim(($v->brand ?? '') . ' ' . ($v->model ?? '')) : '-',
+                    $v ? trim(($v->brand ?? '').' '.($v->model ?? '')) : '-',
                     $v->mileage ?? '-',
                     $sh->description ?? '-',
                     $sh->jobCard?->staff?->name ?? '-',
                     number_format($sh->cost, 2, '.', ''),
-                    $sh->job_card_id ? '#JC-' . str_pad($sh->job_card_id, 5, '0', STR_PAD_LEFT) : '-',
+                    $sh->job_card_id ? '#JC-'.str_pad($sh->job_card_id, 5, '0', STR_PAD_LEFT) : '-',
                 ]);
             }
 
