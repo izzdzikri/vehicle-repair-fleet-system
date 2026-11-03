@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -13,48 +14,58 @@ class JobCard extends Model
 
     protected $casts = [
         'estimated_completion' => 'datetime',
-        'completed_at'         => 'datetime',
-        'symptoms'             => 'array',
-        'inspection_photos'    => 'array',
+        'completed_at' => 'datetime',
+        'symptoms' => 'array',
+        'inspection_photos' => 'array',
     ];
 
-    public function appointment() {
+    public function appointment()
+    {
         return $this->belongsTo(Appointment::class);
     }
 
-    public function vehicle() {
+    public function vehicle()
+    {
         return $this->belongsTo(Vehicle::class);
     }
 
-    public function staff() {
+    public function staff()
+    {
         return $this->belongsTo(User::class, 'staff_id');
     }
 
-    public function jobType() {
+    public function jobType()
+    {
         return $this->belongsTo(JobType::class);
     }
 
-    public function parts() {
+    public function parts()
+    {
         return $this->hasMany(JobCardPart::class);
     }
 
-    public function serviceHistory() {
+    public function serviceHistory()
+    {
         return $this->hasOne(ServiceHistory::class);
     }
 
-    public function labourCharges() {
+    public function labourCharges()
+    {
         return $this->hasMany(LabourCharge::class);
     }
 
-    public function invoice() {
+    public function invoice()
+    {
         return $this->hasOne(Invoice::class);
     }
 
-    public function checkins() {
+    public function checkins()
+    {
         return $this->hasMany(JobCardCheckin::class)->latest();
     }
 
-    public function feedback() {
+    public function feedback()
+    {
         return $this->hasOne(JobFeedback::class);
     }
 
@@ -65,16 +76,22 @@ class JobCard extends Model
      * mid-repair — a busy mechanic under a car may simply not have had
      * a moment to log in and update the system.
      */
-    public function getIsStaleAttribute(): bool {
-        if ($this->current_stage === 'completed') return false;
+    public function getIsStaleAttribute(): bool
+    {
+        if ($this->current_stage === 'completed') {
+            return false;
+        }
+
         return $this->updated_at->lt(now()->subHours(3));
     }
 
-    public function getHoursSinceUpdateAttribute(): int {
+    public function getHoursSinceUpdateAttribute(): int
+    {
         return (int) $this->updated_at->diffInHours(now());
     }
 
-    public function getLastCheckinAttribute() {
+    public function getLastCheckinAttribute()
+    {
         return $this->relationLoaded('checkins') ? $this->checkins->first() : $this->checkins()->first();
     }
 
@@ -89,10 +106,8 @@ class JobCard extends Model
      * job card. A regular mechanic can only edit jobs assigned to them —
      * they can still VIEW every other job card, just not change it.
      */
-    public function canBeEditedBy(User $user): bool {
-        if ($user->role === 'admin') return true;
-        if ($user->role === 'coordinator') return true;
-        if ($user->hasPermission('job_cards.manage_all')) return true;
-        return $this->staff_id === $user->id;
+    public function canBeEditedBy(User $user): bool
+    {
+        return $user->can('update', $this);
     }
 }

@@ -1,14 +1,17 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\Vehicle;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Services\MaintenancePredictionService;
 use Illuminate\Http\Request;
 
 class VehicleController extends Controller
 {
-    public function index(Request $request) {
-        $user   = auth()->user();
+    public function index(Request $request)
+    {
+        $user = auth()->user();
         $search = trim((string) $request->input('search'));
 
         if ($user->role === 'admin') {
@@ -23,14 +26,14 @@ class VehicleController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('plate_number', 'like', "%{$search}%")
-                  ->orWhere('brand', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%")
-                  ->orWhereHas('owner', function($oq) use ($search) {
-                      $oq->where('name', 'like', "%{$search}%")
-                         ->orWhereHas('company', function($cq) use ($search) {
-                             $cq->where('name', 'like', "%{$search}%");
-                         });
-                  });
+                    ->orWhere('brand', 'like', "%{$search}%")
+                    ->orWhere('model', 'like', "%{$search}%")
+                    ->orWhereHas('owner', function ($oq) use ($search) {
+                        $oq->where('name', 'like', "%{$search}%")
+                            ->orWhereHas('company', function ($cq) use ($search) {
+                                $cq->where('name', 'like', "%{$search}%");
+                            });
+                    });
             });
         }
 
@@ -39,33 +42,35 @@ class VehicleController extends Controller
         return view('vehicles.index', compact('vehicles', 'search'));
     }
 
-    public function show(Vehicle $vehicle) {
+    public function show(Vehicle $vehicle)
+    {
         $this->authorizeVehicleAccess($vehicle);
 
         $vehicle->load([
             'owner.company',
             'serviceHistory.jobCard',
-            'appointments' => fn($q) => $q->latest()->take(10),
-            'maintenanceAlerts' => fn($q) => $q->latest()->take(5),
-            'tripLogs' => fn($q) => $q->latest('trip_date')->latest('id')->take(10),
+            'appointments' => fn ($q) => $q->latest()->take(10),
+            'maintenanceAlerts' => fn ($q) => $q->latest()->take(5),
+            'tripLogs' => fn ($q) => $q->latest('trip_date')->latest('id')->take(10),
         ]);
 
-        $totalVisits  = $vehicle->serviceHistory->count();
-        $totalSpent   = $vehicle->serviceHistory->sum('cost');
+        $totalVisits = $vehicle->serviceHistory->count();
+        $totalSpent = $vehicle->serviceHistory->sum('cost');
         $firstService = $vehicle->serviceHistory->last();
-        $lastService  = $vehicle->serviceHistory->first();
+        $lastService = $vehicle->serviceHistory->first();
 
-        $predictionService = app(\App\Services\MaintenancePredictionService::class);
+        $predictionService = app(MaintenancePredictionService::class);
         $usageStats = $predictionService->getUsageStats($vehicle);
-        $telemetry  = $predictionService->getVehicleTelemetry($vehicle);
+        $telemetry = $predictionService->getVehicleTelemetry($vehicle);
         $isSecondaryPic = auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic();
 
         return view('vehicles.show', compact(
-            'vehicle','totalVisits','totalSpent','firstService','lastService','usageStats','telemetry','isSecondaryPic'
+            'vehicle', 'totalVisits', 'totalSpent', 'firstService', 'lastService', 'usageStats', 'telemetry', 'isSecondaryPic'
         ));
     }
 
-    public function create() {
+    public function create()
+    {
         $owners = null;
         if (auth()->user()->role === 'admin') {
             $owners = User::whereIn('role', ['individual', 'corporate'])
@@ -74,19 +79,21 @@ class VehicleController extends Controller
                 ->orderBy('name')
                 ->get();
         }
+
         return view('vehicles.create', compact('owners'));
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         if (auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic()) {
             return back()->with('error', 'Secondary PIC (Viewer) cannot add vehicles. Contact your Primary PIC.');
         }
 
         $request->validate([
             'plate_number' => 'required|unique:vehicles',
-            'brand'        => 'required',
-            'model'        => 'required',
-            'year'         => 'required|integer|min:1990|max:2030',
+            'brand' => 'required',
+            'model' => 'required',
+            'year' => 'required|integer|min:1990|max:2030',
         ]);
 
         $userId = auth()->user()->role === 'admin' && $request->user_id
@@ -94,18 +101,19 @@ class VehicleController extends Controller
             : auth()->id();
 
         Vehicle::create([
-            'user_id'      => $userId,
+            'user_id' => $userId,
             'plate_number' => strtoupper($request->plate_number),
-            'brand'        => $request->brand,
-            'model'        => $request->model,
-            'year'         => $request->year,
-            'mileage'      => $request->mileage ?? 0,
+            'brand' => $request->brand,
+            'model' => $request->model,
+            'year' => $request->year,
+            'mileage' => $request->mileage ?? 0,
         ]);
 
         return redirect()->back()->with('success', 'Vehicle added.');
     }
 
-    public function edit(Vehicle $vehicle) {
+    public function edit(Vehicle $vehicle)
+    {
         $this->authorizeVehicleAccess($vehicle);
         $vehicle->load('owner.company');
 
@@ -121,25 +129,27 @@ class VehicleController extends Controller
         return view('vehicles.edit', compact('vehicle', 'owners'));
     }
 
-    public function update(Request $request, Vehicle $vehicle) {
+    public function update(Request $request, Vehicle $vehicle)
+    {
         $this->authorizeVehicleAccess($vehicle);
+        abort_unless(auth()->user()->can('update', $vehicle), 403, 'You do not have permission to update this vehicle.');
 
         if (auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic()) {
             return back()->with('error', 'Secondary PIC (Viewer) cannot edit vehicles. Contact your Primary PIC.');
         }
 
         $request->validate([
-            'brand'   => 'required',
-            'model'   => 'required',
-            'year'    => 'required|integer|min:1990|max:2030',
+            'brand' => 'required',
+            'model' => 'required',
+            'year' => 'required|integer|min:1990|max:2030',
             'mileage' => 'nullable|numeric|min:0',
             'user_id' => 'nullable|exists:users,id',
         ]);
 
         $data = [
-            'brand'   => $request->brand,
-            'model'   => $request->model,
-            'year'    => $request->year,
+            'brand' => $request->brand,
+            'model' => $request->model,
+            'year' => $request->year,
             'mileage' => $request->mileage ?? $vehicle->mileage,
         ];
 
@@ -152,36 +162,26 @@ class VehicleController extends Controller
         return back()->with('success', 'Vehicle updated.');
     }
 
-    public function destroy(Vehicle $vehicle) {
+    public function destroy(Vehicle $vehicle)
+    {
         $this->authorizeVehicleAccess($vehicle);
+        abort_unless(auth()->user()->can('delete', $vehicle), 403, 'You do not have permission to delete this vehicle.');
 
         if (auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic()) {
             return back()->with('error', 'Secondary PIC (Viewer) cannot delete vehicles. Contact your Primary PIC.');
         }
 
         $vehicle->delete();
+
         return redirect()->back()->with('success', 'Vehicle deleted.');
     }
 
     /**
      * Ensure the current user is allowed to view/edit/delete this vehicle.
-     * Admins can access everything; corporate users can access any vehicle
-     * owned by any PIC in their own company; individuals can only access
-     * their own vehicles.
+     * Centralized via VehiclePolicy.
      */
-    private function authorizeVehicleAccess(Vehicle $vehicle): void {
-        $user = auth()->user();
-
-        if ($user->role === 'admin') {
-            return;
-        }
-
-        if ($user->role === 'corporate') {
-            $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
-            abort_unless($companyUserIds->contains($vehicle->user_id), 403, 'You do not have access to this vehicle.');
-            return;
-        }
-
-        abort_unless($vehicle->user_id === $user->id, 403, 'You do not have access to this vehicle.');
+    private function authorizeVehicleAccess(Vehicle $vehicle): void
+    {
+        abort_unless(auth()->user()->can('view', $vehicle), 403, 'You do not have access to this vehicle.');
     }
 }

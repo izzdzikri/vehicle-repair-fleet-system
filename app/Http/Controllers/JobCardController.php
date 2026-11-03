@@ -1,26 +1,28 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\JobCard;
-use App\Models\Appointment;
-use App\Models\User;
-use App\Models\SparePart;
-use App\Models\JobCardPart;
-use App\Models\ServiceHistory;
-use App\Models\JobType;
 use App\Models\ActivityLog;
+use App\Models\Appointment;
+use App\Models\JobCard;
+use App\Models\JobCardPart;
+use App\Models\JobType;
+use App\Models\LabourCharge;
 use App\Models\Notification;
+use App\Models\ServiceHistory;
+use App\Models\SparePart;
+use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Models\LabourCharge;
 
 class JobCardController extends Controller
 {
-    public function index(Request $request) {
-        $search  = trim((string) $request->input('search'));
+    public function index(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
         $perPage = 15;
 
         // Remember the last-used stage tab across visits (e.g. via
@@ -39,10 +41,12 @@ class JobCardController extends Controller
         $filterStage = $activeStage === 'all' ? null : $activeStage;
 
         $applySearch = function ($query) use ($search) {
-            if ($search === '') return;
+            if ($search === '') {
+                return;
+            }
             $query->where(function ($q) use ($search) {
-                $q->whereHas('vehicle', fn($v) => $v->where('plate_number', 'like', "%{$search}%"))
-                  ->orWhereHas('staff', fn($s) => $s->where('name', 'like', "%{$search}%"));
+                $q->whereHas('vehicle', fn ($v) => $v->where('plate_number', 'like', "%{$search}%"))
+                    ->orWhereHas('staff', fn ($s) => $s->where('name', 'like', "%{$search}%"));
             });
         };
 
@@ -61,13 +65,13 @@ class JobCardController extends Controller
             ")->first();
 
         $stageCounts = [
-            'all'           => (int) ($rawCounts->all_count ?? 0),
-            'received'      => (int) ($rawCounts->received ?? 0),
-            'diagnosing'    => (int) ($rawCounts->diagnosing ?? 0),
+            'all' => (int) ($rawCounts->all_count ?? 0),
+            'received' => (int) ($rawCounts->received ?? 0),
+            'diagnosing' => (int) ($rawCounts->diagnosing ?? 0),
             'waiting_parts' => (int) ($rawCounts->waiting_parts ?? 0),
-            'repairing'     => (int) ($rawCounts->repairing ?? 0),
+            'repairing' => (int) ($rawCounts->repairing ?? 0),
             'quality_check' => (int) ($rawCounts->quality_check ?? 0),
-            'completed'     => (int) ($rawCounts->completed ?? 0),
+            'completed' => (int) ($rawCounts->completed ?? 0),
         ];
 
         $query = JobCard::with(['vehicle', 'staff', 'appointment', 'jobType']);
@@ -81,24 +85,26 @@ class JobCardController extends Controller
         return view('job-cards.index', compact('jobs', 'search', 'stageCounts', 'activeStage'));
     }
 
-    public function create() {
-    $appointments = Appointment::where('status', 'confirmed')
-        ->whereDoesntHave('jobCard')
-        ->with(['vehicle', 'user'])
-        ->get();
+    public function create()
+    {
+        $appointments = Appointment::where('status', 'confirmed')
+            ->whereDoesntHave('jobCard')
+            ->with(['vehicle', 'user'])
+            ->get();
 
-    $staff    = \App\Models\User::where('role', 'staff')
-                    ->where('status', 'active')
-                    ->get();
-    $jobTypes = \App\Models\JobType::orderBy('category')->get();
+        $staff = User::where('role', 'staff')
+            ->where('status', 'active')
+            ->get();
+        $jobTypes = JobType::orderBy('category')->get();
 
-    return view('job-cards.create', compact('appointments', 'staff', 'jobTypes'));
+        return view('job-cards.create', compact('appointments', 'staff', 'jobTypes'));
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $request->validate([
             'appointment_id' => 'nullable|exists:appointments,id',
-            'staff_id'       => 'required|exists:users,id',
+            'staff_id' => 'required|exists:users,id',
         ]);
 
         // Walk-in job card: appointment_id may be null if created directly
@@ -109,7 +115,7 @@ class JobCardController extends Controller
 
         if ($appointmentId) {
             $appointment = Appointment::findOrFail($appointmentId);
-            $vehicleId   = $appointment->vehicle_id;
+            $vehicleId = $appointment->vehicle_id;
         } else {
             // Fallback: should not happen via normal flow, but guard anyway
             return back()->with('error', 'Please select an appointment.');
@@ -124,12 +130,12 @@ class JobCardController extends Controller
         }
 
         $jobCard = JobCard::create([
-            'appointment_id'       => $appointmentId,
-            'vehicle_id'           => $vehicleId,
-            'staff_id'             => $request->staff_id,
-            'job_type_id'          => $request->job_type_id,
-            'current_stage'        => 'received',
-            'diagnosis'            => $request->diagnosis,
+            'appointment_id' => $appointmentId,
+            'vehicle_id' => $vehicleId,
+            'staff_id' => $request->staff_id,
+            'job_type_id' => $request->job_type_id,
+            'current_stage' => 'received',
+            'diagnosis' => $request->diagnosis,
             'estimated_completion' => $estimatedCompletion,
         ]);
 
@@ -137,32 +143,35 @@ class JobCardController extends Controller
         Notification::send(
             $request->staff_id,
             'New Job Assigned',
-            "You've been assigned to ".($vehicle->plate_number ?? 'a vehicle')." (".($vehicle->brand ?? '').' '.($vehicle->model ?? '').").",
-            '/staff/job-cards/' . $jobCard->id
+            "You've been assigned to ".($vehicle->plate_number ?? 'a vehicle').' ('.($vehicle->brand ?? '').' '.($vehicle->model ?? '').').',
+            '/staff/job-cards/'.$jobCard->id
         );
 
         return redirect('/admin/job-cards')->with('success', 'Job card created and assigned.');
     }
 
-    public function show(JobCard $jobCard) {
-    $jobCard->load(['vehicle', 'staff', 'parts.sparePart', 'appointment.user', 'jobType', 'labourCharges', 'checkins.coordinator']);
-    $spareParts = SparePart::where('stock', '>', 0)->orderBy('category')->get();
-    $jobTypes   = \App\Models\JobType::orderBy('category')->orderBy('name')->get();
-    $canEdit    = $jobCard->canBeEditedBy(auth()->user());
-    return view('job-cards.show', compact('jobCard', 'spareParts', 'jobTypes', 'canEdit'));
+    public function show(JobCard $jobCard)
+    {
+        $jobCard->load(['vehicle', 'staff', 'parts.sparePart', 'appointment.user', 'jobType', 'labourCharges', 'checkins.coordinator']);
+        $spareParts = SparePart::where('stock', '>', 0)->orderBy('category')->get();
+        $jobTypes = JobType::orderBy('category')->orderBy('name')->get();
+        $canEdit = $jobCard->canBeEditedBy(auth()->user());
+
+        return view('job-cards.show', compact('jobCard', 'spareParts', 'jobTypes', 'canEdit'));
     }
 
     // ----------------------------------------------------------------
     // EDF (Earliest Deadline First) schedule board
     // ----------------------------------------------------------------
 
-    public function schedule() {
+    public function schedule()
+    {
         $jobs = JobCard::with(['vehicle', 'staff', 'jobType', 'appointment'])
             ->where('current_stage', '!=', 'completed')
             ->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')
             ->get();
 
-        $grouped = $jobs->groupBy(fn($j) => $j->staff->name ?? 'Unassigned');
+        $grouped = $jobs->groupBy(fn ($j) => $j->staff->name ?? 'Unassigned');
 
         return view('job-cards.schedule', compact('jobs', 'grouped'));
     }
@@ -171,13 +180,14 @@ class JobCardController extends Controller
     // Kanban board — drag-and-drop stage view
     // ----------------------------------------------------------------
 
-    public function board() {
+    public function board()
+    {
         $jobs = JobCard::with(['vehicle', 'staff', 'jobType'])
             ->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')
             ->get();
 
-        $stages  = ['received', 'diagnosing', 'waiting_parts', 'repairing', 'quality_check', 'completed'];
-        $grouped = collect($stages)->mapWithKeys(fn($s) => [$s => $jobs->where('current_stage', $s)->values()]);
+        $stages = ['received', 'diagnosing', 'waiting_parts', 'repairing', 'quality_check', 'completed'];
+        $grouped = collect($stages)->mapWithKeys(fn ($s) => [$s => $jobs->where('current_stage', $s)->values()]);
 
         return view('job-cards.board', compact('grouped', 'stages'));
     }
@@ -188,8 +198,11 @@ class JobCardController extends Controller
      * only mutations are restricted to the assigned mechanic, admins,
      * coordinators, and anyone holding job_cards.manage_all.
      */
-    private function assertCanEdit(Request $request, JobCard $jobCard): void {
-        if ($jobCard->canBeEditedBy(auth()->user())) return;
+    private function assertCanEdit(Request $request, JobCard $jobCard): void
+    {
+        if ($jobCard->canBeEditedBy(auth()->user())) {
+            return;
+        }
 
         if ($request->wantsJson()) {
             abort(response()->json([
@@ -201,7 +214,8 @@ class JobCardController extends Controller
         abort(403, 'This job card is assigned to another staff member. You can view it but not make changes.');
     }
 
-    public function updateStage(Request $request, JobCard $jobCard) {
+    public function updateStage(Request $request, JobCard $jobCard)
+    {
         $this->assertCanEdit($request, $jobCard);
 
         $request->validate([
@@ -212,7 +226,7 @@ class JobCardController extends Controller
             'current_stage' => $request->current_stage,
             // Clear completed_at whenever a job is reopened, so a stale
             // timestamp doesn't corrupt performance/turnaround metrics.
-            'completed_at'  => $request->current_stage === 'completed' ? now() : null,
+            'completed_at' => $request->current_stage === 'completed' ? now() : null,
         ]);
 
         if ($request->current_stage === 'completed') {
@@ -230,13 +244,13 @@ class JobCardController extends Controller
             ServiceHistory::firstOrCreate(
                 ['job_card_id' => $jobCard->id],
                 [
-                    'vehicle_id'   => $jobCard->vehicle_id,
+                    'vehicle_id' => $jobCard->vehicle_id,
                     'service_date' => now()->toDateString(),
-                    'description'  => $jobCard->jobType->name
+                    'description' => $jobCard->jobType->name
                                    ?? $jobCard->diagnosis
                                    ?? $jobCard->appointment->service_type
                                    ?? 'Service completed',
-                    'cost'         => $jobCard->total_cost,
+                    'cost' => $jobCard->total_cost,
                 ]
             );
         }
@@ -251,29 +265,31 @@ class JobCardController extends Controller
     /**
      * Save technician-filled symptom checklist + notes.
      */
-    public function updateSymptoms(Request $request, JobCard $jobCard) {
+    public function updateSymptoms(Request $request, JobCard $jobCard)
+    {
         $this->assertCanEdit($request, $jobCard);
 
         $request->validate([
-            'symptoms'         => 'nullable|array',
-            'symptoms.*'       => 'string|max:100',
+            'symptoms' => 'nullable|array',
+            'symptoms.*' => 'string|max:100',
             'technician_notes' => 'nullable|string|max:2000',
         ]);
 
         $jobCard->update([
-            'symptoms'         => $request->symptoms ?? [],
+            'symptoms' => $request->symptoms ?? [],
             'technician_notes' => $request->technician_notes,
         ]);
 
         return back()->with('success', 'Diagnosis updated.');
     }
 
-    public function addPart(Request $request, JobCard $jobCard) {
+    public function addPart(Request $request, JobCard $jobCard)
+    {
         $this->assertCanEdit($request, $jobCard);
 
         $request->validate([
             'spare_part_id' => 'required|exists:spare_parts,id',
-            'quantity'      => 'required|integer|min:1',
+            'quantity' => 'required|integer|min:1',
         ]);
 
         $part = SparePart::findOrFail($request->spare_part_id);
@@ -286,13 +302,13 @@ class JobCardController extends Controller
             $part->decrement('stock', $request->quantity);
 
             JobCardPart::create([
-                'job_card_id'   => $jobCard->id,
+                'job_card_id' => $jobCard->id,
                 'spare_part_id' => $part->id,
-                'quantity'      => $request->quantity,
-                'unit_price'    => $part->unit_price,
+                'quantity' => $request->quantity,
+                'unit_price' => $part->unit_price,
             ]);
 
-            $partsCost  = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
+            $partsCost = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
             $labourCost = $jobCard->labourCharges()->sum('charge');
             $jobCard->update(['total_cost' => $partsCost + $labourCost]);
 
@@ -306,7 +322,8 @@ class JobCardController extends Controller
         return back()->with('success', "Added {$request->quantity}x {$part->name}. Stock deducted: {$part->fresh()->stock} remaining.");
     }
 
-    public function removePart(Request $request, JobCard $jobCard, JobCardPart $jobCardPart) {
+    public function removePart(Request $request, JobCard $jobCard, JobCardPart $jobCardPart)
+    {
         $this->assertCanEdit($request, $jobCard);
 
         if ($jobCardPart->job_card_id !== $jobCard->id) {
@@ -314,7 +331,7 @@ class JobCardController extends Controller
         }
 
         $partName = $jobCardPart->sparePart->name ?? 'Part';
-        $qty      = $jobCardPart->quantity;
+        $qty = $jobCardPart->quantity;
 
         DB::transaction(function () use ($jobCard, $jobCardPart, $partName, $qty) {
             if ($jobCardPart->sparePart) {
@@ -323,7 +340,7 @@ class JobCardController extends Controller
 
             $jobCardPart->delete();
 
-            $partsCost  = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
+            $partsCost = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
             $labourCost = $jobCard->labourCharges()->sum('charge');
             $jobCard->update(['total_cost' => $partsCost + $labourCost]);
 
@@ -337,41 +354,43 @@ class JobCardController extends Controller
         return back()->with('success', "Removed {$partName} (×{$qty}). Stock has been restored to inventory.");
     }
 
-    public function addLabour(Request $request, JobCard $jobCard) {
-    $this->assertCanEdit($request, $jobCard);
+    public function addLabour(Request $request, JobCard $jobCard)
+    {
+        $this->assertCanEdit($request, $jobCard);
 
-    $request->validate([
-        'description' => 'required|string|max:150',
-        'charge'      => 'required|numeric|min:1',
-        'remark'      => 'nullable|string|max:200',
-    ]);
+        $request->validate([
+            'description' => 'required|string|max:150',
+            'charge' => 'required|numeric|min:1',
+            'remark' => 'nullable|string|max:200',
+        ]);
 
-    LabourCharge::create([
-        'job_card_id' => $jobCard->id,
-        'description' => $request->description,
-        'charge'      => $request->charge,
-        'remark'      => $request->remark,
-    ]);
+        LabourCharge::create([
+            'job_card_id' => $jobCard->id,
+            'description' => $request->description,
+            'charge' => $request->charge,
+            'remark' => $request->remark,
+        ]);
 
-    $partsCost  = $jobCard->parts()->sum(\DB::raw('quantity * unit_price'));
-    $labourCost = $jobCard->labourCharges()->sum('charge');
-    $jobCard->update(['total_cost' => $partsCost + $labourCost]);
+        $partsCost = $jobCard->parts()->sum(\DB::raw('quantity * unit_price'));
+        $labourCost = $jobCard->labourCharges()->sum('charge');
+        $jobCard->update(['total_cost' => $partsCost + $labourCost]);
 
-    return back()->with('success', 'Labour charge added.');
-    }   
+        return back()->with('success', 'Labour charge added.');
+    }
 
-public function removeLabour(Request $request, LabourCharge $labourCharge) {
-    $jobCard = $labourCharge->jobCard;
-    $this->assertCanEdit($request, $jobCard);
+    public function removeLabour(Request $request, LabourCharge $labourCharge)
+    {
+        $jobCard = $labourCharge->jobCard;
+        $this->assertCanEdit($request, $jobCard);
 
-    $labourCharge->delete();
+        $labourCharge->delete();
 
-    $partsCost  = $jobCard->parts()->sum(\DB::raw('quantity * unit_price'));
-    $labourCost = $jobCard->labourCharges()->sum('charge');
-    $jobCard->update(['total_cost' => $partsCost + $labourCost]);
+        $partsCost = $jobCard->parts()->sum(\DB::raw('quantity * unit_price'));
+        $labourCost = $jobCard->labourCharges()->sum('charge');
+        $jobCard->update(['total_cost' => $partsCost + $labourCost]);
 
-    return back()->with('success', 'Labour charge removed.');
-}
+        return back()->with('success', 'Labour charge removed.');
+    }
 
     // ----------------------------------------------------------------
     // Inspection photos — technician-uploaded photo documentation,
@@ -380,22 +399,23 @@ public function removeLabour(Request $request, LabourCharge $labourCharge) {
     // as every other mutation above.
     // ----------------------------------------------------------------
 
-    public function uploadPhoto(Request $request, JobCard $jobCard) {
+    public function uploadPhoto(Request $request, JobCard $jobCard)
+    {
         $this->assertCanEdit($request, $jobCard);
 
         $request->validate([
-            'photo'   => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'photo' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'caption' => 'nullable|string|max:150',
         ]);
 
-        $path = $request->file('photo')->store('inspection-photos/' . $jobCard->id, 'public');
+        $path = $request->file('photo')->store('inspection-photos/'.$jobCard->id, 'public');
 
         $photos = $jobCard->inspection_photos ?? [];
         $photos[] = [
-            'id'          => (string) Str::uuid(),
-            'path'        => $path,
-            'caption'     => $request->caption,
-            'stage'       => $jobCard->current_stage,
+            'id' => (string) Str::uuid(),
+            'path' => $path,
+            'caption' => $request->caption,
+            'stage' => $jobCard->current_stage,
             'uploaded_by' => auth()->id(),
             'uploaded_at' => now()->toDateTimeString(),
         ];
@@ -405,19 +425,20 @@ public function removeLabour(Request $request, LabourCharge $labourCharge) {
         return back()->with('success', 'Inspection photo uploaded.');
     }
 
-    public function removePhoto(Request $request, JobCard $jobCard, string $photoId) {
+    public function removePhoto(Request $request, JobCard $jobCard, string $photoId)
+    {
         $this->assertCanEdit($request, $jobCard);
 
         $photos = $jobCard->inspection_photos ?? [];
         $target = collect($photos)->firstWhere('id', $photoId);
 
-        if (!$target) {
+        if (! $target) {
             return back()->with('error', 'Photo not found — it may have already been removed.');
         }
 
         Storage::disk('public')->delete($target['path']);
 
-        $photos = collect($photos)->reject(fn($p) => $p['id'] === $photoId)->values()->all();
+        $photos = collect($photos)->reject(fn ($p) => $p['id'] === $photoId)->values()->all();
         $jobCard->update(['inspection_photos' => $photos]);
 
         return back()->with('success', 'Inspection photo removed.');
