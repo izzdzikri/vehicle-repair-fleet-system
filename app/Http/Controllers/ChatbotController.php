@@ -1177,6 +1177,8 @@ class ChatbotController extends Controller
             ? "\n\n👉 [View Appointment Details {$ref}]({$targetUrl})"
             : "\n\n👉 [Login / Register to Track Appointment Status]({$targetUrl})";
 
+        $symptomsNotes = $booking['symptoms'] ?? $booking['diagnostic_notes'] ?? ($lang === 'ms' ? 'Pemeriksaan Am' : 'General Inspection');
+
         if ($lang === 'ms') {
             $reply = "🎉 **Tempahan Berjaya Disahkan & Direkodkan!**\n\n"
                    ."• **No Rujukan**: `{$ref}`\n"
@@ -1186,7 +1188,7 @@ class ChatbotController extends Controller
                    ."• **Servis**: **{$appointment->service_type}**\n"
                    ."• **Tarikh & Masa**: **{$booking['date_label']}** pada jam **{$booking['time_label']}**\n\n"
                    ."📋 **Catatan Pra-Diagnostik Mekanik**:\n"
-                   ."_{$booking['symptoms']}_\n\n"
+                   ."_{$symptomsNotes}_\n\n"
                    .'Maklumat lengkap kerosakan dan keperluan alat ganti telah dimasukkan ke dalam sistem giliran bengkel kami. Sila bawa kenderaan anda ke **Teraju Setia Enterprise di Kluang, Johor** pada masa yang ditetapkan.'
                    ."{$jumpLinkMd}\n\n"
                    .'Terima kasih kerana memilih Teraju Setia Enterprise! Pandu cermat! 🚗💨';
@@ -1199,7 +1201,7 @@ class ChatbotController extends Controller
                    ."• **Service**: **{$appointment->service_type}**\n"
                    ."• **Scheduled Time**: **{$booking['date_label']}** at **{$booking['time_label']}**\n\n"
                    ."📋 **Mechanic Diagnostic Notes**:\n"
-                   ."_{$booking['symptoms']}_\n\n"
+                   ."_{$symptomsNotes}_\n\n"
                    .'Your appointment and detailed diagnostic brief have been registered in our workshop queue. Please bring your vehicle to **Teraju Setia Enterprise in Kluang, Johor** at your scheduled time.'
                    ."{$jumpLinkEn}\n\n"
                    .'Thank you for choosing Teraju Setia Enterprise! Drive safe! 🚗💨';

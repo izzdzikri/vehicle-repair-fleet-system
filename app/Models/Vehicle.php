@@ -1,53 +1,77 @@
 <?php
+
 namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Vehicle extends Model {
+class Vehicle extends Model
+{
+    use HasFactory;
+
     protected $fillable = [
-        'user_id','plate_number','brand','model','year','mileage'
+        'user_id', 'plate_number', 'brand', 'model', 'year', 'mileage',
     ];
-    public function owner() {
+
+    public function owner()
+    {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function isFleet(): bool {
+    public function isFleet(): bool
+    {
         return $this->owner && $this->owner->role === 'corporate';
     }
 
-    public function isIndividual(): bool {
-        return !$this->isFleet();
+    public function isIndividual(): bool
+    {
+        return ! $this->isFleet();
     }
 
-    public function getOwnerTypeLabelAttribute(): string {
+    public function getOwnerTypeLabelAttribute(): string
+    {
         return $this->isFleet() ? 'Corporate Fleet' : 'Individual Customer';
     }
 
-    public function getOwnerDisplayNameAttribute(): string {
-        if (!$this->owner) {
+    public function getOwnerDisplayNameAttribute(): string
+    {
+        if (! $this->owner) {
             return 'Unassigned Owner';
         }
         if ($this->isFleet() && $this->owner->company) {
-            return $this->owner->company->name . ' (PIC: ' . $this->owner->name . ')';
+            return $this->owner->company->name.' (PIC: '.$this->owner->name.')';
         }
+
         return $this->owner->name;
     }
 
-    public function getCompanyAttribute() {
+    public function getCompanyAttribute()
+    {
         return ($this->owner && $this->owner->company) ? $this->owner->company : null;
     }
-    public function appointments() {
+
+    public function appointments()
+    {
         return $this->hasMany(Appointment::class);
     }
-    public function jobCards() {
+
+    public function jobCards()
+    {
         return $this->hasMany(JobCard::class);
     }
-    public function serviceHistory() {
+
+    public function serviceHistory()
+    {
         return $this->hasMany(ServiceHistory::class);
     }
-    public function tripLogs() {
+
+    public function tripLogs()
+    {
         return $this->hasMany(TripLog::class);
     }
-    public function maintenanceAlerts() {
+
+    public function maintenanceAlerts()
+    {
         return $this->hasMany(MaintenanceAlert::class);
     }
 }

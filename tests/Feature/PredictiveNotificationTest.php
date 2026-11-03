@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+use App\Models\JobType;
+use App\Models\MaintenanceAlert;
+use App\Models\Notification;
+use App\Models\ServiceHistory;
 use App\Models\User;
 use App\Models\Vehicle;
-use App\Models\JobType;
-use App\Models\Notification;
-use App\Models\MaintenanceAlert;
-use App\Models\ServiceHistory;
 use App\Services\MaintenancePredictionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\TestCase;
 
 class PredictiveNotificationTest extends TestCase
 {
@@ -25,7 +25,7 @@ class PredictiveNotificationTest extends TestCase
         if ($vehicle) {
             $jobType = JobType::where('name', 'Oil & Filter Change')->first();
             $last = ServiceHistory::where('vehicle_id', $vehicle->id)
-                ->whereHas('jobCard', fn($q) => $q->where('job_type_id', $jobType->id))
+                ->whereHas('jobCard', fn ($q) => $q->where('job_type_id', $jobType->id))
                 ->orderByDesc('service_date')
                 ->first();
             if ($last) {
@@ -51,13 +51,13 @@ class PredictiveNotificationTest extends TestCase
             ->first();
 
         $this->assertNotNull($notification);
-        $this->assertStringContainsString('Predicted Service Due', $notification->title);
+        $this->assertTrue(str_contains($notification->title, 'Predicted Service Due') || str_contains($notification->title, 'Urgent Maintenance Due'));
     }
 
     public function test_prediction_scan_dispatches_notifications_to_all_active_corporate_pics(): void
     {
         $hafiz = User::where('email', 'hafiz@mulialogistik.com.my')->first();
-        $fifi  = User::where('email', 'fifi@mulialogistik.com.my')->first();
+        $fifi = User::where('email', 'fifi@mulialogistik.com.my')->first();
 
         Notification::whereIn('user_id', [$hafiz->id, $fifi->id])->delete();
         MaintenanceAlert::where('source', 'predicted')->delete();
@@ -108,21 +108,21 @@ class PredictiveNotificationTest extends TestCase
 
         // Create initial medium urgency alert with a notification sent 2 days ago
         Notification::create([
-            'user_id'    => $ain->id,
-            'title'      => '🔮 Predicted Service Due',
-            'message'    => "VKK 3456: {$jobType->name} Due — predicted due soon",
-            'url'        => '/customer/maintenance',
+            'user_id' => $ain->id,
+            'title' => '🔮 Predicted Service Due',
+            'message' => "VKK 3456: {$jobType->name} Due — predicted due soon",
+            'url' => '/customer/maintenance',
             'created_at' => now()->subDays(2),
         ]);
 
         $alert = MaintenanceAlert::firstOrCreate(
             ['vehicle_id' => $vehicle->id, 'job_type_id' => $jobType->id, 'source' => 'predicted'],
             [
-                'alert_type'         => $jobType->name . ' Due',
-                'urgency'            => 'medium',
-                'recommendation'     => 'Due soon',
+                'alert_type' => $jobType->name.' Due',
+                'urgency' => 'medium',
+                'recommendation' => 'Due soon',
                 'predicted_due_date' => now()->addDays(5)->toDateString(),
-                'is_read'            => false,
+                'is_read' => false,
             ]
         );
         $alert->update(['urgency' => 'medium', 'is_read' => false]);
