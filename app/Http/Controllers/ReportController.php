@@ -163,8 +163,8 @@ class ReportController extends Controller
         if ($startDate) {
             $startDateStr = $startDate->toDateTimeString();
             $jobStatsQuery->select('users.company_id')
-                ->selectRaw("COUNT(DISTINCT CASE WHEN job_cards.current_stage = 'completed' AND job_cards.updated_at >= '{$startDateStr}' THEN job_cards.id END) as jobs_count")
-                ->selectRaw("COALESCE(SUM(CASE WHEN job_cards.current_stage = 'completed' AND job_cards.updated_at >= '{$startDateStr}' THEN job_cards.total_cost ELSE 0 END), 0) as total_spend")
+                ->selectRaw("COUNT(DISTINCT CASE WHEN job_cards.current_stage = 'completed' AND job_cards.updated_at >= ? THEN job_cards.id END) as jobs_count", [$startDateStr])
+                ->selectRaw("COALESCE(SUM(CASE WHEN job_cards.current_stage = 'completed' AND job_cards.updated_at >= ? THEN job_cards.total_cost ELSE 0 END), 0) as total_spend", [$startDateStr])
                 ->selectRaw("COUNT(DISTINCT CASE WHEN job_cards.current_stage != 'completed' THEN job_cards.id END) as active_jobs");
         } else {
             $jobStatsQuery->select('users.company_id')

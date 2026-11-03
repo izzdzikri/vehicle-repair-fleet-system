@@ -567,11 +567,11 @@ document.addEventListener('DOMContentLoaded', function () {
         new Chart(revCtx, {
             type: 'line',
             data: {
-                labels: {!! json_encode($months) !!},
+                labels: @js($months),
                 datasets: [
                     {
                         label: 'Revenue (RM)',
-                        data: {!! json_encode($revenue) !!},
+                        data: @js($revenue),
                         borderColor: '#10B981',
                         backgroundColor: 'rgba(16, 185, 129, 0.12)',
                         borderWidth: 2.5,
@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     {
                         label: 'Work Orders',
-                        data: {!! json_encode($monthlyJobs) !!},
+                        data: @js($monthlyJobs),
                         borderColor: '#3B82F6',
                         backgroundColor: 'rgba(59, 130, 246, 0.05)',
                         borderWidth: 2,
