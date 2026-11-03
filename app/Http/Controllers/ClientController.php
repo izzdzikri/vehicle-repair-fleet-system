@@ -1,13 +1,15 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\Vehicle;
+use App\Models\AccountRequest;
 use App\Models\Appointment;
-use App\Models\ServiceHistory;
-use App\Models\MaintenanceAlert;
-use App\Models\User;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Models\MaintenanceAlert;
+use App\Models\ServiceHistory;
+use App\Models\User;
+use App\Models\Vehicle;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -15,8 +17,9 @@ use Illuminate\Support\Str;
 
 class ClientController extends Controller
 {
-    public function index() {
-        $user      = auth()->user();
+    public function index()
+    {
+        $user = auth()->user();
         $companyId = $user->company_id;
 
         // All PICs under the same company
@@ -68,33 +71,27 @@ class ClientController extends Controller
         ));
     }
 
-    public function isSecondaryPic(): bool {
-    return $this->role === 'corporate' && $this->pic_role === 'secondary';
+    public function company()
+    {
+        $user = auth()->user();
+        $companyId = $user->company_id;
+
+        $company = Company::find($companyId);
+
+        $pics = User::where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+
+        $requests = AccountRequest::where('company_id', $companyId)
+            ->with(['requester', 'targetUser'])
+            ->latest()
+            ->get();
+
+        return view('client.company', compact('company', 'pics', 'requests'));
     }
 
-    public function isPrimaryPic(): bool {
-        return $this->role === 'corporate' && $this->pic_role === 'primary';
-    }
-    
-    public function company() {
-    $user      = auth()->user();
-    $companyId = $user->company_id;
-
-    $company = \App\Models\Company::find($companyId);
-
-    $pics = \App\Models\User::where('company_id', $companyId)
-        ->orderBy('name')
-        ->get();
-
-    $requests = \App\Models\AccountRequest::where('company_id', $companyId)
-        ->with(['requester', 'targetUser'])
-        ->latest()
-        ->get();
-
-    return view('client.company', compact('company', 'pics', 'requests'));
-}
-
-    public function statement(Request $request) {
+    public function statement(Request $request)
+    {
         $user = auth()->user();
         $companyId = $user->company_id;
         $company = $companyId ? Company::find($companyId) : null;
@@ -106,7 +103,7 @@ class ClientController extends Controller
         $month = $request->input('month', now()->format('Y-m'));
 
         $historyQuery = ServiceHistory::whereIn('vehicle_id', $vehicleIds)->with(['vehicle', 'jobCard']);
-        $invoicesQuery = Invoice::whereHas('jobCard.appointment', fn($q) => $q->whereIn('user_id', $companyUserIds))
+        $invoicesQuery = Invoice::whereHas('jobCard.appointment', fn ($q) => $q->whereIn('user_id', $companyUserIds))
             ->with(['jobCard.vehicle', 'jobCard.appointment.user', 'payments']);
 
         if ($month !== 'all') {
@@ -118,7 +115,7 @@ class ClientController extends Controller
                 $historyQuery->whereBetween('service_date', [$start, $end]);
                 $invoicesQuery->whereBetween('created_at', [
                     $period->copy()->startOfMonth()->startOfDay(),
-                    $period->copy()->endOfMonth()->endOfDay()
+                    $period->copy()->endOfMonth()->endOfDay(),
                 ]);
             } catch (\Exception $e) {
                 $month = 'all';
@@ -133,24 +130,25 @@ class ClientController extends Controller
             $totalSpent = (float) $invoices->sum('total');
         }
 
-        $totalInvoiced      = (float) $invoices->sum('total');
-        $totalPaid          = (float) $invoices->sum('amount_paid');
-        $outstandingBalance = (float) $invoices->sum(fn($i) => $i->balance);
-        $totalServices      = $serviceHistory->count();
+        $totalInvoiced = (float) $invoices->sum('total');
+        $totalPaid = (float) $invoices->sum('amount_paid');
+        $outstandingBalance = (float) $invoices->sum(fn ($i) => $i->balance);
+        $totalServices = $serviceHistory->count();
 
         // Group by vehicle for summary
         $vehicleSummary = $vehicles->map(function ($vehicle) use ($serviceHistory, $invoices) {
             $vHistory = $serviceHistory->where('vehicle_id', $vehicle->id);
-            $vInvoices = $invoices->filter(fn($inv) => $inv->jobCard?->vehicle_id === $vehicle->id);
+            $vInvoices = $invoices->filter(fn ($inv) => $inv->jobCard?->vehicle_id === $vehicle->id);
             $spend = (float) $vHistory->sum('cost');
             if ($spend == 0 && $vInvoices->isNotEmpty()) {
                 $spend = (float) $vInvoices->sum('total');
             }
+
             return [
-                'vehicle'       => $vehicle,
+                'vehicle' => $vehicle,
                 'service_count' => $vHistory->count(),
-                'total_spend'   => $spend,
-                'last_service'  => $vHistory->sortByDesc('service_date')->first()?->service_date,
+                'total_spend' => $spend,
+                'last_service' => $vHistory->sortByDesc('service_date')->first()?->service_date,
             ];
         })->sortByDesc('total_spend')->values();
 
@@ -165,6 +163,7 @@ class ClientController extends Controller
                 ->setPaper('a4', 'portrait');
             $safeCompanyName = Str::slug($company?->name ?? 'Corporate-Fleet');
             $filename = "Fleet-Statement-{$safeCompanyName}-{$month}.pdf";
+
             return $pdf->download($filename);
         }
 
