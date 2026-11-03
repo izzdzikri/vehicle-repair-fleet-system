@@ -110,4 +110,14 @@ class JobCard extends Model
     {
         return $user->can('update', $this);
     }
+
+    public function getPartsCostAttribute(): float
+    {
+        return (float) $this->parts->sum(fn ($p) => $p->quantity * $p->unit_price);
+    }
+
+    public function getLabourCostAttribute(): float
+    {
+        return (float) $this->labourCharges->sum('charge');
+    }
 }

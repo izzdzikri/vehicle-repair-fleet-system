@@ -625,8 +625,8 @@
         {{-- Cost summary (updated with descriptive labels) --}}
         @if($jobCard->labourCharges->count() || $jobCard->parts->count())
         @php
-            $partsCost  = $jobCard->parts->sum(fn($p) => $p->quantity * $p->unit_price);
-            $labourCost = $jobCard->labourCharges->sum('charge');
+            $partsCost  = $jobCard->parts_cost;
+            $labourCost = $jobCard->labour_cost;
         @endphp
         <div class="mt-4 pt-3 border-t space-y-1 text-sm">
             <div class="flex justify-between text-gray-500">
