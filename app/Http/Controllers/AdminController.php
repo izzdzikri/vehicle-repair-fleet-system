@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
 
 class AdminController extends Controller
 {
@@ -183,7 +184,7 @@ class AdminController extends Controller
 
         if ($request->filled('password')) {
             $request->validate([
-                'password' => 'min:6|confirmed',
+                'password' => ['confirmed', Password::defaults()],
                 'password_confirmation' => 'required',
             ]);
             $data['password'] = Hash::make($request->password);
@@ -200,7 +201,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:100',
             'username' => 'nullable|string|max:50|unique:users',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
+            'password' => ['required', Password::defaults()],
             'role' => 'required|in:admin,staff,coordinator,corporate,individual',
             'contact_no' => 'nullable|string|max:20',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
