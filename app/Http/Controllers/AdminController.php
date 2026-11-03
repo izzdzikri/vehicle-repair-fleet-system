@@ -70,10 +70,14 @@ class AdminController extends Controller
             ? max(0, min(100, round((($totalVehicles - $vehiclesAtRisk) / $totalVehicles) * 100)))
             : 100;
 
-        // Predictive Part Demand & Off-Season Savings (Admin Only)
+        // Predictive Part Demand & Off-Season Savings (Admin Only, cached for 30 minutes)
         $predictionService = app(MaintenancePredictionService::class);
-        $demandForecast = $predictionService->getDemandForecast(60);
-        $offSeasonSavings = $predictionService->getOffSeasonSavingsAnalysis($demandForecast);
+        [$demandForecast, $offSeasonSavings] = Cache::remember('admin_demand_forecast_and_savings_60', 1800, function () use ($predictionService) {
+            $forecast = $predictionService->getDemandForecast(60);
+            $savings = $predictionService->getOffSeasonSavingsAnalysis($forecast);
+
+            return [$forecast, $savings];
+        });
 
         return view('admin.dashboard', [
             'totalVehicles' => $totalVehicles,

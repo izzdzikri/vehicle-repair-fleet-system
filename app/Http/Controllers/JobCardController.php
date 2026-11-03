@@ -14,6 +14,7 @@ use App\Models\SparePart;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -284,6 +285,10 @@ class JobCardController extends Controller
                     'cost' => $jobCard->total_cost,
                 ]
             );
+        }
+
+        if ($targetStage === 'completed' || $currentStage === 'completed') {
+            Cache::forget('admin_demand_forecast_and_savings_60');
         }
 
         if ($request->wantsJson()) {

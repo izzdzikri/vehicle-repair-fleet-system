@@ -72,7 +72,7 @@ class MaintenancePredictionService
         $this->observedCache = [];
         $touched = 0;
 
-        Vehicle::with('owner')->chunk(50, function ($vehicles) use ($intervalTypes, &$touched) {
+        Vehicle::has('serviceHistory')->with('owner')->chunk(100, function ($vehicles) use ($intervalTypes, &$touched) {
             foreach ($vehicles as $vehicle) {
                 $dailyRate = $this->estimateDailyKm($vehicle);
 
@@ -738,7 +738,7 @@ class MaintenancePredictionService
     {
         $now = now()->startOfDay();
 
-        $vehicles = Vehicle::with(['owner.company'])->get();
+        $vehicles = Vehicle::has('serviceHistory')->with(['owner.company'])->get();
         $intervalTypes = JobType::whereNotNull('interval_km')->orWhereNotNull('interval_months')->get();
 
         $servicesDue = [];
@@ -748,14 +748,41 @@ class MaintenancePredictionService
 
         $allParts = SparePart::all()->keyBy('id');
 
+        // Precompute typical parts per job type once to eliminate N+1 queries in loop
+        $typicalPartIdsByJobType = [];
+        foreach ($intervalTypes as $jt) {
+            $typicalPartIds = JobCardPart::whereHas('jobCard', fn ($q) => $q->where('job_type_id', $jt->id))
+                ->pluck('spare_part_id')
+                ->countBy()
+                ->sortDesc()
+                ->keys()
+                ->take(2);
+
+            if ($typicalPartIds->isEmpty()) {
+                $fallbackPart = $allParts->first(fn ($p) => stripos($p->category, $jt->category) !== false || stripos($p->name, $jt->name) !== false);
+                if ($fallbackPart) {
+                    $typicalPartIds = collect([$fallbackPart->id]);
+                }
+            }
+            $typicalPartIdsByJobType[$jt->id] = $typicalPartIds;
+        }
+
+        // Fetch latest service histories for vehicles in a single joined query
+        $vehicleIds = $vehicles->pluck('id');
+        $serviceHistories = $vehicleIds->isEmpty()
+            ? collect()
+            : ServiceHistory::whereIn('service_history.vehicle_id', $vehicleIds)
+                ->join('job_cards', 'job_cards.id', '=', 'service_history.job_card_id')
+                ->select('service_history.id', 'service_history.vehicle_id', 'service_history.service_date', 'job_cards.job_type_id')
+                ->orderByDesc('service_history.service_date')
+                ->get()
+                ->groupBy(fn ($item) => $item->vehicle_id.'_'.$item->job_type_id);
+
         foreach ($vehicles as $vehicle) {
             $dailyRate = $this->estimateDailyKm($vehicle);
 
             foreach ($intervalTypes as $jobType) {
-                $lastService = ServiceHistory::where('vehicle_id', $vehicle->id)
-                    ->whereHas('jobCard', fn ($q) => $q->where('job_type_id', $jobType->id))
-                    ->orderByDesc('service_date')
-                    ->first();
+                $lastService = $serviceHistories->get($vehicle->id.'_'.$jobType->id)?->first();
 
                 if (! $lastService) {
                     continue;
@@ -809,19 +836,7 @@ class MaintenancePredictionService
                     $companySpend[$compKey]['total_cost'] += (float) $jobType->base_price;
 
                     // Typical spare parts consumed for this job type
-                    $typicalPartIds = JobCardPart::whereHas('jobCard', fn ($q) => $q->where('job_type_id', $jobType->id))
-                        ->pluck('spare_part_id')
-                        ->countBy()
-                        ->sortDesc()
-                        ->keys()
-                        ->take(2);
-
-                    if ($typicalPartIds->isEmpty()) {
-                        $fallbackPart = $allParts->first(fn ($p) => stripos($p->category, $jobType->category) !== false || stripos($p->name, $jobType->name) !== false);
-                        if ($fallbackPart) {
-                            $typicalPartIds = collect([$fallbackPart->id]);
-                        }
-                    }
+                    $typicalPartIds = $typicalPartIdsByJobType[$jobType->id] ?? collect();
 
                     foreach ($typicalPartIds as $pid) {
                         if (isset($allParts[$pid])) {
