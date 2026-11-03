@@ -208,6 +208,8 @@ class InvoiceController extends Controller
      */
     public function resend(Invoice $invoice)
     {
+        abort_unless(auth()->user()->hasPermission('invoice.manage'), 403, 'You do not have permission to resend invoices.');
+
         $invoice->load('jobCard.appointment.user');
         $email = $invoice->jobCard->appointment->user->email ?? null;
 
@@ -220,7 +222,9 @@ class InvoiceController extends Controller
 
             return back()->with('success', "Invoice emailed to {$email}.");
         } catch (\Throwable $e) {
-            return back()->with('error', 'Failed to send email: '.$e->getMessage());
+            Log::error('Invoice email resend failed: '.$e->getMessage(), ['invoice_id' => $invoice->id]);
+
+            return back()->with('error', 'Unable to send invoice email at this time. Please check the mail server configuration.');
         }
     }
 
