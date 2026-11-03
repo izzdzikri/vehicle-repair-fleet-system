@@ -179,20 +179,30 @@ class InvoiceController extends Controller
             'paid_at' => 'nullable|date',
         ]);
 
-        if ($request->amount > $invoice->balance) {
-            return back()->with('error', 'Payment exceeds the outstanding balance.');
+        try {
+            DB::transaction(function () use ($invoice, $request) {
+                $lockedInvoice = Invoice::where('id', $invoice->id)->lockForUpdate()->firstOrFail();
+
+                if ($request->amount > $lockedInvoice->balance) {
+                    throw new \InvalidArgumentException('Payment exceeds the outstanding balance.');
+                }
+
+                Payment::create([
+                    'invoice_id' => $lockedInvoice->id,
+                    'amount' => $request->amount,
+                    'method' => $request->method,
+                    'reference_no' => $request->reference_no,
+                    'paid_at' => $request->paid_at ?? now(),
+                    'recorded_by' => auth()->id(),
+                ]);
+
+                $lockedInvoice->recalculate();
+            });
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        Payment::create([
-            'invoice_id' => $invoice->id,
-            'amount' => $request->amount,
-            'method' => $request->method,
-            'reference_no' => $request->reference_no,
-            'paid_at' => $request->paid_at ?? now(),
-            'recorded_by' => auth()->id(),
-        ]);
-
-        $invoice->recalculate();
+        $invoice->refresh();
         $this->sendInvoiceEmail($invoice);
 
         ActivityLog::record(
