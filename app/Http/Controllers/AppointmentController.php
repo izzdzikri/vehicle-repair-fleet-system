@@ -102,7 +102,7 @@ class AppointmentController extends Controller
     public function queue()
     {
         $appointments = Appointment::with(['vehicle', 'user', 'jobCard.staff'])
-            ->whereDate('date', today())
+            ->where('date', today()->toDateString())
             ->where('status', 'confirmed')
             ->get()
             ->sortBy(function ($apt) {

@@ -84,7 +84,7 @@ class AdminController extends Controller
             'totalUsers' => User::count(),
             'pendingJobs' => JobCard::where('current_stage', '!=', 'completed')->count(),
             'lowStock' => SparePart::whereColumn('stock', '<=', 'min_stock')->count(),
-            'todayAppointments' => Appointment::whereDate('date', today())->count(),
+            'todayAppointments' => Appointment::where('date', today()->toDateString())->count(),
             'pendingAppts' => Appointment::where('status', 'pending')->count(),
             'staleJobs' => JobCard::where('current_stage', '!=', 'completed')
                 ->where('updated_at', '<', now()->subHours(3))

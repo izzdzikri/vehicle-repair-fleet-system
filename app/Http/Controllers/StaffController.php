@@ -16,7 +16,7 @@ class StaffController extends Controller
             ->get();
 
         $todayAppointments = Appointment::with(['vehicle', 'user'])
-            ->whereDate('date', today())
+            ->where('date', today()->toDateString())
             ->where('status', 'confirmed')
             ->orderBy('time')
             ->get();

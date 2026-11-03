@@ -39,25 +39,30 @@ class CoordinatorController extends Controller
 {
     public function dashboard()
     {
-        $activeJobs = JobCard::with(['vehicle', 'staff', 'jobType'])
+        $urgentJobs = JobCard::with(['vehicle.owner.company', 'staff', 'jobType'])
             ->where('current_stage', '!=', 'completed')
             ->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')
+            ->take(8)
             ->get();
 
-        $staleCount = $activeJobs->filter(fn ($j) => $j->is_stale)->count();
-        $overdueCount = $activeJobs->filter(fn ($j) => $j->estimated_completion && $j->estimated_completion->isPast())->count();
+        $counts = JobCard::where('current_stage', '!=', 'completed')
+            ->selectRaw('
+                count(*) as total_active,
+                sum(case when updated_at < ? then 1 else 0 end) as stale_count,
+                sum(case when estimated_completion is not null and estimated_completion < ? then 1 else 0 end) as overdue_count
+            ', [now()->subHours(3), now()])->first();
 
-        $todayAppointments = Appointment::whereDate('date', today())
+        $todayAppointments = Appointment::where('date', today()->toDateString())
             ->whereIn('status', ['pending', 'confirmed'])
             ->count();
 
         $lowStockCount = SparePart::whereColumn('stock', '<=', 'min_stock')->count();
 
         return view('coordinator.dashboard', [
-            'urgentJobs' => $activeJobs->take(8),
-            'totalActive' => $activeJobs->count(),
-            'staleCount' => $staleCount,
-            'overdueCount' => $overdueCount,
+            'urgentJobs' => $urgentJobs,
+            'totalActive' => (int) ($counts->total_active ?? 0),
+            'staleCount' => (int) ($counts->stale_count ?? 0),
+            'overdueCount' => (int) ($counts->overdue_count ?? 0),
             'todayAppointments' => $todayAppointments,
             'lowStockCount' => $lowStockCount,
         ]);
