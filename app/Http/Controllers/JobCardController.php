@@ -323,34 +323,42 @@ class JobCardController extends Controller
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $part = SparePart::findOrFail($request->spare_part_id);
+        try {
+            $deductedPart = DB::transaction(function () use ($jobCard, $request) {
+                $lockedPart = SparePart::where('id', $request->spare_part_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-        if ($part->stock < $request->quantity) {
-            return back()->with('error', "Not enough stock. Available: {$part->stock}");
+                if ($lockedPart->stock < $request->quantity) {
+                    throw new \InvalidArgumentException("Not enough stock. Available: {$lockedPart->stock}");
+                }
+
+                $lockedPart->decrement('stock', $request->quantity);
+
+                JobCardPart::create([
+                    'job_card_id' => $jobCard->id,
+                    'spare_part_id' => $lockedPart->id,
+                    'quantity' => $request->quantity,
+                    'unit_price' => $lockedPart->unit_price,
+                ]);
+
+                $partsCost = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
+                $labourCost = $jobCard->labourCharges()->sum('charge');
+                $jobCard->update(['total_cost' => $partsCost + $labourCost]);
+
+                ActivityLog::record(
+                    'job_card.part_added',
+                    "Added {$request->quantity}x {$lockedPart->name} to Job #{$jobCard->id}.",
+                    $jobCard
+                );
+
+                return $lockedPart;
+            });
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        DB::transaction(function () use ($jobCard, $part, $request) {
-            $part->decrement('stock', $request->quantity);
-
-            JobCardPart::create([
-                'job_card_id' => $jobCard->id,
-                'spare_part_id' => $part->id,
-                'quantity' => $request->quantity,
-                'unit_price' => $part->unit_price,
-            ]);
-
-            $partsCost = $jobCard->parts()->sum(DB::raw('quantity * unit_price'));
-            $labourCost = $jobCard->labourCharges()->sum('charge');
-            $jobCard->update(['total_cost' => $partsCost + $labourCost]);
-
-            ActivityLog::record(
-                'job_card.part_added',
-                "Added {$request->quantity}x {$part->name} to Job #{$jobCard->id}.",
-                $jobCard
-            );
-        });
-
-        return back()->with('success', "Added {$request->quantity}x {$part->name}. Stock deducted: {$part->fresh()->stock} remaining.");
+        return back()->with('success', "Added {$request->quantity}x {$deductedPart->name}. Stock deducted: {$deductedPart->fresh()->stock} remaining.");
     }
 
     public function removePart(Request $request, JobCard $jobCard, JobCardPart $jobCardPart)
@@ -365,8 +373,13 @@ class JobCardController extends Controller
         $qty = $jobCardPart->quantity;
 
         DB::transaction(function () use ($jobCard, $jobCardPart, $partName, $qty) {
-            if ($jobCardPart->sparePart) {
-                $jobCardPart->sparePart->increment('stock', $jobCardPart->quantity);
+            if ($jobCardPart->spare_part_id) {
+                $lockedPart = SparePart::where('id', $jobCardPart->spare_part_id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($lockedPart) {
+                    $lockedPart->increment('stock', $qty);
+                }
             }
 
             $jobCardPart->delete();
