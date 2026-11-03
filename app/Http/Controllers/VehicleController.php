@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Invoice;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\MaintenancePredictionService;
@@ -170,6 +171,14 @@ class VehicleController extends Controller
 
         if (auth()->user()->role === 'corporate' && auth()->user()->isSecondaryPic()) {
             return back()->with('error', 'Secondary PIC (Viewer) cannot delete vehicles. Contact your Primary PIC.');
+        }
+
+        if ($vehicle->jobCards()->where('current_stage', '!=', 'completed')->exists()) {
+            return back()->with('error', 'Cannot delete vehicle with active job cards in progress.');
+        }
+
+        if (Invoice::whereHas('jobCard', fn ($q) => $q->where('vehicle_id', $vehicle->id))->where('status', '!=', 'paid')->exists()) {
+            return back()->with('error', 'Cannot delete vehicle with outstanding unpaid invoices.');
         }
 
         $vehicle->delete();

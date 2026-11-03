@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\Appointment;
 use App\Models\Company;
+use App\Models\Invoice;
 use App\Models\JobCard;
 use App\Models\JobType;
 use App\Models\MaintenanceAlert;
@@ -272,6 +273,14 @@ class AdminController extends Controller
             if ($user->isLastActivePrimaryPicOfCompany()) {
                 return back()->with('error', 'Cannot delete — this is the last active Primary PIC for '.($user->company->name ?? 'this company').'. Add a new Primary PIC first.');
             }
+        }
+
+        $userVehicleIds = Vehicle::where('user_id', $user->id)->pluck('id');
+        if (JobCard::whereIn('vehicle_id', $userVehicleIds)->where('current_stage', '!=', 'completed')->exists()) {
+            return back()->with('error', 'Cannot delete user with vehicles currently in repair.');
+        }
+        if (Invoice::whereHas('jobCard.vehicle', fn ($q) => $q->where('user_id', $user->id))->where('status', '!=', 'paid')->exists()) {
+            return back()->with('error', 'Cannot delete user with outstanding unpaid invoices.');
         }
 
         ActivityLog::record('user.deleted', "Deleted user: {$user->name} ({$user->email})", $user);
