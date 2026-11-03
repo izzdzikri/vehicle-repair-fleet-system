@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -13,11 +14,13 @@ class Payment extends Model
         'paid_at' => 'datetime',
     ];
 
-    public function invoice() {
+    public function invoice()
+    {
         return $this->belongsTo(Invoice::class);
     }
 
-    public function recorder() {
+    public function recorder()
+    {
         return $this->belongsTo(User::class, 'recorded_by');
     }
 }

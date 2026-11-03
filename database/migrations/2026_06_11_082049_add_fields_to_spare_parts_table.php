@@ -1,10 +1,13 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::table('spare_parts', function (Blueprint $table) {
             $table->string('category', 50)->default('general')->after('name');
             $table->string('brand', 50)->nullable()->after('category');
@@ -16,11 +19,13 @@ return new class extends Migration {
             $table->boolean('is_special_order')->default(false)->after('supplier_contact');
         });
     }
-    public function down(): void {
+
+    public function down(): void
+    {
         Schema::table('spare_parts', function (Blueprint $table) {
             $table->dropColumn([
-                'category','brand','max_stock','expiry_date',
-                'manufacture_date','supplier_name','supplier_contact','is_special_order'
+                'category', 'brand', 'max_stock', 'expiry_date',
+                'manufacture_date', 'supplier_name', 'supplier_contact', 'is_special_order',
             ]);
         });
     }

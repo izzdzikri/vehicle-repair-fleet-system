@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,8 @@ class Supplier extends Model
         'name', 'contact_person', 'phone', 'email', 'address', 'notes',
     ];
 
-    public function purchaseOrders() {
+    public function purchaseOrders()
+    {
         return $this->hasMany(PurchaseOrder::class);
     }
 }

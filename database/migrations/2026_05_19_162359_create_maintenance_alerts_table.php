@@ -6,17 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-public function up(): void
-{
-    Schema::create('maintenance_alerts', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('vehicle_id')->constrained()->cascadeOnDelete();
-        $table->string('alert_type', 100);
-        $table->enum('urgency', ['low','medium','high'])->default('low');
-        $table->text('recommendation');
-        $table->boolean('is_read')->default(false);
-        $table->timestamps();
-    });
-}
-public function down(): void { Schema::dropIfExists('maintenance_alerts'); }
+    public function up(): void
+    {
+        Schema::create('maintenance_alerts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('vehicle_id')->constrained()->cascadeOnDelete();
+            $table->string('alert_type', 100);
+            $table->enum('urgency', ['low', 'medium', 'high'])->default('low');
+            $table->text('recommendation');
+            $table->boolean('is_read')->default(false);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('maintenance_alerts');
+    }
 };

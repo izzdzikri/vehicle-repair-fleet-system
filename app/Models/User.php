@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,10 +14,10 @@ class User extends Authenticatable
      * Staff sub-roles (a staff member has exactly one, purely for display/labeling).
      */
     public const STAFF_ROLES = [
-        'mechanic'          => 'Mechanic',
-        'accountant'        => 'Accountant',
+        'mechanic' => 'Mechanic',
+        'accountant' => 'Accountant',
         'inventory_manager' => 'Inventory Manager',
-        'front_desk'        => 'Front Desk / Receiving',
+        'front_desk' => 'Front Desk / Receiving',
     ];
 
     /**
@@ -25,10 +26,10 @@ class User extends Authenticatable
      * Admins implicitly have every permission (see hasPermission()).
      */
     public const PERMISSIONS = [
-        'inventory.manage'      => 'Manage Inventory (add/edit/delete parts & stock)',
-        'pricing.manage'        => 'Manage Pricing (job types & part prices)',
-        'invoice.manage'        => 'Generate Invoices & Record Payments',
-        'job_cards.manage_all'  => 'Edit Any Job Card (not just their own assigned jobs)',
+        'inventory.manage' => 'Manage Inventory (add/edit/delete parts & stock)',
+        'pricing.manage' => 'Manage Pricing (job types & part prices)',
+        'invoice.manage' => 'Generate Invoices & Record Payments',
+        'job_cards.manage_all' => 'Edit Any Job Card (not just their own assigned jobs)',
     ];
 
     protected $fillable = [
@@ -64,45 +65,52 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at'         => 'datetime',
-        'password'                  => 'hashed',
-        'specialties'                => 'array',
-        'permissions'                => 'array',
-        'hire_date'                  => 'date',
-        'two_factor_secret'          => 'encrypted',
-        'two_factor_recovery_codes'  => 'encrypted:array',
-        'two_factor_confirmed_at'    => 'datetime',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'specialties' => 'array',
+        'permissions' => 'array',
+        'hire_date' => 'date',
+        'two_factor_secret' => 'encrypted',
+        'two_factor_recovery_codes' => 'encrypted:array',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     // ----------------------------------------------------------------
     // Relationships
     // ----------------------------------------------------------------
 
-    public function company() {
+    public function company()
+    {
         return $this->belongsTo(Company::class);
     }
 
-    public function vehicles() {
+    public function vehicles()
+    {
         return $this->hasMany(Vehicle::class);
     }
 
-    public function appointments() {
+    public function appointments()
+    {
         return $this->hasMany(Appointment::class);
     }
 
-    public function jobCards() {
+    public function jobCards()
+    {
         return $this->hasMany(JobCard::class, 'staff_id');
     }
 
-    public function attendances() {
+    public function attendances()
+    {
         return $this->hasMany(StaffAttendance::class, 'staff_id');
     }
 
-    public function leaveRequests() {
+    public function leaveRequests()
+    {
         return $this->hasMany(LeaveRequest::class, 'staff_id');
     }
 
-    public function salaryPayments() {
+    public function salaryPayments()
+    {
         return $this->hasMany(SalaryPayment::class, 'staff_id');
     }
 
@@ -110,11 +118,13 @@ class User extends Authenticatable
     // Avatar
     // ----------------------------------------------------------------
 
-    public function getAvatarUrlAttribute(): string {
-        if ($this->avatar && file_exists(storage_path('app/public/' . $this->avatar))) {
-            return asset('storage/' . $this->avatar);
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar && file_exists(storage_path('app/public/'.$this->avatar))) {
+            return asset('storage/'.$this->avatar);
         }
         $name = urlencode($this->name ?? 'User');
+
         return "https://ui-avatars.com/api/?name={$name}&background=0f172a&color=fff&size=128&bold=true";
     }
 
@@ -122,19 +132,23 @@ class User extends Authenticatable
     // Role helpers
     // ----------------------------------------------------------------
 
-    public function isAdmin(): bool {
+    public function isAdmin(): bool
+    {
         return $this->role === 'admin';
     }
 
-    public function isCoordinator(): bool {
+    public function isCoordinator(): bool
+    {
         return $this->role === 'coordinator';
     }
 
-    public function isStaff(): bool {
+    public function isStaff(): bool
+    {
         return $this->role === 'staff';
     }
 
-    public function isMechanic(): bool {
+    public function isMechanic(): bool
+    {
         return $this->role === 'staff' && $this->staff_role === 'mechanic';
     }
 
@@ -142,21 +156,30 @@ class User extends Authenticatable
     // PIC role helpers
     // ----------------------------------------------------------------
 
-    public function isPrimaryPic(): bool {
+    public function isPrimaryPic(): bool
+    {
         return $this->role === 'corporate' && $this->pic_role === 'primary';
     }
 
-    public function isSecondaryPic(): bool {
+    public function isSecondaryPic(): bool
+    {
         return $this->role === 'corporate' && $this->pic_role === 'secondary';
     }
 
-    public function canBook(): bool {
-        if ($this->status === 'inactive') return false;
-        if ($this->isSecondaryPic()) return false;
+    public function canBook(): bool
+    {
+        if ($this->status === 'inactive') {
+            return false;
+        }
+        if ($this->isSecondaryPic()) {
+            return false;
+        }
+
         return true;
     }
 
-    public function canManage(): bool {
+    public function canManage(): bool
+    {
         return $this->isPrimaryPic() || in_array($this->role, ['admin', 'staff']);
     }
 
@@ -167,8 +190,11 @@ class User extends Authenticatable
      * approval, direct admin deactivate, and direct admin delete — so
      * a company is never silently left with no one on the account.
      */
-    public function isLastActivePicOfCompany(): bool {
-        if ($this->role !== 'corporate' || !$this->company_id) return false;
+    public function isLastActivePicOfCompany(): bool
+    {
+        if ($this->role !== 'corporate' || ! $this->company_id) {
+            return false;
+        }
 
         return static::where('company_id', $this->company_id)
             ->where('role', 'corporate')
@@ -185,8 +211,11 @@ class User extends Authenticatable
      * users, so this case needs its own guard on top of
      * isLastActivePicOfCompany().
      */
-    public function isLastActivePrimaryPicOfCompany(): bool {
-        if (!$this->isPrimaryPic() || !$this->company_id) return false;
+    public function isLastActivePrimaryPicOfCompany(): bool
+    {
+        if (! $this->isPrimaryPic() || ! $this->company_id) {
+            return false;
+        }
 
         return static::where('company_id', $this->company_id)
             ->where('role', 'corporate')
@@ -208,13 +237,20 @@ class User extends Authenticatable
      * that role's job — see CoordinatorController's class-level
      * doc-comment for the full design rationale.
      */
-    public function hasPermission(string $permission): bool {
-        if ($this->role === 'admin') return true;
-        if ($this->role === 'coordinator' && $permission === 'inventory.manage') return true;
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->role === 'admin') {
+            return true;
+        }
+        if ($this->role === 'coordinator' && $permission === 'inventory.manage') {
+            return true;
+        }
+
         return in_array($permission, $this->permissions ?? [], true);
     }
 
-    public function getStaffRoleLabelAttribute(): ?string {
+    public function getStaffRoleLabelAttribute(): ?string
+    {
         return self::STAFF_ROLES[$this->staff_role] ?? null;
     }
 
@@ -227,7 +263,8 @@ class User extends Authenticatable
      * user mid-setup (secret generated but not yet confirmed) does not
      * count as having 2FA enabled, and login does not challenge them.
      */
-    public function hasTwoFactorEnabled(): bool {
-        return !is_null($this->two_factor_confirmed_at);
+    public function hasTwoFactorEnabled(): bool
+    {
+        return ! is_null($this->two_factor_confirmed_at);
     }
 }

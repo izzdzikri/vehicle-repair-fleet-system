@@ -10,11 +10,12 @@ use Illuminate\Support\Facades\Schema;
 class AppStatus extends Command
 {
     protected $signature = 'app:status';
+
     protected $description = 'Check backend health, database connections, migrations, and core dataset counts';
 
     public function handle(): int
     {
-        $this->info("=== Teraju Fleet System: Backend Health & Status ===");
+        $this->info('=== Teraju Fleet System: Backend Health & Status ===');
         $this->newLine();
 
         // 1. Environment Info
@@ -42,12 +43,13 @@ class AppStatus extends Command
             $this->info("✓ Database Connected: [{$driver}] Database: '{$database}'");
             $dbConnected = true;
         } catch (\Throwable $e) {
-            $this->error("✗ Database Connection Failed: " . $e->getMessage());
+            $this->error('✗ Database Connection Failed: '.$e->getMessage());
         }
         $this->newLine();
 
-        if (!$dbConnected) {
-            $this->warn("Tip: If using podman/docker for MariaDB, run: podman start teraju-db");
+        if (! $dbConnected) {
+            $this->warn('Tip: If using podman/docker for MariaDB, run: podman start teraju-db');
+
             return 1;
         }
 
@@ -70,7 +72,7 @@ class AppStatus extends Command
             ];
             $this->table(['Core Entity', 'Record Count'], $counts);
         } else {
-            $this->warn("Users table not found. Have migrations been executed? Run: php artisan migrate");
+            $this->warn('Users table not found. Have migrations been executed? Run: php artisan migrate');
         }
         $this->newLine();
 
@@ -78,13 +80,14 @@ class AppStatus extends Command
         $publicStorage = public_path('storage');
         $storageLinked = File::exists($publicStorage) || is_link($publicStorage);
         if ($storageLinked) {
-            $this->info("✓ Storage Link: public/storage exists");
+            $this->info('✓ Storage Link: public/storage exists');
         } else {
-            $this->warn("! Storage Link: public/storage is missing. Run: php artisan storage:link");
+            $this->warn('! Storage Link: public/storage is missing. Run: php artisan storage:link');
         }
 
         $this->newLine();
-        $this->info("Backend status check complete.");
+        $this->info('Backend status check complete.');
+
         return 0;
     }
 }

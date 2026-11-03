@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+use App\Models\TripLog;
 use App\Models\User;
 use App\Models\Vehicle;
-use App\Models\TripLog;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\TestCase;
 
 class TripLogTest extends TestCase
 {
@@ -29,20 +29,20 @@ class TripLogTest extends TestCase
         $initialMileage = $vehicle->mileage;
 
         $response = $this->actingAs($ain)->post('/customer/trip-logs', [
-            'vehicle_id'     => $vehicle->id,
-            'trip_date'      => now()->toDateString(),
-            'distance_km'    => 55.5,
-            'terrain_type'   => 'urban',
-            'notes'          => 'Office round trip',
+            'vehicle_id' => $vehicle->id,
+            'trip_date' => now()->toDateString(),
+            'distance_km' => 55.5,
+            'terrain_type' => 'urban',
+            'notes' => 'Office round trip',
             'update_mileage' => 1,
         ]);
 
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('trip_logs', [
-            'vehicle_id'   => $vehicle->id,
-            'distance_km'  => 55.5,
+            'vehicle_id' => $vehicle->id,
+            'distance_km' => 55.5,
             'terrain_type' => 'urban',
-            'notes'        => 'Office round trip',
+            'notes' => 'Office round trip',
         ]);
 
         $this->assertEquals($initialMileage + 56, $vehicle->fresh()->mileage);
@@ -54,9 +54,9 @@ class TripLogTest extends TestCase
         $otherVehicle = Vehicle::where('plate_number', 'JQP 1122')->first(); // Owned by Mulia Logistik
 
         $response = $this->actingAs($ain)->post('/customer/trip-logs', [
-            'vehicle_id'   => $otherVehicle->id,
-            'trip_date'    => now()->toDateString(),
-            'distance_km'  => 30.0,
+            'vehicle_id' => $otherVehicle->id,
+            'trip_date' => now()->toDateString(),
+            'distance_km' => 30.0,
             'terrain_type' => 'urban',
         ]);
 
@@ -69,17 +69,17 @@ class TripLogTest extends TestCase
         $fifiVehicle = Vehicle::where('plate_number', 'JDE 7890')->first(); // Fifi is secondary PIC in same company
 
         $response = $this->actingAs($hafiz)->post('/client/trip-logs', [
-            'vehicle_id'   => $fifiVehicle->id,
-            'trip_date'    => now()->toDateString(),
-            'distance_km'  => 80.0,
+            'vehicle_id' => $fifiVehicle->id,
+            'trip_date' => now()->toDateString(),
+            'distance_km' => 80.0,
             'terrain_type' => 'highway',
-            'notes'        => 'JB to Kulai branch transfer',
+            'notes' => 'JB to Kulai branch transfer',
         ]);
 
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('trip_logs', [
-            'vehicle_id'   => $fifiVehicle->id,
-            'distance_km'  => 80.0,
+            'vehicle_id' => $fifiVehicle->id,
+            'distance_km' => 80.0,
             'terrain_type' => 'highway',
         ]);
     }
@@ -91,9 +91,9 @@ class TripLogTest extends TestCase
 
         // Attempt to store
         $storeResponse = $this->actingAs($fifi)->post('/client/trip-logs', [
-            'vehicle_id'   => $vehicle->id,
-            'trip_date'    => now()->toDateString(),
-            'distance_km'  => 50.0,
+            'vehicle_id' => $vehicle->id,
+            'trip_date' => now()->toDateString(),
+            'distance_km' => 50.0,
             'terrain_type' => 'urban',
         ]);
         $storeResponse->assertSessionHas('error');

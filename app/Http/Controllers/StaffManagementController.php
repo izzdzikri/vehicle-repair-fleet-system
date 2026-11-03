@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Mail\StaffPerformanceMail;
 use App\Models\ActivityLog;
 use App\Models\JobCard;
 use App\Models\JobFeedback;
+use App\Models\JobType;
 use App\Models\LeaveRequest;
 use App\Models\Notification;
 use App\Models\SalaryPayment;
@@ -27,18 +29,19 @@ class StaffManagementController extends Controller
      * Details every staff position, what they do, their mechanic specialties,
      * monthly payroll, active workloads, and contact particulars.
      */
-    public function roster() {
+    public function roster()
+    {
         $staffList = User::whereIn('role', ['admin', 'coordinator', 'staff'])
             ->where('status', 'active')
             ->withCount([
-                'jobCards as active_jobs' => fn($q) => $q->where('current_stage', '!=', 'completed'),
-                'jobCards as completed_jobs' => fn($q) => $q->where('current_stage', 'completed'),
+                'jobCards as active_jobs' => fn ($q) => $q->where('current_stage', '!=', 'completed'),
+                'jobCards as completed_jobs' => fn ($q) => $q->where('current_stage', 'completed'),
             ])
             ->orderByRaw("CASE role WHEN 'admin' THEN 1 WHEN 'coordinator' THEN 2 WHEN 'staff' THEN 3 ELSE 4 END")
             ->orderBy('name')
             ->get();
 
-        $jobTypes = \App\Models\JobType::all()->keyBy('id');
+        $jobTypes = JobType::all()->keyBy('id');
 
         // Job description dictionary describing what each position does
         $dutiesMap = [
@@ -54,11 +57,11 @@ class StaffManagementController extends Controller
 
         foreach ($staffList as $s) {
             $specIds = is_array($s->specialties) ? $s->specialties : [];
-            $s->specialty_models = collect($specIds)->map(fn($id) => $jobTypes->get($id))->filter();
+            $s->specialty_models = collect($specIds)->map(fn ($id) => $jobTypes->get($id))->filter();
             $s->duties = $dutiesMap[$s->staff_role] ?? ($s->role === 'coordinator' ? 'Service desk reception, scheduling, and customer communication.' : 'Vehicle inspection, fault diagnosis, and mechanical repairs.');
         }
 
-        $totalPayroll = $staffList->whereIn('role', ['coordinator', 'staff'])->sum(fn($s) => (float)($s->monthly_salary ?? 0));
+        $totalPayroll = $staffList->whereIn('role', ['coordinator', 'staff'])->sum(fn ($s) => (float) ($s->monthly_salary ?? 0));
         $mechanicsCount = $staffList->where('role', 'staff')->count();
         $coordinatorsCount = $staffList->where('role', 'coordinator')->count();
 
@@ -69,7 +72,8 @@ class StaffManagementController extends Controller
     // Attendance
     // ------------------------------------------------------------
 
-    public function attendance(Request $request) {
+    public function attendance(Request $request)
+    {
         $user = auth()->user();
 
         if ($user->role === 'admin') {
@@ -109,10 +113,10 @@ class StaffManagementController extends Controller
                 }
 
                 return (object) [
-                    'staff'        => $staff,
-                    'record'       => $record,
+                    'staff' => $staff,
+                    'record' => $record,
                     'hours_worked' => $hoursWorked,
-                    'is_late'      => $isLate,
+                    'is_late' => $isLate,
                 ];
             });
 
@@ -147,7 +151,7 @@ class StaffManagementController extends Controller
             ->orderByDesc('date')
             ->take(30)
             ->get()
-            ->map(function($h) {
+            ->map(function ($h) {
                 $duration = '—';
                 if ($h->clock_in && $h->clock_out) {
                     $in = Carbon::parse($h->clock_in);
@@ -158,13 +162,15 @@ class StaffManagementController extends Controller
                     $duration = "{$hours}h {$mins}m";
                 }
                 $h->duration = $duration;
+
                 return $h;
             });
 
         return view('staff-management.attendance-self', compact('today', 'history', 'todayHours'));
     }
 
-    public function clockIn() {
+    public function clockIn()
+    {
         $user = auth()->user();
 
         $record = StaffAttendance::firstOrCreate(
@@ -174,16 +180,17 @@ class StaffManagementController extends Controller
 
         if ($record->wasRecentlyCreated) {
             $record->update(['clock_in' => now()->format('H:i:s')]);
-        } elseif (!$record->clock_in && !in_array($record->status, ['leave', 'absent'])) {
+        } elseif (! $record->clock_in && ! in_array($record->status, ['leave', 'absent'])) {
             $record->update(['clock_in' => now()->format('H:i:s'), 'status' => 'present']);
         }
 
-        ActivityLog::record('attendance.clock_in', "{$user->name} clocked in at " . now()->format('h:i A'), $record);
+        ActivityLog::record('attendance.clock_in', "{$user->name} clocked in at ".now()->format('h:i A'), $record);
 
-        return back()->with('success', 'Clocked in successfully at ' . now()->format('h:i A'));
+        return back()->with('success', 'Clocked in successfully at '.now()->format('h:i A'));
     }
 
-    public function clockOut() {
+    public function clockOut()
+    {
         $user = auth()->user();
 
         $record = StaffAttendance::where('staff_id', $user->id)
@@ -192,23 +199,24 @@ class StaffManagementController extends Controller
 
         if ($record) {
             $record->update(['clock_out' => now()->format('H:i:s')]);
-            ActivityLog::record('attendance.clock_out', "{$user->name} clocked out at " . now()->format('h:i A'), $record);
+            ActivityLog::record('attendance.clock_out', "{$user->name} clocked out at ".now()->format('h:i A'), $record);
         }
 
-        return back()->with('success', 'Clocked out successfully at ' . now()->format('h:i A'));
+        return back()->with('success', 'Clocked out successfully at '.now()->format('h:i A'));
     }
 
     /**
      * Admin manual attendance entry / adjustment override.
      */
-    public function recordAttendance(Request $request) {
+    public function recordAttendance(Request $request)
+    {
         $request->validate([
-            'staff_id'  => 'required|exists:users,id',
-            'date'      => 'required|date',
-            'status'    => 'required|in:present,half_day,absent,leave',
-            'clock_in'  => 'nullable|date_format:H:i',
+            'staff_id' => 'required|exists:users,id',
+            'date' => 'required|date',
+            'status' => 'required|in:present,half_day,absent,leave',
+            'clock_in' => 'nullable|date_format:H:i',
             'clock_out' => 'nullable|date_format:H:i',
-            'notes'     => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:255',
         ]);
 
         $staff = User::findOrFail($request->staff_id);
@@ -216,13 +224,13 @@ class StaffManagementController extends Controller
         $record = StaffAttendance::updateOrCreate(
             [
                 'staff_id' => $request->staff_id,
-                'date'     => $request->date,
+                'date' => $request->date,
             ],
             [
-                'status'    => $request->status,
-                'clock_in'  => $request->clock_in ? Carbon::parse($request->clock_in)->format('H:i:s') : null,
+                'status' => $request->status,
+                'clock_in' => $request->clock_in ? Carbon::parse($request->clock_in)->format('H:i:s') : null,
                 'clock_out' => $request->clock_out ? Carbon::parse($request->clock_out)->format('H:i:s') : null,
-                'notes'     => $request->notes,
+                'notes' => $request->notes,
             ]
         );
 
@@ -238,7 +246,8 @@ class StaffManagementController extends Controller
     /**
      * Export daily or monthly attendance records as CSV.
      */
-    public function exportAttendance(Request $request) {
+    public function exportAttendance(Request $request)
+    {
         $date = $request->input('date', now()->toDateString());
         $scope = $request->input('scope', 'day'); // 'day' or 'month'
 
@@ -257,7 +266,7 @@ class StaffManagementController extends Controller
         }
 
         $headers = [
-            'Content-Type'        => 'text/csv',
+            'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
@@ -270,7 +279,7 @@ class StaffManagementController extends Controller
                     $in = Carbon::parse($r->clock_in);
                     $out = Carbon::parse($r->clock_out);
                     $diffMins = max(0, $in->diffInMinutes($out));
-                    $hours = round($diffMins / 60, 2) . ' hrs';
+                    $hours = round($diffMins / 60, 2).' hrs';
                 }
                 fputcsv($out, [
                     $r->staff->name ?? '—',
@@ -291,7 +300,8 @@ class StaffManagementController extends Controller
     // Leave requests
     // ------------------------------------------------------------
 
-    public function leave() {
+    public function leave()
+    {
         $user = auth()->user();
 
         if ($user->role === 'admin') {
@@ -302,7 +312,7 @@ class StaffManagementController extends Controller
                 ->where('start_date', '>=', now()->startOfYear())
                 ->count();
             $onLeaveToday = $requests->where('status', 'approved')
-                ->filter(fn($r) => now()->between($r->start_date, $r->end_date))
+                ->filter(fn ($r) => now()->between($r->start_date, $r->end_date))
                 ->count();
 
             $stats = compact('pendingCount', 'approvedYear', 'onLeaveToday');
@@ -315,12 +325,12 @@ class StaffManagementController extends Controller
 
         // Calculate leave balances for current calendar year
         $approvedYearRequests = $requests->where('status', 'approved')
-            ->filter(fn($r) => $r->start_date && $r->start_date->year === now()->year);
+            ->filter(fn ($r) => $r->start_date && $r->start_date->year === now()->year);
 
-        $annualTaken = $approvedYearRequests->where('leave_type', 'annual')->sum(fn($r) => $r->days_count);
-        $medicalTaken = $approvedYearRequests->where('leave_type', 'medical')->sum(fn($r) => $r->days_count);
-        $emergencyTaken = $approvedYearRequests->where('leave_type', 'emergency')->sum(fn($r) => $r->days_count);
-        $unpaidTaken = $approvedYearRequests->where('leave_type', 'unpaid')->sum(fn($r) => $r->days_count);
+        $annualTaken = $approvedYearRequests->where('leave_type', 'annual')->sum(fn ($r) => $r->days_count);
+        $medicalTaken = $approvedYearRequests->where('leave_type', 'medical')->sum(fn ($r) => $r->days_count);
+        $emergencyTaken = $approvedYearRequests->where('leave_type', 'emergency')->sum(fn ($r) => $r->days_count);
+        $unpaidTaken = $approvedYearRequests->where('leave_type', 'unpaid')->sum(fn ($r) => $r->days_count);
 
         $annualTotal = 14;
         $medicalTotal = 14;
@@ -336,21 +346,22 @@ class StaffManagementController extends Controller
         return view('staff-management.leave', compact('requests', 'balances'));
     }
 
-    public function storeLeave(Request $request) {
+    public function storeLeave(Request $request)
+    {
         $request->validate([
             'leave_type' => 'required|in:annual,medical,emergency,unpaid',
             'start_date' => 'required|date|after_or_equal:today',
-            'end_date'   => 'required|date|after_or_equal:start_date',
-            'reason'     => 'required|string|max:500',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'reason' => 'required|string|max:500',
         ]);
 
         $leave = LeaveRequest::create([
-            'staff_id'   => auth()->id(),
+            'staff_id' => auth()->id(),
             'leave_type' => $request->leave_type,
             'start_date' => $request->start_date,
-            'end_date'   => $request->end_date,
-            'reason'     => $request->reason,
-            'status'     => 'pending',
+            'end_date' => $request->end_date,
+            'reason' => $request->reason,
+            'status' => 'pending',
         ]);
 
         // Notify admins about the new leave submission
@@ -360,23 +371,24 @@ class StaffManagementController extends Controller
             Notification::send(
                 $adminId,
                 'New Leave Request',
-                auth()->user()->name . " submitted a {$label} request ({$request->start_date} to {$request->end_date}).",
+                auth()->user()->name." submitted a {$label} request ({$request->start_date} to {$request->end_date}).",
                 '/admin/staff-management/leave'
             );
         }
 
         ActivityLog::record(
             'leave.submitted',
-            auth()->user()->name . " submitted a {$label} application from {$request->start_date} to {$request->end_date}.",
+            auth()->user()->name." submitted a {$label} application from {$request->start_date} to {$request->end_date}.",
             $leave
         );
 
         return back()->with('success', 'Leave request submitted successfully for management review.');
     }
 
-    public function approveLeave(LeaveRequest $leaveRequest) {
+    public function approveLeave(LeaveRequest $leaveRequest)
+    {
         $leaveRequest->update([
-            'status'      => 'approved',
+            'status' => 'approved',
             'approved_by' => auth()->id(),
         ]);
 
@@ -388,7 +400,7 @@ class StaffManagementController extends Controller
                 ['staff_id' => $leaveRequest->staff_id, 'date' => $day->toDateString()],
                 [
                     'status' => 'leave',
-                    'notes'  => "Approved {$typeLabel} (#REQ-{$leaveRequest->id})",
+                    'notes' => "Approved {$typeLabel} (#REQ-{$leaveRequest->id})",
                 ]
             );
         }
@@ -396,7 +408,7 @@ class StaffManagementController extends Controller
         Notification::send(
             $leaveRequest->staff_id,
             'Leave Request Approved',
-            "Your {$typeLabel} request ({$leaveRequest->start_date->format('d M')} - {$leaveRequest->end_date->format('d M Y')}) was approved by " . auth()->user()->name . ".",
+            "Your {$typeLabel} request ({$leaveRequest->start_date->format('d M')} - {$leaveRequest->end_date->format('d M Y')}) was approved by ".auth()->user()->name.'.',
             auth()->user()->role === 'coordinator' ? '/coordinator/staff-management/leave' : '/staff/staff-management/leave'
         );
 
@@ -409,11 +421,12 @@ class StaffManagementController extends Controller
         return back()->with('success', 'Leave request approved and attendance calendar updated.');
     }
 
-    public function rejectLeave(Request $request, LeaveRequest $leaveRequest) {
+    public function rejectLeave(Request $request, LeaveRequest $leaveRequest)
+    {
         $adminNotes = trim((string) $request->input('admin_notes', ''));
 
         $leaveRequest->update([
-            'status'      => 'rejected',
+            'status' => 'rejected',
             'approved_by' => auth()->id(),
             'admin_notes' => $adminNotes ?: 'Management scheduling constraints.',
         ]);
@@ -421,13 +434,13 @@ class StaffManagementController extends Controller
         Notification::send(
             $leaveRequest->staff_id,
             'Leave Request Declined',
-            "Your leave request ({$leaveRequest->start_date->format('d M')} - {$leaveRequest->end_date->format('d M Y')}) was declined. Reason: " . ($adminNotes ?: 'Management scheduling constraints.'),
+            "Your leave request ({$leaveRequest->start_date->format('d M')} - {$leaveRequest->end_date->format('d M Y')}) was declined. Reason: ".($adminNotes ?: 'Management scheduling constraints.'),
             auth()->user()->role === 'coordinator' ? '/coordinator/staff-management/leave' : '/staff/staff-management/leave'
         );
 
         ActivityLog::record(
             'leave.rejected',
-            "Declined leave request for {$leaveRequest->staff->name}. Reason: " . ($adminNotes ?: 'Scheduling constraints.'),
+            "Declined leave request for {$leaveRequest->staff->name}. Reason: ".($adminNotes ?: 'Scheduling constraints.'),
             $leaveRequest
         );
 
@@ -438,19 +451,20 @@ class StaffManagementController extends Controller
     // Performance
     // ------------------------------------------------------------
 
-    private function buildPerformanceReport(string $period = 'all') {
+    private function buildPerformanceReport(string $period = 'all')
+    {
         $startDate = null;
         $endDate = null;
 
         if ($period === 'this_month') {
             $startDate = now()->startOfMonth();
-            $endDate   = now()->endOfMonth();
+            $endDate = now()->endOfMonth();
         } elseif ($period === 'last_month') {
             $startDate = now()->subMonth()->startOfMonth();
-            $endDate   = now()->subMonth()->endOfMonth();
+            $endDate = now()->subMonth()->endOfMonth();
         } elseif ($period === 'this_year') {
             $startDate = now()->startOfYear();
-            $endDate   = now()->endOfYear();
+            $endDate = now()->endOfYear();
         }
 
         $staffList = User::whereIn('role', ['staff', 'coordinator'])
@@ -465,8 +479,8 @@ class StaffManagementController extends Controller
                 $completedJobs->whereBetween('updated_at', [$startDate, $endDate]);
             }
 
-            $total   = (clone $completedJobs)->count();
-            $onTime  = (clone $completedJobs)
+            $total = (clone $completedJobs)->count();
+            $onTime = (clone $completedJobs)
                 ->whereNotNull('completed_at')
                 ->whereColumn('completed_at', '<=', 'estimated_completion')
                 ->count();
@@ -475,17 +489,17 @@ class StaffManagementController extends Controller
             $avgHours = (clone $completedJobs)
                 ->whereNotNull('completed_at')
                 ->get()
-                ->avg(fn($j) => $j->created_at->diffInHours($j->completed_at));
+                ->avg(fn ($j) => $j->created_at->diffInHours($j->completed_at));
 
             $attQuery = StaffAttendance::where('staff_id', $s->id);
             if ($startDate && $endDate) {
                 $attQuery->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()]);
             }
             $presentDays = (clone $attQuery)->where('status', 'present')->count();
-            $totalDays   = (clone $attQuery)->count();
+            $totalDays = (clone $attQuery)->count();
             $attendanceRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100) : null;
 
-            $feedbackQuery = JobFeedback::whereHas('jobCard', fn($q) => $q->where('staff_id', $s->id));
+            $feedbackQuery = JobFeedback::whereHas('jobCard', fn ($q) => $q->where('staff_id', $s->id));
             if ($startDate && $endDate) {
                 $feedbackQuery->whereBetween('created_at', [$startDate, $endDate]);
             }
@@ -496,20 +510,21 @@ class StaffManagementController extends Controller
                 ->count();
 
             return (object) [
-                'staff'             => $s,
-                'total_jobs'        => $total,
-                'on_time'           => $onTime,
-                'overdue'           => $overdue,
-                'on_time_pct'       => $total > 0 ? round(($onTime / $total) * 100) : null,
-                'avg_hours'         => $avgHours ? round($avgHours, 1) : null,
-                'attendance_rate'   => $attendanceRate,
-                'avg_rating'        => $avgRating ? round($avgRating, 1) : null,
+                'staff' => $s,
+                'total_jobs' => $total,
+                'on_time' => $onTime,
+                'overdue' => $overdue,
+                'on_time_pct' => $total > 0 ? round(($onTime / $total) * 100) : null,
+                'avg_hours' => $avgHours ? round($avgHours, 1) : null,
+                'attendance_rate' => $attendanceRate,
+                'avg_rating' => $avgRating ? round($avgRating, 1) : null,
                 'active_jobs_count' => $activeJobsCount,
             ];
         });
     }
 
-    public function performance(Request $request) {
+    public function performance(Request $request)
+    {
         $period = $request->input('period', 'all');
         $report = $this->buildPerformanceReport($period);
 
@@ -518,10 +533,10 @@ class StaffManagementController extends Controller
         $totalOnTime = $report->sum('on_time');
         $overallOnTimePct = $totalCompleted > 0 ? round(($totalOnTime / $totalCompleted) * 100) : null;
 
-        $ratedRows = $report->filter(fn($r) => $r->avg_rating !== null);
+        $ratedRows = $report->filter(fn ($r) => $r->avg_rating !== null);
         $overallRating = $ratedRows->isNotEmpty() ? round($ratedRows->avg('avg_rating'), 1) : null;
 
-        $hoursRows = $report->filter(fn($r) => $r->avg_hours !== null);
+        $hoursRows = $report->filter(fn ($r) => $r->avg_hours !== null);
         $overallTurnaround = $hoursRows->isNotEmpty() ? round($hoursRows->avg('avg_hours'), 1) : null;
 
         $kpis = compact('totalCompleted', 'totalOnTime', 'overallOnTimePct', 'overallRating', 'overallTurnaround');
@@ -529,14 +544,15 @@ class StaffManagementController extends Controller
         return view('staff-management.performance', compact('report', 'period', 'kpis'));
     }
 
-    public function emailPerformanceReport(Request $request) {
+    public function emailPerformanceReport(Request $request)
+    {
         $period = $request->input('period', 'all');
         $report = $this->buildPerformanceReport($period);
-        $periodLabel = match($period) {
+        $periodLabel = match ($period) {
             'this_month' => now()->format('F Y'),
             'last_month' => now()->subMonth()->format('F Y'),
-            'this_year'  => 'Year ' . now()->year,
-            default      => 'All Time (Cumulative)',
+            'this_year' => 'Year '.now()->year,
+            default => 'All Time (Cumulative)',
         };
 
         $adminEmails = User::where('role', 'admin')->pluck('email');
@@ -544,31 +560,34 @@ class StaffManagementController extends Controller
             try {
                 Mail::to($email)->send(new StaffPerformanceMail($report, $periodLabel));
             } catch (\Throwable $e) {
-                Log::warning('Performance report email to admin failed: ' . $e->getMessage());
+                Log::warning('Performance report email to admin failed: '.$e->getMessage());
             }
         }
 
         if ($request->boolean('notify_staff')) {
             foreach ($report as $r) {
-                if (!$r->staff->email) continue;
+                if (! $r->staff->email) {
+                    continue;
+                }
                 try {
                     Mail::to($r->staff->email)->send(new StaffPerformanceMail(collect([$r]), $periodLabel));
                 } catch (\Throwable $e) {
-                    Log::warning('Performance report email to staff failed: ' . $e->getMessage());
+                    Log::warning('Performance report email to staff failed: '.$e->getMessage());
                 }
             }
         }
 
         return back()->with('success', 'Performance report emailed to admin/HR'
-            . ($request->boolean('notify_staff') ? ', and to each staff member individually.' : '.'));
+            .($request->boolean('notify_staff') ? ', and to each staff member individually.' : '.'));
     }
 
-    public function exportPerformance(Request $request) {
+    public function exportPerformance(Request $request)
+    {
         $period = $request->input('period', 'all');
-        $report   = $this->buildPerformanceReport($period);
-        $filename = 'staff_performance_' . $period . '_' . now()->format('Ymd_His') . '.csv';
-        $headers  = [
-            'Content-Type'        => 'text/csv',
+        $report = $this->buildPerformanceReport($period);
+        $filename = 'staff_performance_'.$period.'_'.now()->format('Ymd_His').'.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
@@ -582,9 +601,9 @@ class StaffManagementController extends Controller
                     $r->total_jobs,
                     $r->on_time,
                     $r->overdue,
-                    $r->on_time_pct !== null ? $r->on_time_pct . '%' : '',
+                    $r->on_time_pct !== null ? $r->on_time_pct.'%' : '',
                     $r->avg_hours ?? '',
-                    $r->attendance_rate !== null ? $r->attendance_rate . '%' : '',
+                    $r->attendance_rate !== null ? $r->attendance_rate.'%' : '',
                     $r->avg_rating ?? '',
                 ]);
             }
@@ -596,7 +615,8 @@ class StaffManagementController extends Controller
     // Salary payments (Accountant / Admin / Staff Self-service)
     // ------------------------------------------------------------
 
-    public function salary(Request $request) {
+    public function salary(Request $request)
+    {
         $staff = User::whereIn('role', ['staff', 'coordinator'])
             ->where('status', 'active')
             ->orderBy('role')
@@ -612,7 +632,7 @@ class StaffManagementController extends Controller
         $periodPayments = $payments->where('period', $period);
 
         // Payroll Metrics
-        $totalObligation = $staff->sum(fn($s) => (float) ($s->monthly_salary ?? 0));
+        $totalObligation = $staff->sum(fn ($s) => (float) ($s->monthly_salary ?? 0));
         $disbursedThisMonth = $periodPayments->sum('amount');
         $paidStaffIds = $periodPayments->pluck('staff_id')->unique();
         $paidStaffCount = $paidStaffIds->count();
@@ -624,17 +644,18 @@ class StaffManagementController extends Controller
         return view('staff-management.salary', compact('staff', 'payments', 'period', 'stats'));
     }
 
-    public function storeSalaryPayment(Request $request) {
+    public function storeSalaryPayment(Request $request)
+    {
         $request->validate([
-            'staff_id'    => 'required|exists:users,id',
-            'period'      => 'required|date_format:Y-m',
+            'staff_id' => 'required|exists:users,id',
+            'period' => 'required|date_format:Y-m',
             'base_salary' => 'nullable|numeric|min:0',
-            'allowances'  => 'nullable|numeric|min:0',
-            'deductions'  => 'nullable|numeric|min:0',
-            'amount'      => 'required|numeric|min:0.01',
-            'method'      => 'required|in:cash,bank_transfer,cheque',
-            'paid_at'     => 'required|date',
-            'notes'       => 'nullable|string|max:255',
+            'allowances' => 'nullable|numeric|min:0',
+            'deductions' => 'nullable|numeric|min:0',
+            'amount' => 'required|numeric|min:0.01',
+            'method' => 'required|in:cash,bank_transfer,cheque',
+            'paid_at' => 'required|date',
+            'notes' => 'nullable|string|max:255',
         ]);
 
         $exists = SalaryPayment::where('staff_id', $request->staff_id)
@@ -650,15 +671,15 @@ class StaffManagementController extends Controller
         $deductions = (float) $request->input('deductions', 0);
 
         $payment = SalaryPayment::create([
-            'staff_id'    => $request->staff_id,
-            'period'      => $request->period,
+            'staff_id' => $request->staff_id,
+            'period' => $request->period,
             'base_salary' => $baseSalary,
-            'allowances'  => $allowances,
-            'deductions'  => $deductions,
-            'amount'      => $request->amount,
-            'method'      => $request->method,
-            'paid_at'     => $request->paid_at,
-            'notes'       => $request->notes,
+            'allowances' => $allowances,
+            'deductions' => $deductions,
+            'amount' => $request->amount,
+            'method' => $request->method,
+            'paid_at' => $request->paid_at,
+            'notes' => $request->notes,
             'recorded_by' => auth()->id(),
         ]);
 
@@ -666,13 +687,13 @@ class StaffManagementController extends Controller
         Notification::send(
             $staff->id,
             'Salary Disbursement',
-            "Your salary voucher ({$payment->slip_number}) for {$periodFormatted} of RM " . number_format($payment->amount, 2) . " has been issued.",
+            "Your salary voucher ({$payment->slip_number}) for {$periodFormatted} of RM ".number_format($payment->amount, 2).' has been issued.',
             "/staff-management/salary/{$payment->id}/payslip"
         );
 
         ActivityLog::record(
             'salary.disbursed',
-            "Recorded salary voucher {$payment->slip_number} for {$staff->name} ({$periodFormatted}, RM " . number_format($payment->amount, 2) . ")",
+            "Recorded salary voucher {$payment->slip_number} for {$staff->name} ({$periodFormatted}, RM ".number_format($payment->amount, 2).')',
             $payment
         );
 
@@ -682,7 +703,8 @@ class StaffManagementController extends Controller
     /**
      * Printable formal employee payslip voucher.
      */
-    public function payslip(SalaryPayment $salaryPayment) {
+    public function payslip(SalaryPayment $salaryPayment)
+    {
         $user = auth()->user();
 
         // Authorization guard: Admin, invoice.manage holders, or the recipient themselves
@@ -700,7 +722,8 @@ class StaffManagementController extends Controller
     /**
      * Staff / Coordinator self-service salary history & payslips.
      */
-    public function selfSalary() {
+    public function selfSalary()
+    {
         $user = auth()->user();
 
         $payments = SalaryPayment::where('staff_id', $user->id)
@@ -709,7 +732,7 @@ class StaffManagementController extends Controller
             ->get();
 
         $currentYearTotal = $payments
-            ->filter(fn($p) => $p->paid_at && $p->paid_at->year === now()->year)
+            ->filter(fn ($p) => $p->paid_at && $p->paid_at->year === now()->year)
             ->sum('amount');
 
         return view('staff-management.salary-self', compact('payments', 'currentYearTotal'));

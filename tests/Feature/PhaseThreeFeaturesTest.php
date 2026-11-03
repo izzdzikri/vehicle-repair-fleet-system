@@ -2,14 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Appointment;
-use App\Models\JobCard;
 use App\Models\PurchaseOrder;
 use App\Models\Setting;
 use App\Models\SparePart;
 use App\Models\Supplier;
 use App\Models\User;
-use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -36,30 +33,30 @@ class PhaseThreeFeaturesTest extends TestCase
     {
         $admin = User::where('role', 'admin')->first();
         $supplier = Supplier::first() ?? Supplier::create([
-            'name'           => 'Test Auto Parts Supply',
+            'name' => 'Test Auto Parts Supply',
             'contact_person' => 'Mr. Lim',
-            'phone'          => '012-3456789',
+            'phone' => '012-3456789',
         ]);
 
         $partA = SparePart::create([
-            'name'          => 'Test Air Filter Part A',
-            'part_number'   => 'FLT-TEST-001',
-            'category'      => 'Filters',
-            'stock'         => 2,
-            'min_stock'     => 5,
-            'max_stock'     => 20,
-            'unit_price'    => 45.00,
+            'name' => 'Test Air Filter Part A',
+            'part_number' => 'FLT-TEST-001',
+            'category' => 'Filters',
+            'stock' => 2,
+            'min_stock' => 5,
+            'max_stock' => 20,
+            'unit_price' => 45.00,
             'supplier_name' => $supplier->name,
         ]);
 
         $partB = SparePart::create([
-            'name'          => 'Test Spark Plug Part B',
-            'part_number'   => 'SPK-TEST-002',
-            'category'      => 'Ignition',
-            'stock'         => 1,
-            'min_stock'     => 10,
-            'max_stock'     => 30,
-            'unit_price'    => 22.50,
+            'name' => 'Test Spark Plug Part B',
+            'part_number' => 'SPK-TEST-002',
+            'category' => 'Ignition',
+            'stock' => 1,
+            'min_stock' => 10,
+            'max_stock' => 30,
+            'unit_price' => 22.50,
             'supplier_name' => $supplier->name,
         ]);
 
@@ -76,7 +73,7 @@ class PhaseThreeFeaturesTest extends TestCase
         // Perform batch order
         $response = $this->actingAs($admin)->post('/admin/purchase-orders/batch-order', [
             'supplier_id' => $supplier->id,
-            'po_ids'      => [$poA->id, $poB->id],
+            'po_ids' => [$poA->id, $poB->id],
         ]);
 
         $response->assertRedirect();

@@ -9,13 +9,15 @@ use Illuminate\Support\Facades\Cache;
 class ReseedCommand extends Command
 {
     protected $signature = 'app:reseed {--force : Force the operation to run when in production}';
+
     protected $description = 'Safely wipe and re-seed the complete demo dataset (FreshSeeder + Psm2FeatureSeeder)';
 
     public function handle(): int
     {
-        if (app()->environment('production') && !$this->option('force')) {
-            if (!$this->confirm('Application is in PRODUCTION. Are you sure you want to truncate and reseed all data?')) {
+        if (app()->environment('production') && ! $this->option('force')) {
+            if (! $this->confirm('Application is in PRODUCTION. Are you sure you want to truncate and reseed all data?')) {
                 $this->warn('Reseed cancelled.');
+
                 return 0;
             }
         }
@@ -31,6 +33,7 @@ class ReseedCommand extends Command
 
             if ($exitCode !== 0) {
                 $this->error('Database seeding failed.');
+
                 return $exitCode;
             }
 
@@ -48,7 +51,8 @@ class ReseedCommand extends Command
 
             return 0;
         } catch (\Throwable $e) {
-            $this->error('Reseed encountered an error: ' . $e->getMessage());
+            $this->error('Reseed encountered an error: '.$e->getMessage());
+
             return 1;
         }
     }

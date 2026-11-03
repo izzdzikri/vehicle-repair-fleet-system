@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use App\Models\Invoice;
@@ -13,9 +14,7 @@ class InvoiceMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Invoice $invoice)
-    {
-    }
+    public function __construct(public Invoice $invoice) {}
 
     public function build()
     {
@@ -25,7 +24,7 @@ class InvoiceMail extends Mailable implements ShouldQueue
             'jobCard.jobType',
         ]);
 
-        $mail = $this->subject('Invoice ' . $this->invoice->invoice_number . ' — Teraju Setia Enterprise')
+        $mail = $this->subject('Invoice '.$this->invoice->invoice_number.' — Teraju Setia Enterprise')
             ->view('emails.invoice');
 
         try {
@@ -34,11 +33,11 @@ class InvoiceMail extends Mailable implements ShouldQueue
 
             $mail->attachData(
                 $pdf->output(),
-                'Invoice-' . $this->invoice->invoice_number . '.pdf',
+                'Invoice-'.$this->invoice->invoice_number.'.pdf',
                 ['mime' => 'application/pdf']
             );
         } catch (\Throwable $e) {
-            Log::warning('Invoice PDF attachment could not be rendered: ' . $e->getMessage());
+            Log::warning('Invoice PDF attachment could not be rendered: '.$e->getMessage());
         }
 
         return $mail;

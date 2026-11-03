@@ -1,15 +1,17 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\Vehicle;
 use App\Models\Appointment;
-use App\Models\ServiceHistory;
 use App\Models\MaintenanceAlert;
+use App\Models\ServiceHistory;
+use App\Models\Vehicle;
 
 class CustomerController extends Controller
 {
-    public function index() {
-        $user     = auth()->user();
+    public function index()
+    {
+        $user = auth()->user();
         $vehicles = Vehicle::where('user_id', $user->id)->get();
 
         $appointments = Appointment::where('user_id', $user->id)
@@ -25,7 +27,7 @@ class CustomerController extends Controller
             ->get();
 
         $totalServices = ServiceHistory::whereIn('vehicle_id', $vehicleIds)->count();
-        $totalSpent    = ServiceHistory::whereIn('vehicle_id', $vehicleIds)->sum('cost');
+        $totalSpent = ServiceHistory::whereIn('vehicle_id', $vehicleIds)->sum('cost');
 
         // Maintenance alerts for this customer's vehicles
         $maintenanceAlerts = MaintenanceAlert::with('vehicle')

@@ -20,7 +20,7 @@ class LoginRateLimiterTest extends TestCase
         // 5 consecutive bad attempts
         for ($i = 0; $i < 5; $i++) {
             $response = $this->post('/login', [
-                'email'    => $email,
+                'email' => $email,
                 'password' => 'wrongpassword',
             ]);
             $response->assertSessionHasErrors(['email' => 'Invalid credentials.']);
@@ -28,7 +28,7 @@ class LoginRateLimiterTest extends TestCase
 
         // 6th attempt should be locked by rate limiter
         $response = $this->post('/login', [
-            'email'    => $email,
+            'email' => $email,
             'password' => 'wrongpassword',
         ]);
 

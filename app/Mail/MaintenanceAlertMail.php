@@ -1,9 +1,10 @@
 <?php
+
 namespace App\Mail;
 
-use App\Models\Vehicle;
 use App\Models\JobType;
 use App\Models\MaintenanceAlert;
+use App\Models\Vehicle;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -23,7 +24,7 @@ class MaintenanceAlertMail extends Mailable implements ShouldQueue
     public function build()
     {
         $prefix = $this->alert->urgency === 'high' ? '⚠️ URGENT: ' : '🔮 REMINDER: ';
-        $subject = $prefix . $this->vehicle->plate_number . ' — ' . $this->jobType->name . ' Due Soon';
+        $subject = $prefix.$this->vehicle->plate_number.' — '.$this->jobType->name.' Due Soon';
 
         return $this->subject($subject)
             ->view('emails.maintenance-alert');

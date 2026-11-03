@@ -1,34 +1,38 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\PurchaseOrder;
 use App\Models\SparePart;
 use App\Models\Supplier;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class PurchaseOrderController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         $this->autoGenerate();
 
-        $orders     = PurchaseOrder::with(['sparePart', 'supplier', 'creator'])->latest()->get();
-        $suppliers  = Supplier::orderBy('name')->get();
+        $orders = PurchaseOrder::with(['sparePart', 'supplier', 'creator'])->latest()->get();
+        $suppliers = Supplier::orderBy('name')->get();
         $spareParts = SparePart::orderBy('name')->get();
 
-        $activeOrders    = $orders->whereIn('status', ['draft', 'ordered']);
+        $activeOrders = $orders->whereIn('status', ['draft', 'ordered']);
         $completedOrders = $orders->whereIn('status', ['received', 'cancelled']);
 
         $stats = [
-            'total'          => $orders->count(),
-            'active_count'   => $activeOrders->count(),
+            'total' => $orders->count(),
+            'active_count' => $activeOrders->count(),
             'received_count' => $orders->where('status', 'received')->count(),
-            'total_spend'    => (float) $orders->where('status', 'received')->sum(fn($po) => $po->quantity * ($po->unit_cost ?? 0)),
+            'total_spend' => (float) $orders->where('status', 'received')->sum(fn ($po) => $po->quantity * ($po->unit_cost ?? 0)),
         ];
 
         return view('purchase-orders.index', compact('orders', 'suppliers', 'spareParts', 'activeOrders', 'completedOrders', 'stats'));
     }
 
-    private function autoGenerate(): void {
+    private function autoGenerate(): void
+    {
         $lowStockParts = SparePart::whereColumn('stock', '<=', 'min_stock')->get();
 
         foreach ($lowStockParts as $part) {
@@ -36,35 +40,36 @@ class PurchaseOrderController extends Controller
                 ->whereIn('status', ['draft', 'ordered'])
                 ->exists();
 
-            if (!$alreadyQueued) {
+            if (! $alreadyQueued) {
                 $suggestedQty = max($part->max_stock - $part->stock, $part->min_stock);
 
                 $supplier = null;
-                if (!empty($part->supplier_name)) {
+                if (! empty($part->supplier_name)) {
                     $supplier = Supplier::where('name', $part->supplier_name)->first();
                 }
-                if (!$supplier) {
+                if (! $supplier) {
                     $supplier = Supplier::first();
                 }
 
                 PurchaseOrder::create([
-                    'spare_part_id'  => $part->id,
-                    'supplier_id'    => $supplier?->id,
-                    'unit_cost'      => $part->unit_price,
-                    'quantity'       => $suggestedQty,
-                    'status'         => 'draft',
+                    'spare_part_id' => $part->id,
+                    'supplier_id' => $supplier?->id,
+                    'unit_cost' => $part->unit_price,
+                    'quantity' => $suggestedQty,
+                    'status' => 'draft',
                     'auto_generated' => true,
-                    'created_by'     => auth()->id(),
+                    'created_by' => auth()->id(),
                 ]);
             }
         }
     }
 
-    public function batchOrder(Request $request) {
+    public function batchOrder(Request $request)
+    {
         $request->validate([
             'supplier_id' => 'nullable|exists:suppliers,id',
-            'po_ids'      => 'nullable|array',
-            'po_ids.*'    => 'exists:purchase_orders,id',
+            'po_ids' => 'nullable|array',
+            'po_ids.*' => 'exists:purchase_orders,id',
         ]);
 
         $query = PurchaseOrder::where('status', 'draft');
@@ -82,13 +87,13 @@ class PurchaseOrderController extends Controller
 
         foreach ($drafts as $po) {
             $supplierId = $po->supplier_id ?: $defaultSupplierId;
-            $unitCost   = $po->unit_cost ?: ($po->sparePart?->unit_price ?: 0);
+            $unitCost = $po->unit_cost ?: ($po->sparePart?->unit_price ?: 0);
 
             $po->update([
                 'supplier_id' => $supplierId,
-                'unit_cost'   => $unitCost,
-                'status'      => 'ordered',
-                'ordered_at'  => now(),
+                'unit_cost' => $unitCost,
+                'status' => 'ordered',
+                'ordered_at' => now(),
             ]);
             $count++;
         }
@@ -96,49 +101,52 @@ class PurchaseOrderController extends Controller
         return back()->with('success', "Batch dispatch complete: {$count} purchase order(s) successfully marked as Ordered.");
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $request->validate([
             'spare_part_id' => 'required|exists:spare_parts,id',
-            'quantity'      => 'required|integer|min:1',
-            'supplier_id'   => 'nullable|exists:suppliers,id',
-            'unit_cost'     => 'nullable|numeric|min:0',
+            'quantity' => 'required|integer|min:1',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'unit_cost' => 'nullable|numeric|min:0',
         ]);
 
         PurchaseOrder::create([
             'spare_part_id' => $request->spare_part_id,
-            'quantity'      => $request->quantity,
-            'supplier_id'   => $request->supplier_id,
-            'unit_cost'     => $request->unit_cost,
-            'status'        => 'draft',
-            'created_by'    => auth()->id(),
+            'quantity' => $request->quantity,
+            'supplier_id' => $request->supplier_id,
+            'unit_cost' => $request->unit_cost,
+            'status' => 'draft',
+            'created_by' => auth()->id(),
         ]);
 
         return back()->with('success', 'Purchase order created.');
     }
 
-    public function markOrdered(Request $request, PurchaseOrder $purchaseOrder) {
+    public function markOrdered(Request $request, PurchaseOrder $purchaseOrder)
+    {
         $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
-            'unit_cost'   => 'nullable|numeric|min:0',
+            'unit_cost' => 'nullable|numeric|min:0',
         ]);
 
         $purchaseOrder->update([
             'supplier_id' => $request->supplier_id,
-            'unit_cost'   => $request->unit_cost,
-            'status'      => 'ordered',
-            'ordered_at'  => now(),
+            'unit_cost' => $request->unit_cost,
+            'status' => 'ordered',
+            'ordered_at' => now(),
         ]);
 
         return back()->with('success', 'Marked as ordered.');
     }
 
-    public function markReceived(PurchaseOrder $purchaseOrder) {
+    public function markReceived(PurchaseOrder $purchaseOrder)
+    {
         if ($purchaseOrder->status !== 'ordered') {
             return back()->with('error', 'Only ordered purchase orders can be received.');
         }
 
         $purchaseOrder->update([
-            'status'      => 'received',
+            'status' => 'received',
             'received_at' => now(),
         ]);
 
@@ -147,22 +155,28 @@ class PurchaseOrderController extends Controller
         return back()->with('success', "Stock received — {$purchaseOrder->sparePart->name} +{$purchaseOrder->quantity} units. Moved to Completed History (Invoice ready to print).");
     }
 
-    public function cancel(PurchaseOrder $purchaseOrder) {
+    public function cancel(PurchaseOrder $purchaseOrder)
+    {
         $purchaseOrder->update(['status' => 'cancelled']);
+
         return back()->with('success', 'Purchase order cancelled.');
     }
 
-    public function invoice(PurchaseOrder $purchaseOrder) {
+    public function invoice(PurchaseOrder $purchaseOrder)
+    {
         $purchaseOrder->load(['sparePart', 'supplier', 'creator']);
+
         return view('purchase-orders.invoice', compact('purchaseOrder'));
     }
 
-    public function downloadPdf(PurchaseOrder $purchaseOrder) {
+    public function downloadPdf(PurchaseOrder $purchaseOrder)
+    {
         $purchaseOrder->load(['sparePart', 'supplier', 'creator']);
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('purchase-orders.pdf', compact('purchaseOrder'))
+        $pdf = Pdf::loadView('purchase-orders.pdf', compact('purchaseOrder'))
             ->setPaper('a4', 'portrait');
 
-        $filename = 'PurchaseOrder-' . $purchaseOrder->po_number . '.pdf';
+        $filename = 'PurchaseOrder-'.$purchaseOrder->po_number.'.pdf';
+
         return $pdf->download($filename);
     }
 }

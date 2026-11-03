@@ -1,7 +1,10 @@
 <?php
+
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Models\JobCard;
+use App\Models\SparePart;
 use Illuminate\Http\Request;
 
 /**
@@ -34,32 +37,34 @@ use Illuminate\Http\Request;
  */
 class CoordinatorController extends Controller
 {
-    public function dashboard() {
+    public function dashboard()
+    {
         $activeJobs = JobCard::with(['vehicle', 'staff', 'jobType'])
             ->where('current_stage', '!=', 'completed')
             ->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')
             ->get();
 
-        $staleCount   = $activeJobs->filter(fn($j) => $j->is_stale)->count();
-        $overdueCount = $activeJobs->filter(fn($j) => $j->estimated_completion && $j->estimated_completion->isPast())->count();
+        $staleCount = $activeJobs->filter(fn ($j) => $j->is_stale)->count();
+        $overdueCount = $activeJobs->filter(fn ($j) => $j->estimated_completion && $j->estimated_completion->isPast())->count();
 
-        $todayAppointments = \App\Models\Appointment::whereDate('date', today())
+        $todayAppointments = Appointment::whereDate('date', today())
             ->whereIn('status', ['pending', 'confirmed'])
             ->count();
 
-        $lowStockCount = \App\Models\SparePart::whereColumn('stock', '<=', 'min_stock')->count();
+        $lowStockCount = SparePart::whereColumn('stock', '<=', 'min_stock')->count();
 
         return view('coordinator.dashboard', [
-            'urgentJobs'         => $activeJobs->take(8),
-            'totalActive'        => $activeJobs->count(),
-            'staleCount'         => $staleCount,
-            'overdueCount'       => $overdueCount,
-            'todayAppointments'  => $todayAppointments,
-            'lowStockCount'      => $lowStockCount,
+            'urgentJobs' => $activeJobs->take(8),
+            'totalActive' => $activeJobs->count(),
+            'staleCount' => $staleCount,
+            'overdueCount' => $overdueCount,
+            'todayAppointments' => $todayAppointments,
+            'lowStockCount' => $lowStockCount,
         ]);
     }
 
-    public function jobCards(Request $request) {
+    public function jobCards(Request $request)
+    {
         // Remember the last-used filter tab across visits, same pattern
         // as JobCardController/AppointmentController — "All Active"
         // always passes an explicit filter=all so it can update/clear
@@ -70,7 +75,9 @@ class CoordinatorController extends Controller
         } else {
             $activeFilter = session('coordinator_filter', 'all');
         }
-        if ($activeFilter === 'all') $activeFilter = null;
+        if ($activeFilter === 'all') {
+            $activeFilter = null;
+        }
 
         $query = JobCard::with(['vehicle', 'staff', 'jobType'])
             ->where('current_stage', '!=', 'completed');
@@ -83,8 +90,8 @@ class CoordinatorController extends Controller
 
         $jobs = $query->orderByRaw('estimated_completion IS NULL, estimated_completion ASC')->get();
 
-        $totalActive  = JobCard::where('current_stage', '!=', 'completed')->count();
-        $staleTotal   = JobCard::where('current_stage', '!=', 'completed')
+        $totalActive = JobCard::where('current_stage', '!=', 'completed')->count();
+        $staleTotal = JobCard::where('current_stage', '!=', 'completed')
             ->where('updated_at', '<', now()->subHours(3))->count();
         $overdueTotal = JobCard::where('current_stage', '!=', 'completed')
             ->whereNotNull('estimated_completion')->where('estimated_completion', '<', now())->count();
@@ -100,14 +107,15 @@ class CoordinatorController extends Controller
      * already grants coordinators unconditional access on the routes
      * this controller doesn't directly handle).
      */
-    public function storeCheckin(Request $request, JobCard $jobCard) {
+    public function storeCheckin(Request $request, JobCard $jobCard)
+    {
         $request->validate([
             'note' => 'nullable|string|max:500',
         ]);
 
         $jobCard->checkins()->create([
             'coordinator_id' => auth()->id(),
-            'note'           => $request->note,
+            'note' => $request->note,
         ]);
 
         return back()->with('success', 'Check-in logged.');

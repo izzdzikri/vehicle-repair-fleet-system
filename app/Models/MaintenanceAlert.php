@@ -1,8 +1,12 @@
 <?php
+
 namespace App\Models;
+
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
-class MaintenanceAlert extends Model {
+class MaintenanceAlert extends Model
+{
     protected $fillable = [
         'vehicle_id', 'source', 'job_type_id', 'alert_type', 'urgency',
         'recommendation', 'predicted_due_date', 'is_read',
@@ -11,42 +15,50 @@ class MaintenanceAlert extends Model {
     ];
 
     protected $casts = [
-        'predicted_due_date'  => 'date',
+        'predicted_due_date' => 'date',
         'overridden_due_date' => 'date',
-        'is_read'             => 'boolean',
-        'is_verified'         => 'boolean',
-        'verified_at'         => 'datetime',
+        'is_read' => 'boolean',
+        'is_verified' => 'boolean',
+        'verified_at' => 'datetime',
     ];
 
-    public function vehicle() {
+    public function vehicle()
+    {
         return $this->belongsTo(Vehicle::class);
     }
 
-    public function jobType() {
+    public function jobType()
+    {
         return $this->belongsTo(JobType::class);
     }
 
-    public function verifier() {
+    public function verifier()
+    {
         return $this->belongsTo(User::class, 'verified_by');
     }
 
-    public function getEffectiveDueDateAttribute(): ?\Carbon\Carbon {
+    public function getEffectiveDueDateAttribute(): ?Carbon
+    {
         $val = $this->overridden_due_date ?: $this->predicted_due_date;
-        if (!$val) {
+        if (! $val) {
             return null;
         }
-        return $val instanceof \Carbon\Carbon ? $val : \Carbon\Carbon::parse($val);
+
+        return $val instanceof Carbon ? $val : Carbon::parse($val);
     }
 
-    public function getEffectiveUrgencyAttribute(): string {
+    public function getEffectiveUrgencyAttribute(): string
+    {
         return $this->attributes['overridden_urgency'] ?? ($this->urgency ?? 'medium');
     }
 
-    public function getIsOverriddenAttribute(): bool {
-        return !empty($this->attributes['overridden_due_date']) || !empty($this->attributes['overridden_urgency']);
+    public function getIsOverriddenAttribute(): bool
+    {
+        return ! empty($this->attributes['overridden_due_date']) || ! empty($this->attributes['overridden_urgency']);
     }
 
-    public function getIsVerifiedAttribute(): bool {
+    public function getIsVerifiedAttribute(): bool
+    {
         return (bool) ($this->attributes['is_verified'] ?? false);
     }
 }

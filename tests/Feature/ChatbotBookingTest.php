@@ -11,6 +11,7 @@ use Tests\TestCase;
 class ChatbotBookingTest extends TestCase
 {
     use DatabaseTransactions;
+
     public function test_guest_can_complete_multi_turn_booking_flow_and_persist_to_database()
     {
         // Turn 1: user initiates booking
@@ -54,13 +55,13 @@ class ChatbotBookingTest extends TestCase
         // Verify record in database
         $this->assertDatabaseHas('vehicles', [
             'plate_number' => 'JQR 1234',
-            'brand'        => 'Nissan',
-            'model'        => 'Serena',
+            'brand' => 'Nissan',
+            'model' => 'Serena',
         ]);
 
         $this->assertDatabaseHas('appointments', [
-            'walkin_name'  => 'Ahmad',
-            'is_walkin'    => true,
+            'walkin_name' => 'Ahmad',
+            'is_walkin' => true,
             'service_type' => 'Engine Diagnostics & Troubleshooting',
         ]);
 
@@ -79,20 +80,20 @@ class ChatbotBookingTest extends TestCase
     {
         // 1-shot intake
         $this->postJson('/chatbot/reply', [
-            'message' => 'Saya nak servis kereta Nissan Serena JQR 5678 esok jam 9 pagi sebab senguk senguk. Nama Siti 019-8765432'
+            'message' => 'Saya nak servis kereta Nissan Serena JQR 5678 esok jam 9 pagi sebab senguk senguk. Nama Siti 019-8765432',
         ])->assertStatus(200)->assertJson(['action' => 'confirm_booking']);
 
         // Confirm via action button
         $res = $this->postJson('/chatbot/reply', [
-            'action'  => 'confirm_booking',
-            'message' => 'Sahkan tempahan slot'
+            'action' => 'confirm_booking',
+            'message' => 'Sahkan tempahan slot',
         ]);
 
         $res->assertStatus(200);
         $res->assertJson(['booking_confirmed' => true]);
 
         $this->assertDatabaseHas('appointments', [
-            'walkin_name'  => 'Siti',
+            'walkin_name' => 'Siti',
             'service_type' => 'Engine Diagnostics & Troubleshooting',
         ]);
     }
@@ -112,7 +113,7 @@ class ChatbotBookingTest extends TestCase
 
         // 1. User asks a troubleshooting question
         $res1 = $this->postJson('/chatbot/reply', [
-            'message' => 'tolong kereta tak boleh start macam mana ye'
+            'message' => 'tolong kereta tak boleh start macam mana ye',
         ]);
         $res1->assertStatus(200);
         // Must NOT assume booking right away
@@ -122,7 +123,7 @@ class ChatbotBookingTest extends TestCase
 
         // 2. User then proceeds with vehicle details
         $res2 = $this->postJson('/chatbot/reply', [
-            'message' => 'hondahrv, jqc8888'
+            'message' => 'hondahrv, jqc8888',
         ]);
         $res2->assertStatus(200);
         $res2->assertSessionHas('chatbot_intake');
@@ -133,9 +134,9 @@ class ChatbotBookingTest extends TestCase
 
         // 4. User picks slot
         $res5 = $this->postJson('/chatbot/reply', [
-            'action'  => 'pick_slot',
-            'date'    => '2026-10-25',
-            'time'    => '09:30:00',
+            'action' => 'pick_slot',
+            'date' => '2026-10-25',
+            'time' => '09:30:00',
             'message' => 'Saya pilih tarikh 25/Oct/2026 jam 9:30 AM',
         ]);
         $res5->assertStatus(200);
@@ -156,7 +157,7 @@ class ChatbotBookingTest extends TestCase
         $this->assertStringContainsString('👉 [', $res6->json('reply'));
 
         $this->assertDatabaseHas('appointments', [
-            'walkin_name'  => 'Ramli',
+            'walkin_name' => 'Ramli',
             'service_type' => 'Battery & Electrical Inspection',
         ]);
     }
@@ -167,12 +168,12 @@ class ChatbotBookingTest extends TestCase
         $this->actingAs($ain);
 
         $this->postJson('/chatbot/reply', [
-            'message' => 'Saya nak booking servis kereta Proton X50 VKK 3456 esok jam 10 pagi untuk servis minyak hitam. Nama Ain 012-3456789'
+            'message' => 'Saya nak booking servis kereta Proton X50 VKK 3456 esok jam 10 pagi untuk servis minyak hitam. Nama Ain 012-3456789',
         ])->assertStatus(200)->assertJson(['action' => 'confirm_booking']);
 
         $res = $this->postJson('/chatbot/reply', [
-            'action'  => 'confirm_booking',
-            'message' => 'Sahkan tempahan slot'
+            'action' => 'confirm_booking',
+            'message' => 'Sahkan tempahan slot',
         ]);
 
         $res->assertStatus(200);
@@ -194,13 +195,13 @@ class ChatbotBookingTest extends TestCase
 
         // Step 1: Draft initial booking (all details including service provided)
         $this->postJson('/chatbot/reply', [
-            'message' => 'Saya nak servis minyak hitam kereta Honda Civic JQK 9999 esok jam 9 pagi. Nama Danial 017-1234567'
+            'message' => 'Saya nak servis minyak hitam kereta Honda Civic JQK 9999 esok jam 9 pagi. Nama Danial 017-1234567',
         ])->assertStatus(200)->assertJson(['action' => 'confirm_booking']);
 
         // Step 2: User clicks [Ubah Servis]
         $editRes = $this->postJson('/chatbot/reply', [
-            'action'  => 'edit_booking_service',
-            'message' => 'Ubah servis'
+            'action' => 'edit_booking_service',
+            'message' => 'Ubah servis',
         ]);
 
         $editRes->assertStatus(200);
@@ -212,10 +213,10 @@ class ChatbotBookingTest extends TestCase
 
         // Step 3: User picks a service chip (e.g., Brake Inspection & Service)
         $pickRes = $this->postJson('/chatbot/reply', [
-            'action'       => 'pick_service_type',
+            'action' => 'pick_service_type',
             'service_type' => 'Brake Inspection & Service',
-            'symptoms'     => 'Brake pads squeaking sound when stopping',
-            'message'      => 'Pemeriksaan Sistem & Pad Brek'
+            'symptoms' => 'Brake pads squeaking sound when stopping',
+            'message' => 'Pemeriksaan Sistem & Pad Brek',
         ]);
 
         $pickRes->assertStatus(200);

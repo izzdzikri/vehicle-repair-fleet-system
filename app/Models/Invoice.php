@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -15,19 +16,23 @@ class Invoice extends Model
         'due_date' => 'date',
     ];
 
-    public function jobCard() {
+    public function jobCard()
+    {
         return $this->belongsTo(JobCard::class);
     }
 
-    public function payments() {
+    public function payments()
+    {
         return $this->hasMany(Payment::class);
     }
 
-    public function generator() {
+    public function generator()
+    {
         return $this->belongsTo(User::class, 'generated_by');
     }
 
-    public function recalculate(): void {
+    public function recalculate(): void
+    {
         $paid = $this->payments()->sum('amount');
 
         if ($this->total <= 0) {
@@ -44,7 +49,8 @@ class Invoice extends Model
         $this->update(['amount_paid' => $paid, 'status' => $status]);
     }
 
-    public function getBalanceAttribute(): float {
+    public function getBalanceAttribute(): float
+    {
         return max(0, $this->total - $this->amount_paid);
     }
 }

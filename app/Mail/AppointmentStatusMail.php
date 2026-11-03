@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Mail;
 
 use App\Models\Appointment;
@@ -11,13 +12,11 @@ class AppointmentStatusMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Appointment $appointment, public string $statusLabel)
-    {
-    }
+    public function __construct(public Appointment $appointment, public string $statusLabel) {}
 
     public function build()
     {
-        return $this->subject('Appointment ' . $this->statusLabel . ' — Teraju Setia Enterprise')
+        return $this->subject('Appointment '.$this->statusLabel.' — Teraju Setia Enterprise')
             ->view('emails.appointment-status');
     }
 }

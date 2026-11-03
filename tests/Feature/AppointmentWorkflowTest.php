@@ -62,20 +62,20 @@ class AppointmentWorkflowTest extends TestCase
         $staff = User::where('role', 'staff')->first();
 
         $apt = Appointment::create([
-            'vehicle_id'   => $vehicle->id,
-            'date'         => today()->toDateString(),
-            'time'         => '10:00:00',
+            'vehicle_id' => $vehicle->id,
+            'date' => today()->toDateString(),
+            'time' => '10:00:00',
             'service_type' => 'Brake Inspection',
-            'status'       => 'confirmed',
-            'is_walkin'    => true,
-            'walkin_name'  => 'Test Customer',
+            'status' => 'confirmed',
+            'is_walkin' => true,
+            'walkin_name' => 'Test Customer',
         ]);
 
         $jobCard = JobCard::create([
             'appointment_id' => $apt->id,
-            'vehicle_id'     => $vehicle->id,
-            'staff_id'       => $staff->id,
-            'current_stage'  => 'repairing',
+            'vehicle_id' => $vehicle->id,
+            'staff_id' => $staff->id,
+            'current_stage' => 'repairing',
         ]);
 
         // When staff visits queue, the link points to /staff/job-cards/{id}
@@ -99,19 +99,19 @@ class AppointmentWorkflowTest extends TestCase
     public function test_coordinator_can_confirm_pending_appointment()
     {
         $coordinator = User::where('role', 'coordinator')->first();
-        if (!$coordinator) {
+        if (! $coordinator) {
             $this->markTestSkipped('Coordinator account not found.');
         }
 
         $vehicle = Vehicle::first();
         $apt = Appointment::create([
-            'vehicle_id'   => $vehicle->id,
-            'date'         => today()->addDays(2)->toDateString(),
-            'time'         => '11:00:00',
+            'vehicle_id' => $vehicle->id,
+            'date' => today()->addDays(2)->toDateString(),
+            'time' => '11:00:00',
             'service_type' => 'Oil & Filter Change',
-            'status'       => 'pending',
-            'is_walkin'    => true,
-            'walkin_name'  => 'Walkin Test',
+            'status' => 'pending',
+            'is_walkin' => true,
+            'walkin_name' => 'Walkin Test',
         ]);
 
         $this->actingAs($coordinator)
@@ -129,14 +129,14 @@ class AppointmentWorkflowTest extends TestCase
 
         $notes = "=== TERAJU WORKSHOP INTAKE & DIAGNOSTIC BRIEF ===\n• Customer Complaint: Engine ticking sound";
         $apt = Appointment::create([
-            'vehicle_id'   => $vehicle->id,
-            'date'         => today()->addDay()->toDateString(),
-            'time'         => '14:00:00',
+            'vehicle_id' => $vehicle->id,
+            'date' => today()->addDay()->toDateString(),
+            'time' => '14:00:00',
             'service_type' => 'Engine Diagnostics',
-            'notes'        => $notes,
-            'status'       => 'confirmed',
-            'is_walkin'    => true,
-            'walkin_name'  => 'Encik Razak',
+            'notes' => $notes,
+            'status' => 'confirmed',
+            'is_walkin' => true,
+            'walkin_name' => 'Encik Razak',
         ]);
 
         $this->actingAs($admin)
@@ -171,13 +171,13 @@ class AppointmentWorkflowTest extends TestCase
         $vehicle = Vehicle::first();
 
         $apt = Appointment::create([
-            'vehicle_id'   => $vehicle->id,
-            'date'         => today()->toDateString(),
-            'time'         => '16:00:00',
+            'vehicle_id' => $vehicle->id,
+            'date' => today()->toDateString(),
+            'time' => '16:00:00',
             'service_type' => 'Battery Replacement',
-            'status'       => 'confirmed',
-            'is_walkin'    => true,
-            'walkin_name'  => 'Late Walkin',
+            'status' => 'confirmed',
+            'is_walkin' => true,
+            'walkin_name' => 'Late Walkin',
         ]);
 
         $this->actingAs($admin)

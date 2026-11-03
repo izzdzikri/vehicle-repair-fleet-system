@@ -4,8 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::table('appointments', function (Blueprint $table) {
             $table->index(['status', 'date'], 'idx_appointments_status_date');
         });
@@ -36,7 +38,8 @@ return new class extends Migration {
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::table('users', function (Blueprint $table) {
             $table->dropIndex('idx_users_role');
             $table->dropIndex('idx_users_status');

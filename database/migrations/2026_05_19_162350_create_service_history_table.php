@@ -6,17 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-public function up(): void
-{
-    Schema::create('service_history', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('vehicle_id')->constrained()->cascadeOnDelete();
-        $table->foreignId('job_card_id')->constrained()->cascadeOnDelete();
-        $table->date('service_date');
-        $table->text('description');
-        $table->decimal('cost', 10, 2);
-        $table->timestamps();
-    });
-}
-public function down(): void { Schema::dropIfExists('service_history'); }
+    public function up(): void
+    {
+        Schema::create('service_history', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('vehicle_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('job_card_id')->constrained()->cascadeOnDelete();
+            $table->date('service_date');
+            $table->text('description');
+            $table->decimal('cost', 10, 2);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('service_history');
+    }
 };
