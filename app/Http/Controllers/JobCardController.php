@@ -222,14 +222,45 @@ class JobCardController extends Controller
             'current_stage' => 'required|in:received,diagnosing,waiting_parts,repairing,quality_check,completed',
         ]);
 
+        $currentStage = $jobCard->current_stage;
+        $targetStage = $request->current_stage;
+
+        // Enforce valid workshop state transitions
+        if ($currentStage !== $targetStage) {
+            $allowedTransitions = [
+                'received' => ['diagnosing'],
+                'diagnosing' => ['waiting_parts', 'repairing'],
+                'waiting_parts' => ['repairing', 'diagnosing'],
+                'repairing' => ['waiting_parts', 'quality_check'],
+                'quality_check' => ['completed', 'repairing'],
+                'completed' => auth()->user()->role === 'admin' ? ['repairing', 'quality_check'] : [],
+            ];
+
+            $allowed = $allowedTransitions[$currentStage] ?? [];
+            if (! in_array($targetStage, $allowed, true)) {
+                $msg = "Invalid stage transition from '{$currentStage}' to '{$targetStage}'. Stages must follow the workshop workflow.";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+
+                return back()->with('error', $msg);
+            }
+        }
+
+        // If an admin reopens a completed job, roll back service history and restore appointment status
+        if ($currentStage === 'completed' && $targetStage !== 'completed') {
+            ServiceHistory::where('job_card_id', $jobCard->id)->delete();
+            if ($jobCard->appointment) {
+                $jobCard->appointment->update(['status' => 'confirmed']);
+            }
+        }
+
         $jobCard->update([
-            'current_stage' => $request->current_stage,
-            // Clear completed_at whenever a job is reopened, so a stale
-            // timestamp doesn't corrupt performance/turnaround metrics.
-            'completed_at' => $request->current_stage === 'completed' ? now() : null,
+            'current_stage' => $targetStage,
+            'completed_at' => $targetStage === 'completed' ? now() : null,
         ]);
 
-        if ($request->current_stage === 'completed') {
+        if ($targetStage === 'completed') {
             ActivityLog::record(
                 'job_card.completed',
                 "Completed job card #{$jobCard->id} for ".($jobCard->vehicle->plate_number ?? '—'),
