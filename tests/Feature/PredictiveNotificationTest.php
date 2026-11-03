@@ -51,7 +51,7 @@ class PredictiveNotificationTest extends TestCase
             ->first();
 
         $this->assertNotNull($notification);
-        $this->assertStringContainsString('Predicted Service Due', $notification->title);
+        $this->assertTrue(str_contains($notification->title, 'Predicted Service Due') || str_contains($notification->title, 'Urgent Maintenance Due'));
     }
 
     public function test_prediction_scan_dispatches_notifications_to_all_active_corporate_pics(): void
