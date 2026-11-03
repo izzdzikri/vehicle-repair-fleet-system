@@ -124,23 +124,40 @@ class InvoiceController extends Controller
             ? ($jobCard->appointment->walkin_name ?? 'Walk-in Customer')
             : ($jobCard->appointment->user->name ?? '—');
 
-        $invoice = Invoice::create([
-            'job_card_id' => $jobCard->id,
-            'invoice_number' => 'PENDING',
-            'customer_name' => $customerName,
-            'subtotal' => $subtotal,
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'total' => $total,
-            'due_date' => $request->input('due_date'),
-            'generated_by' => auth()->id(),
-        ]);
+        try {
+            $invoice = DB::transaction(function () use ($jobCard, $subtotal, $taxRate, $taxAmount, $total, $customerName, $request) {
+                $lockedJobCard = JobCard::where('id', $jobCard->id)->lockForUpdate()->firstOrFail();
 
-        $invoice->update([
-            'invoice_number' => 'INV-'.now()->format('Y').'-'.str_pad($invoice->id, 5, '0', STR_PAD_LEFT),
-        ]);
+                if ($lockedJobCard->invoice()->exists()) {
+                    throw new \InvalidArgumentException('This job card already has an invoice.');
+                }
 
-        $invoice->recalculate();
+                $tempNumber = 'TMP-'.Str::upper(Str::random(12));
+
+                $createdInvoice = Invoice::create([
+                    'job_card_id' => $lockedJobCard->id,
+                    'invoice_number' => $tempNumber,
+                    'customer_name' => $customerName,
+                    'subtotal' => $subtotal,
+                    'tax_rate' => $taxRate,
+                    'tax_amount' => $taxAmount,
+                    'total' => $total,
+                    'due_date' => $request->input('due_date'),
+                    'generated_by' => auth()->id(),
+                ]);
+
+                $createdInvoice->update([
+                    'invoice_number' => 'INV-'.now()->format('Y').'-'.str_pad($createdInvoice->id, 5, '0', STR_PAD_LEFT),
+                ]);
+
+                $createdInvoice->recalculate();
+
+                return $createdInvoice;
+            });
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
         $this->sendInvoiceEmail($invoice);
 
         $ownerId = $jobCard->appointment->user_id ?? null;
