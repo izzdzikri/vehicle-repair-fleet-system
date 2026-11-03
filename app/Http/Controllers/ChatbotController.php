@@ -1086,40 +1086,49 @@ class ChatbotController extends Controller
         $cleanPlate = strtoupper(trim(preg_replace('/\s+/', ' ', $booking['plate_number'])));
         $vehicle = Vehicle::where('plate_number', $cleanPlate)->first();
 
+        $canUpdateSpecs = true;
         if (! $vehicle) {
             $vehicle = new Vehicle;
             $vehicle->plate_number = $cleanPlate;
             $vehicle->user_id = $user ? $user->id : null;
-        }
-
-        if (! empty($booking['car_brand'])) {
-            $vehicle->brand = $booking['car_brand'];
-        }
-        if (! empty($booking['car_model'])) {
-            $vehicle->model = $booking['car_model'];
-        }
-        if (! empty($booking['car_year'])) {
-            $vehicle->year = (int) $booking['car_year'];
-        }
-        if (! empty($booking['mileage'])) {
-            $mileageNum = (int) preg_replace('/[^\d]/', '', $booking['mileage']);
-            if ($mileageNum > 0) {
-                $vehicle->mileage = $mileageNum;
+        } else {
+            // Guard: If vehicle already belongs to another customer, do NOT let unauthenticated or unrelated users overwrite its specifications
+            if ($vehicle->user_id && (! $user || ($user->id !== $vehicle->user_id && $user->role !== 'admin'))) {
+                $canUpdateSpecs = false;
             }
         }
-        $vehicle->save();
+
+        if ($canUpdateSpecs) {
+            if (! empty($booking['car_brand'])) {
+                $vehicle->brand = $booking['car_brand'];
+            }
+            if (! empty($booking['car_model'])) {
+                $vehicle->model = $booking['car_model'];
+            }
+            if (! empty($booking['car_year'])) {
+                $vehicle->year = (int) $booking['car_year'];
+            }
+            if (! empty($booking['mileage'])) {
+                $mileageNum = (int) preg_replace('/[^\d]/', '', $booking['mileage']);
+                if ($mileageNum > 0) {
+                    $vehicle->mileage = $mileageNum;
+                }
+            }
+            $vehicle->save();
+        }
 
         // 2. Create Appointment with full diagnostic notes for the mechanic!
+        // All online/chatbot submissions enter as 'pending' for front-desk triage and review
         $appointment = Appointment::create([
-            'user_id' => $user ? $user->id : null,
+            'user_id' => $user ? $user->id : ($vehicle->user_id ?: null),
             'vehicle_id' => $vehicle->id,
             'date' => $booking['date'],
             'time' => $booking['time'],
             'service_type' => $booking['service_type'],
             'notes' => $booking['diagnostic_notes'],
-            'status' => $user ? 'pending' : 'confirmed',
+            'status' => 'pending',
             'is_walkin' => $user ? false : true,
-            'walkin_name' => $booking['customer_name'] ?: ($user ? $user->name : 'Walk-in Customer'),
+            'walkin_name' => $booking['customer_name'] ?: ($user ? $user->name : 'Online Walk-in'),
             'walkin_contact' => $booking['phone'] ?: ($user ? $user->contact_no : '—'),
         ]);
 
