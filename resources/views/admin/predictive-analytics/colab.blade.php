@@ -171,6 +171,14 @@
 
             <div class="h-4 w-px bg-gray-200 mx-1"></div>
 
+            {{-- Cell dev: DevMode Trial Scratchpad --}}
+            <button type="button" @click="setActivePane('cell_dev')"
+                    :class="activePane === 'cell_dev' ? 'nav-tab-active' : 'text-fuchsia-700 hover:text-fuchsia-900 hover:bg-fuchsia-50 bg-fuchsia-50/50 border border-fuchsia-200/80'"
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer shadow-2xs">
+                <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-fuchsia-500"></i>
+                <span>🧪 DevMode Trial</span>
+            </button>
+
             {{-- Cell 6: Leaderboard --}}
             <button type="button" @click="setActivePane('cell_6')"
                     :class="activePane === 'cell_6' ? 'nav-tab-active' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'"
@@ -289,6 +297,43 @@
                 </template>
             </div>
         </div>
+
+        {{-- DevMode Sandbox Quick Experiments Toolbar (Only for cell_dev) --}}
+        @if($cellKey === 'cell_dev')
+        <div class="px-4 py-2.5 bg-gradient-to-r from-fuchsia-50 via-purple-50 to-indigo-50 border-b border-fuchsia-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex items-center gap-1.5 font-bold text-fuchsia-900">
+                <i data-lucide="sparkles" class="w-4 h-4 text-fuchsia-600"></i>
+                <span>Quick Live Experiments (Click to inject):</span>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <button type="button" @click="injectDevExperiment('clock')"
+                        class="px-2.5 py-1 rounded-md bg-white hover:bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-200 font-semibold transition cursor-pointer shadow-2xs flex items-center gap-1">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-fuchsia-600"></i>
+                    <span>Exp 1: Live Clock</span>
+                </button>
+                <button type="button" @click="injectDevExperiment('sleep')"
+                        class="px-2.5 py-1 rounded-md bg-white hover:bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-200 font-semibold transition cursor-pointer shadow-2xs flex items-center gap-1">
+                    <i data-lucide="timer" class="w-3.5 h-3.5 text-fuchsia-600"></i>
+                    <span>Exp 2: 2s Delay</span>
+                </button>
+                <button type="button" @click="injectDevExperiment('inspect')"
+                        class="px-2.5 py-1 rounded-md bg-white hover:bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-200 font-semibold transition cursor-pointer shadow-2xs flex items-center gap-1">
+                    <i data-lucide="database" class="w-3.5 h-3.5 text-indigo-600"></i>
+                    <span>Exp 3: Inspect Tensors</span>
+                </button>
+                <button type="button" @click="injectDevExperiment('error')"
+                        class="px-2.5 py-1 rounded-md bg-white hover:bg-rose-100 text-rose-800 border border-rose-200 font-semibold transition cursor-pointer shadow-2xs flex items-center gap-1">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-600"></i>
+                    <span>Exp 4: Trigger Error (1/0)</span>
+                </button>
+                <button type="button" @click="injectDevExperiment('blank')"
+                        class="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-semibold transition cursor-pointer shadow-2xs flex items-center gap-1">
+                    <i data-lucide="file" class="w-3.5 h-3.5 text-gray-300"></i>
+                    <span>Blank Slate</span>
+                </button>
+            </div>
+        </div>
+        @endif
 
         {{-- Code Editor Area (Textarea Fallback + CodeMirror Integration) --}}
         <div class="p-3 bg-white">
@@ -591,7 +636,7 @@ function colabNotebook() {
         newModelShort: 'Gradient Boosting',
         executionCounter: 0,
         editors: {},
-        cellKeys: ['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_6'],
+        cellKeys: ['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_dev', 'cell_6'],
         customCells: [],
         defaultTemplates: @json($defaultCells),
         cellStates: {
@@ -600,6 +645,7 @@ function colabNotebook() {
             cell_3: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
             cell_4: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
             cell_5: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
+            cell_dev: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
             cell_6: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
         },
 
@@ -1163,9 +1209,63 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
             });
         },
 
+        injectDevExperiment(type) {
+            let code = '';
+            if (type === 'clock') {
+                code = `# [Exp 1] Live System Clock (Real-Time Execution Proof)
+import datetime
+now = datetime.datetime.now()
+print("=" * 60)
+print(f"✓ LIVE SYSTEM CLOCK : {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
+print(f"✓ UNIX TIMESTAMP    : {now.timestamp():.3f}")
+print("=" * 60)
+print("Click ▶ again and notice the seconds and milliseconds advance in real-time!")`;
+            } else if (type === 'sleep') {
+                code = `# [Exp 2] Artificial Sleep Delay Simulation
+import time
+print("Starting 2.0-second Python sleep simulation...")
+t0 = time.time()
+time.sleep(2.0)
+t1 = time.time()
+print(f"✓ Finished sleep! Elapsed: {(t1 - t0):.3f} seconds")
+print("Notice how the play button spinner turned for exactly 2 seconds and badge shows ~2000ms!");`;
+            } else if (type === 'inspect') {
+                code = `# [Exp 3] Ingested Fleet Data & In-Memory Preprocessed Tensors
+import pandas as pd
+print("=" * 65)
+print("INSPECTING PREPROCESSED DATASET IN PYTHON KERNEL:")
+print("=" * 65)
+if 'df' in globals():
+    print(f"• Active DataFrame : {type(df)} with {len(df)} total fleet records")
+    print(f"• Raw Columns      : {list(df.columns)}")
+if 'X_train_pp' in globals():
+    print(f"• X_train_pp Shape : {X_train_pp.shape} (Standardized & One-Hot Encoded)")
+    print(f"• X_test_pp Shape  : {X_test_pp.shape}")
+if 'y_test' in globals():
+    print(f"• y_test Classes   : {dict(pd.Series(y_test).value_counts())}")
+print("=" * 65)`;
+            } else if (type === 'error') {
+                code = `# [Exp 4] Intentional Error Traceback (Proves live exception capture)
+print("Triggering intentional ZeroDivisionError in Python 3.13...")
+numerator = 100
+denominator = 0
+result = numerator / denominator`;
+            } else if (type === 'blank') {
+                code = `# DevMode Freeform Sandbox Scratchpad
+# Type any Python 3.13 code here and press Shift+Enter!
+`;
+            }
+            if (this.editors['cell_dev']) {
+                this.editors['cell_dev'].setValue(code);
+                this.editors['cell_dev'].focus();
+            }
+            const el = document.getElementById('editor_cell_dev');
+            if (el) el.value = code;
+        },
+
         resetCodeToDefaults() {
-            if (!confirm('Reset all 6 base code cells to original default code templates? Any unsaved edits will be lost.')) return;
-            ['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_6'].forEach(k => {
+            if (!confirm('Reset all base code cells to original default code templates? Any unsaved edits will be lost.')) return;
+            ['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_dev', 'cell_6'].forEach(k => {
                 const code = this.defaultTemplates[k]?.code || '';
                 if (this.editors[k]) {
                     this.editors[k].setValue(code);
