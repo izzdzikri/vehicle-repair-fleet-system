@@ -340,13 +340,29 @@
              }">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
                 <div class="flex items-center gap-5">
-                    <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center font-extrabold text-3xl md:text-4xl shadow-md shrink-0"
+                    <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center shadow-md shrink-0 transition"
                          :class="{
                              'bg-rose-600 text-white': inferenceResult?.consensus?.label === 'HIGH',
                              'bg-amber-500 text-white': inferenceResult?.consensus?.label === 'MEDIUM',
                              'bg-emerald-600 text-white': inferenceResult?.consensus?.label === 'LOW'
                          }">
-                        <span x-text="inferenceResult?.consensus?.label"></span>
+                        {{-- Severity Status Icon --}}
+                        <svg x-show="inferenceResult?.consensus?.label === 'HIGH'" class="w-7 h-7 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <svg x-show="inferenceResult?.consensus?.label === 'MEDIUM'" class="w-7 h-7 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <svg x-show="inferenceResult?.consensus?.label === 'LOW'" class="w-7 h-7 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <polyline points="9 12 11 14 15 10"></polyline>
+                        </svg>
+                        {{-- Label Text Sized to Fit Square Container --}}
+                        <span class="text-xs md:text-sm font-black uppercase tracking-wider mt-0.5 leading-none" x-text="inferenceResult?.consensus?.label"></span>
                     </div>
 
                     <div>
