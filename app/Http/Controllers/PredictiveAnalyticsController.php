@@ -1059,6 +1059,7 @@ BIBTEX;
             'action'     => 'required|in:run_single_cell,run_all',
             'cells'      => 'required|array',
             'cell_key'   => 'nullable|string',
+            'cell_order' => 'nullable|array',
         ]);
 
         $dataset = MlDataset::findOrFail($request->dataset_id);
@@ -1069,6 +1070,7 @@ BIBTEX;
             'action'       => $request->action,
             'cell_key'     => $request->cell_key,
             'cells'        => $request->cells,
+            'cell_order'   => $request->cell_order ?? array_keys($request->cells),
         ];
 
         $res = Process::timeout(180)->run([
@@ -1212,33 +1214,57 @@ BIBTEX;
         return [
             'cell_1' => [
                 'title'       => 'Cell 1: Environment Setup & Dataset Ingestion Pipeline',
+                'short_title' => 'Pipeline',
+                'badge'       => 'Pipeline & Ingestion',
+                'badge_color' => 'bg-sky-50 text-sky-700 border-sky-200',
+                'icon'        => 'database',
                 'description' => 'Load selected dataset, clean features, and prepare 80/20 stratified split.',
                 'code'        => "# [Cell 1] Dataset Ingestion & Preprocessing Pipeline\nimport pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler, OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\n\n# Load selected Teraju Setia dataset\ndf = pd.read_csv(DATASET_PATH)\ndf.columns = [c.strip().lower().replace(' ', '_') for c in df.columns]\nif 'urgency' in df.columns:\n    df.rename(columns={'urgency': 'urgency_label'}, inplace=True)\ndf['urgency_label'] = df['urgency_label'].str.upper()\n\nNUMERIC_FEATURES = ['days_since_service', 'km_since_service', 'interval_km', 'interval_months', 'daily_km', 'terrain_severity', 'vehicle_age', 'total_mileage']\nCATEGORICAL_FEATURES = ['fuel_type', 'owner_type']\n\nfor col in NUMERIC_FEATURES:\n    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)\n\npreprocessor = ColumnTransformer(transformers=[\n    ('num', StandardScaler(), NUMERIC_FEATURES),\n    ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), CATEGORICAL_FEATURES)\n])\n\nX = df[NUMERIC_FEATURES + CATEGORICAL_FEATURES]\ny = df['urgency_label'].values\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, stratify=y, random_state=42)\nX_train_pp = preprocessor.fit_transform(X_train)\nX_test_pp = preprocessor.transform(X_test)\n\nprint(f\"✓ Dataset Loaded: {len(df)} total rows\")\nprint(f\"✓ Train Split: {len(X_train)} samples | Test Split: {len(X_test)} samples\")\nprint(f\"✓ Target Class Distribution: {dict(pd.Series(y).value_counts())}\")",
             ],
             'cell_2' => [
                 'title'       => 'Cell 2: Model 1 — Deterministic Hybrid Rule-Based Model',
+                'short_title' => '1. Rule-Based',
+                'badge'       => 'Deterministic Rule',
+                'badge_color' => 'bg-amber-50 text-amber-700 border-amber-200',
+                'icon'        => 'cpu',
                 'description' => 'Hybrid time/mileage calculation with terrain severity adjustment factor.',
                 'code'        => "# [Cell 2] Model 1: Deterministic Hybrid Time/Mileage + Terrain Severity Rule\ndef run_rule_based(X_subset):\n    preds, confs = [], []\n    for _, row in X_subset.iterrows():\n        eff_km = max(float(row.get('interval_km', 5000)) / max(float(row.get('terrain_severity', 1.0)), 0.1), 1)\n        remaining_km = eff_km - float(row.get('km_since_service', 0))\n        daily = max(float(row.get('daily_km', 40)), 1)\n        days_via_km = remaining_km / daily\n        days_via_time = (float(row.get('interval_months', 6)) * 30.44) - float(row.get('days_since_service', 0))\n        d = round(min(days_via_km, days_via_time))\n\n        if d <= 0:\n            pred = \"HIGH\"\n            margin = min(abs(d), 60)\n            conf = 50 + 50 * (margin / 60)\n        elif d <= 14:\n            pred = \"MEDIUM\"\n            conf = 50 + 50 * (min(d, 14 - d) / 7)\n        else:\n            pred = \"LOW\"\n            conf = 50 + 50 * (min(d - 14, 60) / 60)\n\n        preds.append(pred)\n        confs.append(round(min(max(conf, 50.0), 100.0), 2))\n    return np.array(preds), np.array(confs)\n\nrb_preds, rb_confs = run_rule_based(X_test)\nrb_acc = (rb_preds == y_test).mean() * 100\nprint(f\"✓ Model 1: Rule-Based Evaluation Complete\")\nprint(f\"  • Test Accuracy: {rb_acc:.2f}%\")\nprint(f\"  • Average Margin Confidence: {rb_confs.mean():.2f}%\")",
             ],
             'cell_3' => [
                 'title'       => 'Cell 3: Model 2 — Decision Tree Classifier (CART)',
+                'short_title' => '2. Decision Tree',
+                'badge'       => 'Decision Tree (CART)',
+                'badge_color' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                'icon'        => 'git-fork',
                 'description' => 'Configurable CART tree with Gini impurity criterion and tree depth controls.',
                 'code'        => "# [Cell 3] Model 2: Decision Tree Classifier (CART)\nfrom sklearn.tree import DecisionTreeClassifier\n\n# Hyperparameters: adjust max_depth, criterion, min_samples_split\ndt_model = DecisionTreeClassifier(\n    criterion='gini',\n    max_depth=6,\n    min_samples_split=2,\n    random_state=42\n)\n\ndt_model.fit(X_train_pp, y_train)\ndt_preds = dt_model.predict(X_test_pp)\ndt_confs = dt_model.predict_proba(X_test_pp).max(axis=1) * 100\ndt_acc = (dt_preds == y_test).mean() * 100\n\nprint(f\"✓ Model 2: Decision Tree Trained (Depth: {dt_model.get_depth()}, Leaves: {dt_model.get_n_leaves()})\")\nprint(f\"  • Test Accuracy: {dt_acc:.2f}%\")\nprint(f\"  • Mean Leaf Confidence: {dt_confs.mean():.2f}%\")",
             ],
             'cell_4' => [
                 'title'       => 'Cell 4: Model 3 — Random Forest Ensemble (Bagging)',
+                'short_title' => '3. Random Forest',
+                'badge'       => 'Ensemble (100 Trees)',
+                'badge_color' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                'icon'        => 'layers',
                 'description' => '100 Bootstrap trees ensemble with Out-of-Bag (OOB) scoring.',
                 'code'        => "# [Cell 4] Model 3: Random Forest Classifier (100 Trees Ensemble)\nfrom sklearn.ensemble import RandomForestClassifier\n\n# Hyperparameters: adjust n_estimators, max_features, max_depth\nrf_model = RandomForestClassifier(\n    n_estimators=100,\n    max_features='sqrt',\n    max_depth=8,\n    oob_score=True,\n    random_state=42,\n    n_jobs=-1\n)\n\nrf_model.fit(X_train_pp, y_train)\nrf_preds = rf_model.predict(X_test_pp)\nrf_confs = rf_model.predict_proba(X_test_pp).max(axis=1) * 100\nrf_acc = (rf_preds == y_test).mean() * 100\n\nprint(f\"✓ Model 3: Random Forest Ensemble Fitted (100 Estimators)\")\nprint(f\"  • Test Accuracy: {rf_acc:.2f}%\")\nprint(f\"  • OOB (Out-of-Bag) Score: {rf_model.oob_score_ * 100:.2f}%\")\nprint(f\"  • Mean Vote Confidence: {rf_confs.mean():.2f}%\")",
             ],
             'cell_5' => [
                 'title'       => 'Cell 5: Model 4 — Support Vector Machine (RBF Kernel)',
+                'short_title' => '4. SVM (RBF)',
+                'badge'       => 'Kernel SVM + Platt',
+                'badge_color' => 'bg-purple-50 text-purple-700 border-purple-200',
+                'icon'        => 'zap',
                 'description' => 'Radial Basis Function SVM with Platt probability scaling and C regularization.',
                 'code'        => "# [Cell 5] Model 4: Support Vector Machine (RBF Kernel + Platt Probability)\nfrom sklearn.svm import SVC\nfrom sklearn.pipeline import Pipeline\n\n# Hyperparameters: C (regularization), gamma (kernel coefficient)\nsvm_model = SVC(\n    kernel='rbf',\n    C=1.0,\n    gamma='scale',\n    probability=True,\n    decision_function_shape='ovo',\n    random_state=42\n)\n\nsvm_model.fit(X_train_pp, y_train)\nsvm_preds = svm_model.predict(X_test_pp)\nsvm_confs = svm_model.predict_proba(X_test_pp).max(axis=1) * 100\nsvm_acc = (svm_preds == y_test).mean() * 100\n\nprint(f\"✓ Model 4: SVM (RBF) Fitted (Support Vectors: {sum(svm_model.n_support_)})\")\nprint(f\"  • Test Accuracy: {svm_acc:.2f}%\")\nprint(f\"  • Mean Platt Confidence: {svm_confs.mean():.2f}%\")",
             ],
             'cell_6' => [
-                'title'       => 'Cell 6: Evaluation & 4-Model Comparative Analysis',
-                'description' => 'Computes test metrics, macro F1, HIGH urgency recall, and ensemble agreement.',
-                'code'        => "# [Cell 6] 4-Model Evaluation & Leaderboard Benchmark\nfrom sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix\n\nmodels_dict = {\n    'Rule-Based Baseline': (rb_preds, rb_confs),\n    'Decision Tree (CART)': (dt_preds, dt_confs),\n    'Random Forest (100 Trees)': (rf_preds, rf_confs),\n    'SVM (RBF Kernel)': (svm_preds, svm_confs),\n}\n\nprint(\"=\" * 72)\nprint(f\"{'ALGORITHM':<26} | {'ACCURACY':<10} | {'MACRO F1':<10} | {'HIGH RECALL':<12} | {'MEAN CONF'}\")\nprint(\"=\" * 72)\n\nfor name, (preds, confs) in models_dict.items():\n    acc = (preds == y_test).mean() * 100\n    f1 = f1_score(y_test, preds, average='macro', zero_division=0) * 100\n    rec = recall_score(y_test, preds, average=None, labels=['LOW', 'MEDIUM', 'HIGH'], zero_division=0)\n    high_rec = rec[2] * 100  # HIGH is index 2\n    print(f\"{name:<26} | {acc:>8.2f}% | {f1:>8.2f}% | {high_rec:>10.2f}% | {confs.mean():>8.2f}%\")\n\nprint(\"=\" * 72)\n\n# Compute 4-Model Consensus on Test Set\nagreements = []\nfor i in range(len(y_test)):\n    votes = [rb_preds[i], dt_preds[i], rf_preds[i], svm_preds[i]]\n    agree_count = max(votes.count(v) for v in set(votes))\n    agreements.append(agree_count)\n\nprint(f\"\\n✓ 4-Model Consensus Breakdown (N = {len(y_test)}):\")\nprint(f\"  • 4/4 Unanimous Agreement: {agreements.count(4)} ({agreements.count(4)/len(y_test)*100:.1f}%)\")\nprint(f\"  • 3/4 Strong Majority:    {agreements.count(3)} ({agreements.count(3)/len(y_test)*100:.1f}%)\")\nprint(f\"  • Split / Contested (<=2): {sum(1 for a in agreements if a <= 2)} ({sum(1 for a in agreements if a <= 2)/len(y_test)*100:.1f}%)\")",
+                'title'       => 'Cell 6: Evaluation & Comparative Leaderboard',
+                'short_title' => 'Leaderboard',
+                'badge'       => 'Leaderboard Benchmark',
+                'badge_color' => 'bg-rose-50 text-rose-700 border-rose-200',
+                'icon'        => 'bar-chart-2',
+                'description' => 'Computes test metrics, macro F1, HIGH urgency recall, and multi-model consensus.',
+                'code'        => "# [Cell 6] Multi-Model Evaluation & Leaderboard Benchmark\nfrom sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix\n\nmodels_dict = {\n    'Rule-Based Baseline': (rb_preds, rb_confs),\n    'Decision Tree (CART)': (dt_preds, dt_confs),\n    'Random Forest (100 Trees)': (rf_preds, rf_confs),\n    'SVM (RBF Kernel)': (svm_preds, svm_confs),\n}\n\n# Automatically integrate any dynamically added models registered in EXTRA_MODELS\nif 'EXTRA_MODELS' in globals() and isinstance(EXTRA_MODELS, dict):\n    models_dict.update(EXTRA_MODELS)\n\nprint(\"=\" * 74)\nprint(f\"{'ALGORITHM':<28} | {'ACCURACY':<10} | {'MACRO F1':<10} | {'HIGH RECALL':<12} | {'MEAN CONF'}\")\nprint(\"=\" * 74)\n\nfor name, (preds, confs) in models_dict.items():\n    acc = (preds == y_test).mean() * 100\n    f1 = f1_score(y_test, preds, average='macro', zero_division=0) * 100\n    rec = recall_score(y_test, preds, average=None, labels=['LOW', 'MEDIUM', 'HIGH'], zero_division=0)\n    high_rec = rec[2] * 100 if len(rec) > 2 else 0\n    print(f\"{name:<28} | {acc:>8.2f}% | {f1:>8.2f}% | {high_rec:>10.2f}% | {confs.mean():>8.2f}%\")\n\nprint(\"=\" * 74)\n\n# Compute Multi-Model Consensus on Test Set\nall_model_preds = [preds for preds, confs in models_dict.values()]\nnum_models = len(models_dict)\nagreements = []\nfor i in range(len(y_test)):\n    votes = [p[i] for p in all_model_preds]\n    agree_count = max(votes.count(v) for v in set(votes))\n    agreements.append(agree_count)\n\nprint(f\"\\n✓ Multi-Model Consensus Breakdown ({num_models} Models, N = {len(y_test)}):\")\nprint(f\"  • {num_models}/{num_models} Unanimous Agreement: {agreements.count(num_models)} ({agreements.count(num_models)/len(y_test)*100:.1f}%)\")\nif num_models >= 3:\n    maj_thresh = (num_models // 2) + 1\n    maj_count = sum(1 for a in agreements if a >= maj_thresh and a < num_models)\n    print(f\"  • Majority (>= {maj_thresh}/{num_models}):          {maj_count} ({maj_count/len(y_test)*100:.1f}%)\")\n    split_count = sum(1 for a in agreements if a < maj_thresh)\n    print(f\"  • Split / Contested (< {maj_thresh}):       {split_count} ({split_count/len(y_test)*100:.1f}%)\")",
             ],
         ];
     }

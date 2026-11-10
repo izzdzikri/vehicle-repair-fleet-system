@@ -25,7 +25,17 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    HistGradientBoostingClassifier,
+    GradientBoostingClassifier,
+    AdaBoostClassifier,
+    ExtraTreesClassifier,
+)
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -72,6 +82,14 @@ def execute_notebook(payload: dict) -> dict:
         "DecisionTreeClassifier": DecisionTreeClassifier,
         "RandomForestClassifier": RandomForestClassifier,
         "SVC": SVC,
+        "HistGradientBoostingClassifier": HistGradientBoostingClassifier,
+        "GradientBoostingClassifier": GradientBoostingClassifier,
+        "KNeighborsClassifier": KNeighborsClassifier,
+        "LogisticRegression": LogisticRegression,
+        "AdaBoostClassifier": AdaBoostClassifier,
+        "MLPClassifier": MLPClassifier,
+        "ExtraTreesClassifier": ExtraTreesClassifier,
+        "GaussianNB": GaussianNB,
         "StandardScaler": StandardScaler,
         "OneHotEncoder": OneHotEncoder,
         "ColumnTransformer": ColumnTransformer,
@@ -89,8 +107,10 @@ def execute_notebook(payload: dict) -> dict:
     extracted_models = {}
     extracted_predictions = []
 
-    # If single cell execution, run prior cells in silent mode first so variables exist
-    cell_order = ["cell_1", "cell_2", "cell_3", "cell_4", "cell_5", "cell_6"]
+    # Dynamic cell order from payload, or default sequence
+    cell_order = payload.get("cell_order")
+    if not cell_order or not isinstance(cell_order, list):
+        cell_order = list(cells.keys())
 
     if action == "run_single_cell" and single_cell_key:
         cells_to_run = []
