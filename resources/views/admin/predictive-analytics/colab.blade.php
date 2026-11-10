@@ -122,7 +122,7 @@
                     class="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer">
                 <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
                 <span>All Cells</span>
-                <span class="ml-0.5 px-1.5 py-0.2 bg-slate-700 text-white text-[10px] rounded-full"
+                <span class="ml-0.5 px-2 py-0.5 bg-slate-700 text-white text-xs font-bold rounded-full"
                       :class="activePane === 'all' ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700'"
                       x-text="cellKeys.length"></span>
             </button>
@@ -438,10 +438,10 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <h4 class="font-bold text-gray-900 text-sm font-mono" x-text="cell.title"></h4>
-                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded border"
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded border"
                                   :class="cell.badgeColor || 'bg-indigo-50 text-indigo-700 border-indigo-200'"
                                   x-text="cell.badge"></span>
-                            <span class="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-1.5 py-0.2 rounded uppercase">Custom Model</span>
+                            <span class="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded uppercase">Custom Model</span>
                         </div>
                         <p class="text-xs text-gray-500 mt-0.5" x-text="cell.description"></p>
                     </div>
@@ -578,15 +578,15 @@
                                 <div>
                                     <div class="flex items-center justify-between gap-2 mb-1.5">
                                         <span class="font-bold text-sm text-gray-900" x-text="preset.name"></span>
-                                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded border"
+                                        <span class="text-xs font-semibold px-2 py-0.5 rounded border"
                                               :class="preset.badgeColor"
                                               x-text="preset.badge"></span>
                                     </div>
                                     <p class="text-xs text-gray-500 leading-relaxed" x-text="preset.description"></p>
                                 </div>
                                 <div class="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
-                                    <span class="font-mono text-[11px] text-gray-400">scikit-learn 1.6</span>
-                                    <span x-show="selectedPreset === pKey" class="text-indigo-600 font-bold flex items-center gap-1 text-[11px]">
+                                    <span class="font-mono text-xs text-gray-400">scikit-learn 1.6</span>
+                                    <span x-show="selectedPreset === pKey" class="text-indigo-600 font-bold flex items-center gap-1 text-xs">
                                         <i data-lucide="check" class="w-3.5 h-3.5"></i> Selected
                                     </span>
                                 </div>
