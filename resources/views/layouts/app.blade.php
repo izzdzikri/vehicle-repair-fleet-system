@@ -64,6 +64,7 @@
             main { padding: 0 !important; margin: 0 !important; overflow: visible !important; max-width: 100% !important; }
         }
     </style>
+    @stack('head')
 </head>
 <body class="bg-gray-100 min-h-screen" x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
 
@@ -160,7 +161,12 @@
                     {!! $link('/admin/job-cards',       'clipboard-list',   'Job Cards',         'admin/job-cards*', null, ['admin/job-cards/schedule','admin/job-cards/board']) !!}
                     {!! $link('/admin/job-cards/board', 'layout-grid',      'Job Board',         'admin/job-cards/board') !!}
                     {!! $link('/admin/job-cards/schedule', 'list-ordered',  'Job Schedule',      'admin/job-cards/schedule') !!}
-                    {!! $link('/admin/maintenance',     'bell',             'Maintenance',       'admin/maintenance*', $sidebarCounts['urgent_alerts'] ?: null) !!}
+                    {!! $link('/admin/maintenance',     'bell',             'Maintenance Alerts','admin/maintenance', $sidebarCounts['urgent_alerts'] ?: null, 'admin/maintenance-alerts*') !!}
+
+                    {!! $section('R&D Researcher Panel') !!}
+                    {!! $link('/admin/researcher-panel', 'microscope', 'Researcher Panel', ['admin/researcher-panel*', 'admin/maintenance-alerts/researcher-panel*']) !!}
+                    {!! $link('/admin/researcher-colab', 'terminal', 'ML Colab Lab', ['admin/researcher-colab*']) !!}
+                    {!! $link('/admin/maintenance-alerts/predictive-analytics', 'cpu', 'ML Data & Training', 'admin/maintenance-alerts/predictive-analytics*') !!}
 
                     {!! $section('Inventory') !!}
                     {!! $link('/admin/spare-parts',     'package',          'Inventory',         'admin/spare-parts*', $sidebarCounts['low_stock'] ?: null) !!}

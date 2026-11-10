@@ -12,6 +12,8 @@ class MaintenanceAlert extends Model
         'recommendation', 'predicted_due_date', 'is_read',
         'is_verified', 'verified_by', 'verified_at', 'admin_notes',
         'overridden_due_date', 'overridden_urgency',
+        // ML R&D fields — additive only, nullable
+        'predicted_by_algo', 'confidence_score', 'ml_staff_verified', 'ml_verified_by_user_id',
     ];
 
     protected $casts = [

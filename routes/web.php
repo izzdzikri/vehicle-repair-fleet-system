@@ -12,6 +12,7 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\JobCardController;
 use App\Http\Controllers\MaintenanceAlertController;
+use App\Http\Controllers\PredictiveAnalyticsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
@@ -172,6 +173,48 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/maintenance', [MaintenanceAlertController::class, 'store'])->name('admin.maintenance.store');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('admin.maintenance.read');
     Route::post('/maintenance/predict', [MaintenanceAlertController::class, 'runPredictions'])->name('admin.maintenance.predict');
+
+    // ── Predictive Analytics R&D Panel ──────────────────────────────────────
+    Route::get('/maintenance-alerts/predictive-analytics', [PredictiveAnalyticsController::class, 'index'])
+        ->name('admin.predictive-analytics.index');
+    Route::post('/maintenance-alerts/predictive-analytics/upload', [PredictiveAnalyticsController::class, 'uploadDataset'])
+        ->name('admin.predictive-analytics.upload');
+    Route::post('/maintenance-alerts/predictive-analytics/export', [PredictiveAnalyticsController::class, 'exportSystemData'])
+        ->name('admin.predictive-analytics.export');
+    Route::post('/maintenance-alerts/predictive-analytics/generate', [PredictiveAnalyticsController::class, 'generateSyntheticData'])
+        ->name('admin.predictive-analytics.generate');
+    Route::post('/maintenance-alerts/predictive-analytics/run', [PredictiveAnalyticsController::class, 'runExperiment'])
+        ->name('admin.predictive-analytics.run');
+    Route::delete('/maintenance-alerts/predictive-analytics/datasets/{dataset}', [PredictiveAnalyticsController::class, 'deleteDataset'])
+        ->name('admin.predictive-analytics.datasets.delete');
+    Route::post('/maintenance-alerts/predictive-analytics/predictions/{prediction}/push', [PredictiveAnalyticsController::class, 'pushToAlerts'])
+        ->name('admin.predictive-analytics.predictions.push');
+    Route::post('/maintenance-alerts/predictive-analytics/predictions/{prediction}/verify', [PredictiveAnalyticsController::class, 'verifyPrediction'])
+        ->name('admin.predictive-analytics.predictions.verify');
+    Route::get('/maintenance-alerts/predictive-analytics/predictions/{prediction}/audit-detail', [PredictiveAnalyticsController::class, 'predictionAuditDetail'])
+        ->name('admin.predictive-analytics.predictions.audit-detail');
+    Route::get('/maintenance-alerts/predictive-analytics/experiments/{experiment}/predictions', [PredictiveAnalyticsController::class, 'experimentPredictions'])
+        ->name('admin.predictive-analytics.experiments.predictions');
+    Route::get('/maintenance-alerts/predictive-analytics/experiments/{experiment}/chart-data', [PredictiveAnalyticsController::class, 'chartData'])
+        ->name('admin.predictive-analytics.chart-data');
+
+    // ── Dedicated Researcher Panel (4-Model Confidence & Prediction Matrix) ──
+    Route::get('/researcher-panel', [PredictiveAnalyticsController::class, 'researcherPanel'])
+        ->name('admin.researcher-panel');
+    Route::get('/maintenance-alerts/researcher-panel', [PredictiveAnalyticsController::class, 'researcherPanel'])
+        ->name('admin.maintenance-alerts.researcher-panel');
+    Route::get('/researcher-panel/export-csv/{experiment}', [PredictiveAnalyticsController::class, 'exportPredictionsCsv'])
+        ->name('admin.researcher-panel.export-csv');
+    Route::get('/researcher-panel/export-latex/{experiment}', [PredictiveAnalyticsController::class, 'exportLatexSnippet'])
+        ->name('admin.researcher-panel.export-latex');
+
+    // ── Interactive Google Colab Notebook Lab ────────────────────────────
+    Route::get('/researcher-colab', [PredictiveAnalyticsController::class, 'colabNotebook'])
+        ->name('admin.researcher-colab');
+    Route::post('/researcher-colab/run', [PredictiveAnalyticsController::class, 'executeColabCell'])
+        ->name('admin.researcher-colab.run');
+    Route::post('/researcher-colab/commit-experiment', [PredictiveAnalyticsController::class, 'commitColabExperiment'])
+        ->name('admin.researcher-colab.commit');
     Route::get('/predictions/proofread', [AdminController::class, 'proofreadPredictions'])->name('admin.predictions.proofread');
     Route::post('/predictions/{alert}/verify', [AdminController::class, 'verifyPrediction'])->name('admin.predictions.verify');
     Route::post('/predictions/{alert}/adjust', [AdminController::class, 'adjustPrediction'])->name('admin.predictions.adjust');

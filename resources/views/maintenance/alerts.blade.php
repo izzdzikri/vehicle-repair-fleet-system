@@ -294,6 +294,34 @@
                             <i data-lucide="sparkles" class="w-2.5 h-2.5 text-blue-500"></i> Auto-Projected
                         </span>
                         @endif
+                        {{-- ML R&D: confidence badge (non-breaking — only shows when pushed from Predictive Analytics) --}}
+                        @if($alert->confidence_score !== null)
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5
+                            {{ $alert->confidence_score >= 85 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                               ($alert->confidence_score >= 60 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                                'bg-slate-100 text-slate-600 border border-slate-200') }}">
+                            <i data-lucide="brain-circuit" class="w-2.5 h-2.5"></i>
+                            ML {{ round($alert->confidence_score) }}%
+                            @if($alert->predicted_by_algo)
+                            · {{ str_replace('_',' ', $alert->predicted_by_algo) }}
+                            @endif
+                        </span>
+                        @endif
+                        {{-- ML Staff Verify badge --}}
+                        @if($alert->confidence_score !== null && isset($alert->ml_staff_verified))
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5
+                            {{ $alert->ml_staff_verified === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                               ($alert->ml_staff_verified === 'rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                                'bg-slate-100 text-slate-500 border border-slate-200') }}">
+                            @if($alert->ml_staff_verified === 'verified')
+                                <i data-lucide="shield-check" class="w-2.5 h-2.5"></i> Verified
+                            @elseif($alert->ml_staff_verified === 'rejected')
+                                <i data-lucide="shield-x" class="w-2.5 h-2.5"></i> Rejected
+                            @else
+                                <i data-lucide="shield" class="w-2.5 h-2.5"></i> Pending
+                            @endif
+                        </span>
+                        @endif
                     </td>
                     <td class="py-3.5 px-4 whitespace-nowrap">
                         @if($alert->predicted_due_date)
