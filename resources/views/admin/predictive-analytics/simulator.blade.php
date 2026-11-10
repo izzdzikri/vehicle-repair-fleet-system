@@ -338,46 +338,33 @@
                  'bg-amber-50/90 border-amber-200 text-amber-950': inferenceResult?.consensus?.label === 'MEDIUM',
                  'bg-emerald-50/90 border-emerald-200 text-emerald-950': inferenceResult?.consensus?.label === 'LOW'
              }">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-                <div class="flex items-center gap-5">
-                    <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center shadow-md shrink-0 transition"
-                         :class="{
-                             'bg-rose-600 text-white': inferenceResult?.consensus?.label === 'HIGH',
-                             'bg-amber-500 text-white': inferenceResult?.consensus?.label === 'MEDIUM',
-                             'bg-emerald-600 text-white': inferenceResult?.consensus?.label === 'LOW'
-                         }">
-                        {{-- Severity Status Icon --}}
-                        <svg x-show="inferenceResult?.consensus?.label === 'HIGH'" class="w-7 h-7 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
-                        <svg x-show="inferenceResult?.consensus?.label === 'MEDIUM'" class="w-7 h-7 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
-                            <line x1="12" y1="9" x2="12" y2="13"></line>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                        </svg>
-                        <svg x-show="inferenceResult?.consensus?.label === 'LOW'" class="w-7 h-7 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                            <polyline points="9 12 11 14 15 10"></polyline>
-                        </svg>
-                        {{-- Label Text Sized to Fit Square Container --}}
-                        <span class="text-xs md:text-sm font-black uppercase tracking-wider mt-0.5 leading-none" x-text="inferenceResult?.consensus?.label"></span>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div>
+                    <div class="flex items-center gap-2.5 flex-wrap mb-2">
+                        <span class="text-xs md:text-sm font-mono uppercase tracking-wider font-bold">Multi-Model Consensus:</span>
+
+                        {{-- Prominent Consensus Verdict Pill --}}
+                        <span class="px-3.5 py-1 rounded-full text-xs md:text-sm font-black uppercase tracking-wider shadow-2xs border flex items-center gap-1.5"
+                              :class="{
+                                  'bg-rose-600 text-white border-rose-700': inferenceResult?.consensus?.label === 'HIGH',
+                                  'bg-amber-500 text-white border-amber-600': inferenceResult?.consensus?.label === 'MEDIUM',
+                                  'bg-emerald-600 text-white border-emerald-700': inferenceResult?.consensus?.label === 'LOW'
+                              }">
+                            <span x-text="inferenceResult?.consensus?.label === 'HIGH' ? '🚨' : (inferenceResult?.consensus?.label === 'MEDIUM' ? '⚠️' : '✅')"></span>
+                            <span x-text="inferenceResult?.consensus?.label + ' URGENCY'"></span>
+                        </span>
+
+                        <span class="text-xs md:text-sm font-bold px-3 py-1 rounded-full border bg-white shadow-2xs text-gray-700"
+                              x-text="inferenceResult?.consensus?.status_text"></span>
+                        <span class="text-xs md:text-sm font-mono text-gray-500 font-semibold"
+                              x-text="'Kernel Runtime: ' + inferenceResult?.execution_time_ms + 'ms'"></span>
                     </div>
 
-                    <div>
-                        <div class="flex items-center gap-2.5 flex-wrap">
-                            <span class="text-xs md:text-sm font-mono uppercase tracking-wider font-bold">Multi-Model Consensus Verdict:</span>
-                            <span class="text-xs md:text-sm font-bold px-3 py-1 rounded-full border bg-white shadow-2xs"
-                                  x-text="inferenceResult?.consensus?.status_text"></span>
-                            <span class="text-xs md:text-sm font-mono text-gray-600 font-semibold"
-                                  x-text="'Kernel Runtime: ' + inferenceResult?.execution_time_ms + 'ms'"></span>
-                        </div>
-                        <h3 class="text-2xl md:text-3xl font-extrabold tracking-tight mt-1.5"
-                            x-text="inferenceResult?.consensus?.label === 'HIGH' ? '🚨 High Maintenance Urgency Detected' : (inferenceResult?.consensus?.label === 'MEDIUM' ? '⚠️ Medium Maintenance Urgency Warning' : '✅ Low Urgency (Healthy Fleet Vehicle)')"></h3>
-                        <p class="text-sm md:text-base font-medium mt-1.5 leading-relaxed"
-                           x-text="inferenceResult?.explainability?.recommended_action"></p>
-                    </div>
+                    <h3 class="text-2xl md:text-3xl font-extrabold tracking-tight mt-1"
+                        x-text="inferenceResult?.consensus?.label === 'HIGH' ? 'High Maintenance Urgency Detected' : (inferenceResult?.consensus?.label === 'MEDIUM' ? 'Medium Maintenance Urgency Warning' : 'Low Urgency (Healthy Fleet Vehicle)')"></h3>
+
+                    <p class="text-sm md:text-base font-medium mt-1.5 leading-relaxed max-w-3xl"
+                       x-text="inferenceResult?.explainability?.recommended_action"></p>
                 </div>
 
                 {{-- Fast Stats Pills --}}
