@@ -165,6 +165,7 @@
 
                     {!! $section('R&D Researcher Panel') !!}
                     {!! $link('/admin/researcher-panel', 'microscope', 'Researcher Panel', ['admin/researcher-panel*', 'admin/maintenance-alerts/researcher-panel*']) !!}
+                    {!! $link('/admin/researcher-simulator', 'sliders-horizontal', 'Interactive Simulator', ['admin/researcher-simulator*']) !!}
                     {!! $link('/admin/researcher-colab', 'terminal', 'ML Colab Lab', ['admin/researcher-colab*']) !!}
                     {!! $link('/admin/maintenance-alerts/predictive-analytics', 'cpu', 'ML Data & Training', 'admin/maintenance-alerts/predictive-analytics*') !!}
 

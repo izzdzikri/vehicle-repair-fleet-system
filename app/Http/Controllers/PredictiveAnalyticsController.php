@@ -1033,6 +1033,181 @@ BIBTEX;
         ]);
     }
 
+    // ── Interactive Model Playground & What-If Simulator ─────────────────
+
+    public function interactiveSimulator(Request $request)
+    {
+        // 1. Live fleet vehicles with calculated or realistic telemetry
+        $vehicles = Vehicle::with(['serviceHistory.jobCard.jobType', 'tripLogs', 'owner'])
+            ->latest()
+            ->take(30)
+            ->get()
+            ->map(function ($v) {
+                $lastService = $v->serviceHistory->sortByDesc('service_date')->first();
+                $daysSince = $lastService ? Carbon::parse($lastService->service_date)->diffInDays(now()) : rand(25, 220);
+                $dailyKm = 45;
+                if ($v->tripLogs && $v->tripLogs->count() >= 2) {
+                    $totalKm = $v->tripLogs->sum('distance_km');
+                    $spanDays = max(1, $v->tripLogs->first()->trip_date->diffInDays($v->tripLogs->last()->trip_date));
+                    $dailyKm = max(15, min(round($totalKm / $spanDays), 140));
+                }
+                $kmSince = round($dailyKm * $daysSince);
+
+                return [
+                    'id'                 => $v->id,
+                    'plate_number'       => $v->plate_number,
+                    'brand_model'        => ($v->brand ?? '') . ' ' . ($v->model ?? ''),
+                    'fuel_type'          => strtolower($v->fuel_type ?? 'diesel'),
+                    'owner_type'         => ($v->owner && $v->owner->role === 'corporate') ? 'corporate' : 'commercial',
+                    'vehicle_age'        => max(1, now()->year - (int) ($v->year ?: (now()->year - 4))),
+                    'total_mileage'      => (float) ($v->mileage ?: 85000),
+                    'days_since_service' => $daysSince,
+                    'km_since_service'   => $kmSince,
+                    'daily_km'           => $dailyKm,
+                    'interval_km'        => 5000,
+                    'interval_months'    => 6,
+                    'terrain_severity'   => ($v->model && str_contains(strtolower($v->model), '4x4')) ? 1.4 : 1.1,
+                ];
+            });
+
+        // 2. Pre-curated diverse benchmark scenarios
+        $sampleScenarios = [
+            [
+                'name'               => '🚨 Critical Overdue 4x4 (Jungle / Timber Track)',
+                'badge'              => 'High Risk',
+                'badge_color'        => 'bg-rose-50 text-rose-700 border-rose-200',
+                'description'        => 'Hilux 4x4 overdue by 210 days and 14,200 km on severe unpaved timber track.',
+                'days_since_service' => 210,
+                'km_since_service'   => 14200,
+                'interval_km'        => 5000,
+                'interval_months'    => 6,
+                'daily_km'           => 65,
+                'terrain_severity'   => 1.8,
+                'vehicle_age'        => 5,
+                'total_mileage'      => 142000,
+                'fuel_type'          => 'diesel',
+                'owner_type'         => 'commercial',
+            ],
+            [
+                'name'               => '⚠️ Borderline Warning (Approaching Schedule Window)',
+                'badge'              => 'Medium Risk',
+                'badge_color'        => 'bg-amber-50 text-amber-700 border-amber-200',
+                'description'        => 'Delivery van with 140 days and 4,800 km elapsed under mixed urban conditions.',
+                'days_since_service' => 140,
+                'km_since_service'   => 4800,
+                'interval_km'        => 5000,
+                'interval_months'    => 6,
+                'daily_km'           => 45,
+                'terrain_severity'   => 1.3,
+                'vehicle_age'        => 3,
+                'total_mileage'      => 68000,
+                'fuel_type'          => 'diesel',
+                'owner_type'         => 'corporate',
+            ],
+            [
+                'name'               => '⏱ High Daily Mileage Courier (Rapid KM Depletion)',
+                'badge'              => 'KM Priority',
+                'badge_color'        => 'bg-purple-50 text-purple-700 border-purple-200',
+                'description'        => 'Intercity courier running 130 km/day; 45 days elapsed but already 5,850 km.',
+                'days_since_service' => 45,
+                'km_since_service'   => 5850,
+                'interval_km'        => 5000,
+                'interval_months'    => 6,
+                'daily_km'           => 130,
+                'terrain_severity'   => 1.0,
+                'vehicle_age'        => 2,
+                'total_mileage'      => 52000,
+                'fuel_type'          => 'petrol',
+                'owner_type'         => 'commercial',
+            ],
+            [
+                'name'               => '✅ Healthy Vehicle (Recently Serviced Baseline)',
+                'badge'              => 'Low Risk',
+                'badge_color'        => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                'description'        => 'Inspection completed 18 days ago; only 720 km driven under smooth highway conditions.',
+                'days_since_service' => 18,
+                'km_since_service'   => 720,
+                'interval_km'        => 5000,
+                'interval_months'    => 6,
+                'daily_km'           => 40,
+                'terrain_severity'   => 0.9,
+                'vehicle_age'        => 3,
+                'total_mileage'      => 45000,
+                'fuel_type'          => 'diesel',
+                'owner_type'         => 'corporate',
+            ],
+            [
+                'name'               => '🚜 Extreme Off-Road Plantation Truck (Heavy 2.0x Terrain)',
+                'badge'              => 'Severe Terrain',
+                'badge_color'        => 'bg-orange-50 text-orange-700 border-orange-200',
+                'description'        => 'Logging site vehicle; severe 2.0x terrain cuts nominal 5,000 km interval down to 2,500 km.',
+                'days_since_service' => 90,
+                'km_since_service'   => 3800,
+                'interval_km'        => 5000,
+                'interval_months'    => 6,
+                'daily_km'           => 42,
+                'terrain_severity'   => 2.0,
+                'vehicle_age'        => 6,
+                'total_mileage'      => 178000,
+                'fuel_type'          => 'diesel',
+                'owner_type'         => 'commercial',
+            ],
+        ];
+
+        // 3. Find latest experiment for accuracy leaderboard context
+        $latestExperiment = MlExperiment::where('status', 'completed')
+            ->with('metrics')
+            ->latest()
+            ->first();
+
+        return view('admin.predictive-analytics.simulator', [
+            'vehicles'         => $vehicles,
+            'sampleScenarios'  => $sampleScenarios,
+            'latestExperiment' => $latestExperiment,
+        ]);
+    }
+
+    public function runSimulatorInference(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'days_since_service' => 'required|numeric|min:0|max:1000',
+            'km_since_service'   => 'required|numeric|min:0|max:100000',
+            'interval_km'        => 'required|numeric|min:1000|max:50000',
+            'interval_months'    => 'required|numeric|min:1|max:36',
+            'daily_km'           => 'required|numeric|min:1|max:500',
+            'terrain_severity'   => 'required|numeric|min:0.5|max:3.0',
+            'vehicle_age'        => 'nullable|numeric|min:0|max:40',
+            'total_mileage'      => 'nullable|numeric|min:0|max:1000000',
+            'fuel_type'          => 'nullable|string|in:diesel,petrol,hybrid,electric',
+            'owner_type'         => 'nullable|string|in:corporate,commercial,individual,government_fleet',
+        ]);
+
+        $payload = [
+            'features'  => $validated,
+            'model_dir' => storage_path('app/ml_models/exp_1'),
+        ];
+
+        $scriptPath = storage_path('app/ml_engine/run_simulator_inference.py');
+        $res = Process::timeout(30)->run([
+            'python3', $scriptPath, '--payload', json_encode($payload),
+        ]);
+
+        if (! $res->successful()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Simulator inference engine failed: ' . Str::limit($res->errorOutput(), 500),
+            ], 500);
+        }
+
+        $result = json_decode($res->output(), true);
+
+        return response()->json($result ?: [
+            'status'  => 'error',
+            'message' => 'Invalid JSON from inference engine',
+            'raw'     => $res->output(),
+        ]);
+    }
+
     // ── Interactive Google Colab Notebook Lab ────────────────────────────
 
     public function colabNotebook(Request $request)

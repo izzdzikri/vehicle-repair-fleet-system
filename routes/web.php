@@ -208,6 +208,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/researcher-panel/export-latex/{experiment}', [PredictiveAnalyticsController::class, 'exportLatexSnippet'])
         ->name('admin.researcher-panel.export-latex');
 
+    // ── Interactive Model Playground & What-If Prediction Simulator ────────
+    Route::get('/researcher-simulator', [PredictiveAnalyticsController::class, 'interactiveSimulator'])
+        ->name('admin.researcher-simulator');
+    Route::post('/researcher-simulator/run', [PredictiveAnalyticsController::class, 'runSimulatorInference'])
+        ->name('admin.researcher-simulator.run');
+
     // ── Interactive Google Colab Notebook Lab ────────────────────────────
     Route::get('/researcher-colab', [PredictiveAnalyticsController::class, 'colabNotebook'])
         ->name('admin.researcher-colab');
