@@ -236,20 +236,24 @@
         {{-- Cell Header Bar --}}
         <div class="px-4 py-3 bg-gray-50/90 border-b border-gray-200 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                {{-- Play / Run Button --}}
-                <button type="button" @click="runSingleCell('{{ $cellKey }}')" :disabled="cellStates['{{ $cellKey }}']?.loading"
-                        class="colab-play-btn bg-white hover:bg-indigo-50 text-indigo-600 border border-gray-200 shadow-2xs cursor-pointer"
-                        title="Run this cell (Shift + Enter)">
-                    <template x-if="!cellStates['{{ $cellKey }}']?.loading">
-                        <i data-lucide="play" class="w-4 h-4 ml-0.5 text-indigo-600"></i>
-                    </template>
-                    <template x-if="cellStates['{{ $cellKey }}']?.loading">
-                        <svg class="animate-spin w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                        </svg>
-                    </template>
-                </button>
+                {{-- Play / Run Button & Jupyter Execution Index --}}
+                <div class="flex items-center gap-1.5">
+                    <button type="button" @click="runSingleCell('{{ $cellKey }}')" :disabled="cellStates['{{ $cellKey }}']?.loading"
+                            class="colab-play-btn bg-white hover:bg-indigo-50 text-indigo-600 border border-gray-200 shadow-2xs cursor-pointer"
+                            title="Run this cell (Shift + Enter)">
+                        <template x-if="!cellStates['{{ $cellKey }}']?.loading">
+                            <i data-lucide="play" class="w-4 h-4 ml-0.5 text-indigo-600"></i>
+                        </template>
+                        <template x-if="cellStates['{{ $cellKey }}']?.loading">
+                            <svg class="animate-spin w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                        </template>
+                    </button>
+                    <span class="text-xs font-mono font-bold text-gray-400 select-none min-w-[28px] text-center"
+                          x-text="cellStates['{{ $cellKey }}']?.runCount ? '[' + cellStates['{{ $cellKey }}'].runCount + ']' : '[ ]'"></span>
+                </div>
 
                 <div>
                     <div class="flex items-center gap-2">
@@ -274,8 +278,11 @@
                 </button>
 
                 <template x-if="cellStates['{{ $cellKey }}']?.executionTime">
-                    <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md text-xs font-bold font-mono"
-                          x-text="cellStates['{{ $cellKey }}']?.executionTime + 'ms'"></span>
+                    <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md text-xs font-bold font-mono flex items-center gap-1.5"
+                          title="Execution duration in Python 3.13 kernel">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span x-text="(cellStates['{{ $cellKey }}']?.lastRanAt ? cellStates['{{ $cellKey }}'].lastRanAt + ' • ' : '') + cellStates['{{ $cellKey }}'].executionTime + 'ms'"></span>
+                    </span>
                 </template>
                 <template x-if="cellStates['{{ $cellKey }}']?.status === 'error'">
                     <span class="text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md text-xs font-bold">Execution Error</span>
@@ -349,20 +356,24 @@
             {{-- Cell Header Bar --}}
             <div class="px-4 py-3 bg-indigo-50/50 border-b border-indigo-100 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    {{-- Play / Run Button --}}
-                    <button type="button" @click="runSingleCell(cell.key)" :disabled="cellStates[cell.key]?.loading"
-                            class="colab-play-btn bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-2xs cursor-pointer"
-                            title="Run this custom algorithm cell (Shift + Enter)">
-                        <template x-if="!cellStates[cell.key]?.loading">
-                            <i data-lucide="play" class="w-4 h-4 ml-0.5 text-indigo-600"></i>
-                        </template>
-                        <template x-if="cellStates[cell.key]?.loading">
-                            <svg class="animate-spin w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                        </template>
-                    </button>
+                    {{-- Play / Run Button & Jupyter Execution Index --}}
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" @click="runSingleCell(cell.key)" :disabled="cellStates[cell.key]?.loading"
+                                class="colab-play-btn bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-2xs cursor-pointer"
+                                title="Run this custom algorithm cell (Shift + Enter)">
+                            <template x-if="!cellStates[cell.key]?.loading">
+                                <i data-lucide="play" class="w-4 h-4 ml-0.5 text-indigo-600"></i>
+                            </template>
+                            <template x-if="cellStates[cell.key]?.loading">
+                                <svg class="animate-spin w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                            </template>
+                        </button>
+                        <span class="text-xs font-mono font-bold text-gray-400 select-none min-w-[28px] text-center"
+                              x-text="cellStates[cell.key]?.runCount ? '[' + cellStates[cell.key]?.runCount + ']' : '[ ]'"></span>
+                    </div>
 
                     <div>
                         <div class="flex items-center gap-2">
@@ -394,8 +405,10 @@
                     </button>
 
                     <template x-if="cellStates[cell.key]?.executionTime">
-                        <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md text-xs font-bold font-mono"
-                              x-text="cellStates[cell.key]?.executionTime + 'ms'"></span>
+                        <span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md text-xs font-bold font-mono flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span x-text="(cellStates[cell.key]?.lastRanAt ? cellStates[cell.key]?.lastRanAt + ' • ' : '') + cellStates[cell.key]?.executionTime + 'ms'"></span>
+                        </span>
                     </template>
                     <template x-if="cellStates[cell.key]?.status === 'error'">
                         <span class="text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md text-xs font-bold">Execution Error</span>
@@ -576,17 +589,18 @@ function colabNotebook() {
         selectedPreset: 'hist_gbm',
         newModelName: 'Histogram Gradient Boosting (GBM)',
         newModelShort: 'Gradient Boosting',
+        executionCounter: 0,
         editors: {},
         cellKeys: ['cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_6'],
         customCells: [],
         defaultTemplates: @json($defaultCells),
         cellStates: {
-            cell_1: { loading: false, stdout: '', stderr: '', executionTime: null, status: 'idle' },
-            cell_2: { loading: false, stdout: '', stderr: '', executionTime: null, status: 'idle' },
-            cell_3: { loading: false, stdout: '', stderr: '', executionTime: null, status: 'idle' },
-            cell_4: { loading: false, stdout: '', stderr: '', executionTime: null, status: 'idle' },
-            cell_5: { loading: false, stdout: '', stderr: '', executionTime: null, status: 'idle' },
-            cell_6: { loading: false, stdout: '', stderr: '', executionTime: null, status: 'idle' },
+            cell_1: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
+            cell_2: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
+            cell_3: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
+            cell_4: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
+            cell_5: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
+            cell_6: { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' },
         },
 
         // Ready-to-run scikit-learn algorithm presets
@@ -999,12 +1013,13 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
 
         runSingleCell(cellKey) {
             if (!this.cellStates[cellKey]) {
-                this.cellStates[cellKey] = { loading: false, stdout: '', stderr: '', executionTime: null, status: 'idle' };
+                this.cellStates[cellKey] = { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' };
             }
             this.cellStates[cellKey].loading = true;
             this.cellStates[cellKey].stderr = '';
             this.cellStates[cellKey].stdout = '';
             this.cellStates[cellKey].status = 'running';
+            this.cellStates[cellKey].runCount = '*';
 
             const payload = {
                 dataset_id: this.selectedDatasetId,
@@ -1023,6 +1038,10 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
             .then(res => res.json())
             .then(data => {
                 this.cellStates[cellKey].loading = false;
+                this.executionCounter++;
+                this.cellStates[cellKey].runCount = this.executionCounter;
+                this.cellStates[cellKey].lastRanAt = new Date().toLocaleTimeString();
+
                 const cellRes = (data.cell_results && data.cell_results[cellKey]) ? data.cell_results[cellKey] : null;
 
                 if (cellRes) {
@@ -1038,6 +1057,7 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
             })
             .catch(err => {
                 this.cellStates[cellKey].loading = false;
+                this.cellStates[cellKey].runCount = 'err';
                 this.cellStates[cellKey].stderr = 'Execution failed: ' + err.message;
                 this.cellStates[cellKey].status = 'error';
                 if (window.lucide) lucide.createIcons();
@@ -1048,13 +1068,14 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
             this.isRunning = true;
             this.cellKeys.forEach(k => {
                 if (!this.cellStates[k]) {
-                    this.cellStates[k] = { loading: false, stdout: '', stderr: '', executionTime: null, status: 'idle' };
+                    this.cellStates[k] = { loading: false, stdout: '', stderr: '', executionTime: null, lastRanAt: null, runCount: null, status: 'idle' };
                 }
                 this.cellStates[k].loading = true;
                 this.cellStates[k].stdout = '';
                 this.cellStates[k].stderr = '';
                 this.cellStates[k].executionTime = null;
                 this.cellStates[k].status = 'running';
+                this.cellStates[k].runCount = '*';
             });
 
             const payload = {
@@ -1073,8 +1094,13 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
             .then(res => res.json())
             .then(data => {
                 this.isRunning = false;
-                this.cellKeys.forEach(k => {
+                const nowTime = new Date().toLocaleTimeString();
+                this.cellKeys.forEach((k, idx) => {
                     this.cellStates[k].loading = false;
+                    this.executionCounter++;
+                    this.cellStates[k].runCount = this.executionCounter;
+                    this.cellStates[k].lastRanAt = nowTime;
+
                     const cr = (data.cell_results && data.cell_results[k]) ? data.cell_results[k] : null;
                     if (cr) {
                         this.cellStates[k].stdout = cr.stdout || '';
@@ -1093,7 +1119,10 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
             .catch(err => {
                 this.isRunning = false;
                 this.cellKeys.forEach(k => {
-                    if (this.cellStates[k]) this.cellStates[k].loading = false;
+                    if (this.cellStates[k]) {
+                        this.cellStates[k].loading = false;
+                        this.cellStates[k].runCount = 'err';
+                    }
                 });
                 alert('Notebook execution error: ' + err.message);
                 if (window.lucide) lucide.createIcons();
