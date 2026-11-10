@@ -146,4 +146,56 @@ class PredictiveNotificationTest extends TestCase
 
         $this->assertNotNull($urgentNotice);
     }
+
+    public function test_researcher_simulator_renders_for_admin(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $response = $this->actingAs($admin)->get('/admin/researcher-simulator');
+
+        $response->assertStatus(200);
+        $response->assertSee('What-If Simulator');
+        $response->assertSee('Interactive Model Playground');
+    }
+
+    public function test_researcher_simulator_inference_endpoint(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $response = $this->actingAs($admin)->postJson('/admin/researcher-simulator/run', [
+            'days_since_service' => 180,
+            'km_since_service'   => 12000,
+            'interval_km'        => 10000,
+            'interval_months'    => 6,
+            'daily_km'           => 65,
+            'terrain_severity'   => 1.5,
+            'vehicle_age'        => 5,
+            'total_mileage'      => 140000,
+            'fuel_type'          => 'diesel',
+            'owner_type'         => 'corporate',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'status',
+            'execution_time_ms',
+            'models' => [
+                'rule_based',
+                'decision_tree',
+                'random_forest',
+                'svm',
+            ],
+            'consensus' => [
+                'label',
+                'status_text',
+            ],
+            'explainability',
+        ]);
+    }
+
+    public function test_researcher_simulator_forbidden_for_regular_user(): void
+    {
+        $user = User::where('role', 'individual')->first();
+        $response = $this->actingAs($user)->get('/admin/researcher-simulator');
+
+        $response->assertStatus(403);
+    }
 }

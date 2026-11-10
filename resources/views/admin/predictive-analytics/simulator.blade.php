@@ -40,7 +40,7 @@
                     <i data-lucide="terminal" class="w-3.5 h-3.5 text-amber-400"></i>
                     <span>ML Colab Lab</span>
                 </a>
-                <a href="{{ route('admin.maintenance-alerts.predictive-analytics') }}"
+                <a href="{{ route('admin.predictive-analytics.index') }}"
                    class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
                     <i data-lucide="cpu" class="w-3.5 h-3.5 text-indigo-600"></i>
                     <span>ML Training</span>
