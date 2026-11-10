@@ -11,7 +11,22 @@
     .colab-cell:focus-within, .colab-cell.active-cell { border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1; }
     .colab-play-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .colab-output { background: #0d1117; color: #58a6ff; font-family: 'JetBrains Mono', monospace; }
-    .CodeMirror { height: auto; min-height: 140px; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.6; border-radius: 0.5rem; }
+    
+    /* CodeMirror Auto-Height & Viewport Stability - Prevents text vanishing on click/focus */
+    .CodeMirror {
+        height: auto !important;
+        min-height: 160px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        border-radius: 0.5rem;
+    }
+    .CodeMirror-scroll {
+        height: auto !important;
+        min-height: 160px;
+        overflow-y: hidden !important;
+        overflow-x: auto !important;
+    }
     .CodeMirror-gutters { background: #1e1e2e; border-right: 1px solid #2e2e42; }
     .CodeMirror-linenumber { color: #6272a4; }
     .nav-tab-active { background-color: #0f172a; color: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
@@ -336,7 +351,7 @@
         @endif
 
         {{-- Code Editor Area (Textarea Fallback + CodeMirror Integration) --}}
-        <div class="p-3 bg-white">
+        <div x-ignore class="p-3 bg-white">
             <textarea id="editor_{{ $cellKey }}"
                       rows="8"
                       class="w-full bg-[#1e1e2e] text-[#f8f8f2] font-mono text-sm p-4 rounded-xl border border-gray-700 leading-relaxed outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner resize-y">{{ $cellMeta['code'] }}</textarea>
@@ -465,8 +480,7 @@
             <div class="p-3 bg-white">
                 <textarea :id="'editor_' + cell.key"
                           rows="8"
-                          class="w-full bg-[#1e1e2e] text-[#f8f8f2] font-mono text-sm p-4 rounded-xl border border-gray-700 leading-relaxed outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner resize-y"
-                          x-text="cell.code"></textarea>
+                          class="w-full bg-[#1e1e2e] text-[#f8f8f2] font-mono text-sm p-4 rounded-xl border border-gray-700 leading-relaxed outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner resize-y"></textarea>
             </div>
 
             {{-- Running Console Output Area --}}
@@ -622,6 +636,7 @@
 <!-- Load CodeMirror Scripts explicitly in scripts stack -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/autorefresh.min.js"></script>
 
 <script>
 function colabNotebook() {
@@ -919,11 +934,22 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
                     indentUnit: 4,
                     tabSize: 4,
                     indentWithTabs: false,
+                    viewportMargin: Infinity,
+                    autoRefresh: true,
                     extraKeys: {
                         'Shift-Enter': () => this.runSingleCell(k),
                         'Ctrl-Enter': () => this.runSingleCell(k),
                     }
                 });
+
+                // Guarantee viewport lines are preserved whenever user clicks or focuses
+                cm.on('focus', (inst) => {
+                    inst.refresh();
+                });
+                cm.on('mousedown', (inst) => {
+                    setTimeout(() => inst.refresh(), 10);
+                });
+
                 this.editors[k] = cm;
             } catch (e) {
                 console.error('CodeMirror init failed for', k, e);
@@ -939,6 +965,15 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
                     this.editors[paneKey].refresh();
                     this.editors[paneKey].focus();
                 }
+                // Two-stage refresh to ensure geometry is synchronized after any DOM reflow
+                setTimeout(() => {
+                    if (paneKey === 'all') {
+                        Object.values(this.editors).forEach(cm => cm.refresh());
+                    } else if (this.editors[paneKey]) {
+                        this.editors[paneKey].refresh();
+                    }
+                }, 50);
+
                 if (window.lucide) lucide.createIcons();
             });
         },
@@ -1008,7 +1043,13 @@ print(f"  • Mean Confidence: {custom_confs.mean():.2f}%")`
 
             // Initialize CodeMirror and switch to this new model's pane
             this.$nextTick(() => {
+                const el = document.getElementById('editor_' + newKey);
+                if (el) el.value = newCell.code;
                 this.attachCodeMirror(newKey);
+                if (this.editors[newKey]) {
+                    this.editors[newKey].setValue(newCell.code);
+                    this.editors[newKey].refresh();
+                }
                 this.setActivePane(newKey);
             });
         },
