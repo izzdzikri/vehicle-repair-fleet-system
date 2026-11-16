@@ -14,6 +14,7 @@ use App\Models\JobType;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -424,6 +425,153 @@ class PredictiveAnalyticsController extends Controller
         $dataset->delete();
 
         return back()->with('success', 'Dataset deleted.');
+    }
+
+    // ─────────────────────────── View Dataset Table & Data ───────────────────
+
+    public function showDataset(Request $request, MlDataset $dataset)
+    {
+        $path = $dataset->absolute_path;
+        if (! file_exists($path)) {
+            return redirect()
+                ->route('admin.predictive-analytics.index', ['tab' => 'data'])
+                ->with('error', "Dataset file not found at {$path}");
+        }
+
+        $fp = fopen($path, 'r');
+        $rawHeaders = fgetcsv($fp, 0, ',', '"', "\\");
+        if (! $rawHeaders) {
+            fclose($fp);
+            return redirect()
+                ->route('admin.predictive-analytics.index', ['tab' => 'data'])
+                ->with('error', 'Empty or unreadable dataset file.');
+        }
+
+        // Clean any BOM or leading/trailing whitespace
+        $headers = array_map(function ($h) {
+            return trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', (string) $h));
+        }, $rawHeaders);
+
+        $search  = trim((string) $request->input('search', ''));
+        $urgency = trim((string) $request->input('urgency', ''));
+        $fuel    = trim((string) $request->input('fuel', ''));
+        $owner   = trim((string) $request->input('owner', ''));
+
+        $allRows = [];
+        $stats = [
+            'total_rows'   => 0,
+            'high_count'   => 0,
+            'medium_count' => 0,
+            'low_count'    => 0,
+            'fuel_counts'  => [],
+            'owner_counts' => [],
+            'avg_mileage'  => 0,
+            'avg_days'     => 0,
+        ];
+
+        $totalMileage = 0;
+        $totalDays    = 0;
+        $rowIdx       = 1;
+
+        while (($row = fgetcsv($fp, 0, ',', '"', "\\")) !== false) {
+            if (empty($row) || (count($row) === 1 && $row[0] === null)) {
+                continue;
+            }
+            if (count($row) < count($headers)) {
+                $row = array_pad($row, count($headers), '');
+            }
+            $record = array_combine(array_slice($headers, 0, count($row)), array_slice($row, 0, count($headers)));
+            $record['_row_id'] = $rowIdx++;
+
+            $stats['total_rows']++;
+            $u = strtoupper(trim($record['urgency_label'] ?? ''));
+            if ($u === 'HIGH') $stats['high_count']++;
+            elseif ($u === 'MEDIUM') $stats['medium_count']++;
+            elseif ($u === 'LOW') $stats['low_count']++;
+
+            $f = strtolower(trim($record['fuel_type'] ?? ''));
+            if ($f !== '') {
+                $stats['fuel_counts'][$f] = ($stats['fuel_counts'][$f] ?? 0) + 1;
+            }
+
+            $o = strtolower(trim($record['owner_type'] ?? ''));
+            if ($o !== '') {
+                $stats['owner_counts'][$o] = ($stats['owner_counts'][$o] ?? 0) + 1;
+            }
+
+            $totalMileage += (float) ($record['total_mileage'] ?? 0);
+            $totalDays    += (float) ($record['days_since_service'] ?? 0);
+
+            // Filtering
+            if ($urgency !== '' && $u !== strtoupper($urgency)) {
+                continue;
+            }
+            if ($fuel !== '' && $f !== strtolower($fuel)) {
+                continue;
+            }
+            if ($owner !== '' && $o !== strtolower($owner)) {
+                continue;
+            }
+            if ($search !== '') {
+                $haystack = strtolower(implode(' ', $record));
+                if (! str_contains($haystack, strtolower($search))) {
+                    continue;
+                }
+            }
+
+            $allRows[] = $record;
+        }
+        fclose($fp);
+
+        if ($stats['total_rows'] > 0) {
+            $stats['avg_mileage'] = round($totalMileage / $stats['total_rows']);
+            $stats['avg_days']    = round($totalDays / $stats['total_rows'], 1);
+        }
+
+        // Pagination
+        $perPage     = (int) $request->input('per_page', 25);
+        $perPage     = max(10, min($perPage, 200));
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $totalRows   = count($allRows);
+        $offset      = ($currentPage - 1) * $perPage;
+        $pageItems   = array_slice($allRows, $offset, $perPage);
+
+        $paginated = new LengthAwarePaginator(
+            $pageItems,
+            $totalRows,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('admin.predictive-analytics.dataset-show', compact(
+            'dataset',
+            'headers',
+            'paginated',
+            'stats',
+            'search',
+            'urgency',
+            'fuel',
+            'owner',
+            'perPage'
+        ));
+    }
+
+    public function downloadDataset(MlDataset $dataset)
+    {
+        $path = $dataset->absolute_path;
+        if (! file_exists($path)) {
+            return back()->with('error', 'Dataset file not found.');
+        }
+
+        $filename = basename($dataset->file_path);
+        if (! Str::endsWith($filename, '.csv')) {
+            $filename .= '.csv';
+        }
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
     }
 
     // ─────────────────────────── Get Experiment Predictions (AJAX) ───────────

@@ -185,6 +185,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         ->name('admin.predictive-analytics.generate');
     Route::post('/maintenance-alerts/predictive-analytics/run', [PredictiveAnalyticsController::class, 'runExperiment'])
         ->name('admin.predictive-analytics.run');
+    Route::get('/maintenance-alerts/predictive-analytics/datasets/{dataset}', [PredictiveAnalyticsController::class, 'showDataset'])
+        ->name('admin.predictive-analytics.datasets.show');
+    Route::get('/maintenance-alerts/predictive-analytics/datasets/{dataset}/download', [PredictiveAnalyticsController::class, 'downloadDataset'])
+        ->name('admin.predictive-analytics.datasets.download');
     Route::delete('/maintenance-alerts/predictive-analytics/datasets/{dataset}', [PredictiveAnalyticsController::class, 'deleteDataset'])
         ->name('admin.predictive-analytics.datasets.delete');
     Route::post('/maintenance-alerts/predictive-analytics/predictions/{prediction}/push', [PredictiveAnalyticsController::class, 'pushToAlerts'])

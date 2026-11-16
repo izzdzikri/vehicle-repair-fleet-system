@@ -198,4 +198,55 @@ class PredictiveNotificationTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_admin_can_view_dataset_table_and_data(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $dataset = \App\Models\MlDataset::first();
+
+        $response = $this->actingAs($admin)
+            ->get("/admin/maintenance-alerts/predictive-analytics/datasets/{$dataset->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Dataset Records Table');
+        $response->assertSee('Total Records');
+        $response->assertSee($dataset->name);
+        $response->assertSee('Vehicle ID');
+        $response->assertSee('Urgency Target');
+    }
+
+    public function test_admin_can_filter_dataset_by_urgency_and_search(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $dataset = \App\Models\MlDataset::first();
+
+        $response = $this->actingAs($admin)
+            ->get("/admin/maintenance-alerts/predictive-analytics/datasets/{$dataset->id}?urgency=HIGH&search=Air");
+
+        $response->assertStatus(200);
+        $response->assertSee('Air Conditioning Service');
+    }
+
+    public function test_admin_can_download_dataset_csv(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+        $dataset = \App\Models\MlDataset::first();
+
+        $response = $this->actingAs($admin)
+            ->get("/admin/maintenance-alerts/predictive-analytics/datasets/{$dataset->id}/download");
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    }
+
+    public function test_regular_user_cannot_view_dataset(): void
+    {
+        $user = User::where('role', 'individual')->first();
+        $dataset = \App\Models\MlDataset::first();
+
+        $response = $this->actingAs($user)
+            ->get("/admin/maintenance-alerts/predictive-analytics/datasets/{$dataset->id}");
+
+        $response->assertStatus(403);
+    }
 }
