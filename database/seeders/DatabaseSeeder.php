@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             FreshSeeder::class,
             Psm2FeatureSeeder::class,
+            MlFeatureSeeder::class,
         ]);
     }
 }

@@ -2,10 +2,14 @@ FROM php:8.4-apache
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git unzip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libicu-dev libonig-dev \
+        python3 python3-pip python3-venv \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql mbstring zip gd bcmath intl opcache \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Python ML libraries for predictive analytics & live inference
+RUN python3 -m pip install --no-cache-dir --break-system-packages scikit-learn==1.6.1 pandas numpy joblib
 
 # Serve from Laravel's public/ folder and allow .htaccess
 RUN sed -ri 's!DocumentRoot /var/www/html!DocumentRoot /var/www/html/public!' /etc/apache2/sites-available/000-default.conf \

@@ -23,6 +23,9 @@ php artisan storage:link --force || true
 php artisan config:clear
 php artisan migrate --force
 
+# Ensure baseline ML experiments and datasets exist on every deploy
+php artisan db:seed --class=Database\\Seeders\\MlFeatureSeeder --force || true
+
 # One-time demo data. Set RUN_SEED=true for ONE deploy only,
 # because FreshSeeder TRUNCATES every table.
 if [ "$RUN_SEED" = "true" ]; then

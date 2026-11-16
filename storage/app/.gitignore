@@ -4,7 +4,8 @@
 !.gitignore
 !ml_engine/
 !ml_engine/**
-*.pkl
 !ml_datasets/
 !ml_datasets/**
+!ml_models/
+!ml_models/**
 
