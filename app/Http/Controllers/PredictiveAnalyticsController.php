@@ -249,7 +249,9 @@ class PredictiveAnalyticsController extends Controller
                 'experiment_id' => $experiment->id,
                 'stderr'        => $result->errorOutput(),
             ]);
-            return back()->with('error', 'ML experiment failed. Check logs.');
+            return redirect()
+                ->route('admin.predictive-analytics.index', ['tab' => 'train'])
+                ->with('error', 'ML experiment failed: ' . Str::limit($result->errorOutput() ?: 'Unknown error', 200));
         }
 
         $output = json_decode($result->output(), true);
@@ -259,7 +261,9 @@ class PredictiveAnalyticsController extends Controller
                 'status'        => 'failed',
                 'error_message' => $output['error'] ?? 'Python script returned an error',
             ]);
-            return back()->with('error', 'ML engine returned an error: ' . ($output['error'] ?? 'Unknown'));
+            return redirect()
+                ->route('admin.predictive-analytics.index', ['tab' => 'train'])
+                ->with('error', 'ML engine returned an error: ' . ($output['error'] ?? 'Unknown'));
         }
 
         // Persist results
@@ -325,7 +329,7 @@ class PredictiveAnalyticsController extends Controller
         });
 
         return redirect()
-            ->route('admin.predictive-analytics.index')
+            ->route('admin.predictive-analytics.index', ['tab' => 'train'])
             ->with('success', "Experiment \"{$experiment->run_name}\" completed successfully.");
     }
 

@@ -271,8 +271,19 @@
                 </div>
 
                 <form action="{{ route('admin.predictive-analytics.run') }}" method="POST"
-                      x-data="{ loading: false }" @submit="loading = true">
+                      x-data="{ loading: false }" @submit="loading = true" novalidate>
                     @csrf
+
+                    @if($errors->any())
+                    <div class="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs space-y-1">
+                        @foreach($errors->all() as $err)
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="alert-circle" class="w-3.5 h-3.5 shrink-0 text-rose-500"></i>
+                            <span>{{ $err }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
 
                     {{-- Dataset select --}}
                     <div class="mb-4">
@@ -353,7 +364,7 @@
                                 </div>
                                 <div>
                                     <label class="text-xs font-bold text-gray-500 uppercase">SVM C</label>
-                                    <input type="number" name="svm_c" value="1.0" min="0.01" max="100" step="0.1"
+                                    <input type="number" name="svm_c" value="1.0" min="0.01" max="100" step="any"
                                            class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-300 outline-none mt-0.5">
                                 </div>
                                 <div class="col-span-2">
@@ -367,14 +378,14 @@
                         </div>
                     </div>
 
-                    <button type="submit" :disabled="loading"
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold text-base py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                    <button type="submit" :disabled="loading" :class="loading ? 'cursor-wait opacity-80' : ''"
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold text-base py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
                         <svg x-show="loading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
                         <i data-lucide="play-circle" class="w-4 h-4" x-show="!loading"></i>
-                        <span x-text="loading ? 'Training in Progress...' : 'Run In-System Training & Evaluation'"></span>
+                        <span x-text="loading ? 'Training in Progress (Evaluating 4 Models)...' : 'Run In-System Training & Evaluation'"></span>
                     </button>
                 </form>
             </div>
