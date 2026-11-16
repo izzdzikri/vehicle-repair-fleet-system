@@ -3,7 +3,7 @@
 run_experiment.py — Teraju Setia Fleet Predictive Analytics ML Engine
 ======================================================================
 Accepts a JSON payload via --payload or as first CLI argument.
-Runs 4 models on a shared 80/20 stratified split + 5-fold CV and
+Runs 5 models on a shared 80/20 stratified split + 5-fold CV and
 outputs a structured JSON result to stdout.
 
 Usage:
@@ -13,7 +13,7 @@ Usage:
 Required payload keys:
   dataset_path   : absolute path to the CSV file
   dataset_type   : one of synthetic|kaggle_benchmark|system_live|unlabeled_test
-  models_to_run  : list of model keys, e.g. ["rule_based","decision_tree","random_forest","svm"]
+  models_to_run  : list of model keys, e.g. ["rule_based","decision_tree","random_forest","svm","logistic_regression"]
   output_dir     : directory to save .pkl model files
   split_ratio    : float, e.g. 0.80
   cv_folds       : int, e.g. 5
@@ -37,6 +37,7 @@ from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder, StandardScaler, OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -505,6 +506,59 @@ def run_experiment(payload: dict) -> dict:
                 })
         except Exception as e:
             result["errors"].append({"model": "svm", "error": str(e), "tb": traceback.format_exc()})
+
+    # ── LOGISTIC REGRESSION ──
+    if "logistic_regression" in models_to_run:
+        try:
+            lr_C = float(hp.get("lr_C", 1.0))
+            lr_solver = hp.get("lr_solver", "lbfgs")
+            lr_max_iter = int(hp.get("lr_max_iter", 1000))
+            lr_pipeline = Pipeline([
+                ("lr", LogisticRegression(
+                    C=lr_C,
+                    solver=lr_solver,
+                    max_iter=lr_max_iter,
+                    random_state=42,
+                ))
+            ])
+            if has_labels:
+                lr_pipeline.fit(X_train_pp, y_train)
+                lr_preds = lr_pipeline.predict(X_test_pp)
+                lr_proba = lr_pipeline.predict_proba(X_test_pp).max(axis=1) * 100
+                cv_acc = cv_score(lr_pipeline, X_train_pp, y_train, cv_folds)
+
+                metrics = compute_metrics(y_test, lr_preds)
+                yearly = compute_yearly_accuracy(df_test, y_test, lr_preds)
+                model_result = {
+                    "algorithm": "logistic_regression",
+                    "cv_accuracy": round(cv_acc, 6),
+                    "extra_meta": {
+                        "C": lr_C,
+                        "solver": lr_solver,
+                        "max_iter": lr_max_iter,
+                        "n_classes": int(len(lr_pipeline.named_steps["lr"].classes_)),
+                    },
+                }
+                model_result.update(metrics)
+                model_result["yearly_accuracy"] = yearly
+            else:
+                lr_pipeline.fit(X_train_pp, y_all)
+                lr_preds = lr_pipeline.predict(X_test_pp)
+                lr_proba = lr_pipeline.predict_proba(X_test_pp).max(axis=1) * 100
+                model_result = {"algorithm": "logistic_regression", "cv_accuracy": None}
+
+            result["models"]["logistic_regression"] = model_result
+            joblib.dump(lr_pipeline, os.path.join(output_dir, "logistic_regression.pkl"))
+
+            for i, (p, c) in enumerate(zip(lr_preds, lr_proba)):
+                while len(pred_rows) <= i:
+                    pred_rows.append({})
+                pred_rows[i].update({
+                    "lr_prediction": str(p),
+                    "lr_confidence": round(float(c), 2),
+                })
+        except Exception as e:
+            result["errors"].append({"model": "logistic_regression", "error": str(e), "tb": traceback.format_exc()})
 
     # ── Build prediction rows ──
     for i, row_preds in enumerate(pred_rows):

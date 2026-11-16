@@ -14,16 +14,18 @@
 @section('content')
 @php
     $algos = [
-        'rule_based'    => ['icon' => 'ruler', 'label' => 'Rule-Based', 'color' => 'violet'],
-        'decision_tree' => ['icon' => 'git-branch', 'label' => 'Decision Tree', 'color' => 'sky'],
-        'random_forest' => ['icon' => 'trees', 'label' => 'Random Forest', 'color' => 'emerald'],
-        'svm'           => ['icon' => 'circle-dot', 'label' => 'SVM (RBF)', 'color' => 'amber'],
+        'rule_based'          => ['icon' => 'ruler',        'label' => 'Rule-Based',          'color' => 'violet'],
+        'decision_tree'       => ['icon' => 'git-branch',   'label' => 'Decision Tree',       'color' => 'sky'],
+        'random_forest'       => ['icon' => 'trees',        'label' => 'Random Forest',       'color' => 'emerald'],
+        'svm'                 => ['icon' => 'circle-dot',   'label' => 'SVM (RBF)',           'color' => 'amber'],
+        'logistic_regression' => ['icon' => 'trending-up',  'label' => 'Logistic Regression', 'color' => 'rose'],
     ];
     $colorMap = [
-        'violet'  => ['bg'=>'bg-violet-500','text'=>'text-violet-400','light'=>'bg-violet-50'],
-        'sky'     => ['bg'=>'bg-sky-500','text'=>'text-sky-400','light'=>'bg-sky-50'],
+        'violet'  => ['bg'=>'bg-violet-500', 'text'=>'text-violet-400', 'light'=>'bg-violet-50'],
+        'sky'     => ['bg'=>'bg-sky-500',    'text'=>'text-sky-400',    'light'=>'bg-sky-50'],
         'emerald' => ['bg'=>'bg-emerald-500','text'=>'text-emerald-400','light'=>'bg-emerald-50'],
-        'amber'   => ['bg'=>'bg-amber-500','text'=>'text-amber-400','light'=>'bg-amber-50'],
+        'amber'   => ['bg'=>'bg-amber-500',  'text'=>'text-amber-400',  'light'=>'bg-amber-50'],
+        'rose'    => ['bg'=>'bg-rose-500',   'text'=>'text-rose-400',   'light'=>'bg-rose-50'],
     ];
     $labelBadge = [
         'LOW'    => 'badge-low',
@@ -70,7 +72,7 @@
         <div class="flex items-center gap-1 bg-gray-100/80 p-1 rounded-lg overflow-x-auto">
             @foreach([
                 ['key'=>'data',     'num'=>'1', 'icon'=>'database',    'label'=>'Data Hub',             'desc'=>'Upload & Live Export'],
-                ['key'=>'train',    'num'=>'2', 'icon'=>'cpu',         'label'=>'Training Engine',      'desc'=>'4-Model Training & Tuning'],
+                ['key'=>'train',    'num'=>'2', 'icon'=>'cpu',         'label'=>'Training Engine',      'desc'=>'5-Model Training & Tuning'],
                 ['key'=>'analysis', 'num'=>'3', 'icon'=>'bar-chart-3', 'label'=>'Evaluation & Benchmarks', 'desc'=>'Accuracy & Metrics'],
             ] as $t)
             <button @click="tab = '{{ $t['key'] }}'"
@@ -91,7 +93,7 @@
         <a href="{{ route('admin.researcher-panel') }}"
            class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 border border-indigo-200/80 whitespace-nowrap transition shrink-0 self-start sm:self-auto">
             <i data-lucide="microscope" class="w-3.5 h-3.5"></i>
-            <span>Researcher Panel (4-Model Matrix) →</span>
+            <span>Researcher Panel (5-Model Matrix) →</span>
         </a>
     </div>
 
@@ -400,6 +402,24 @@
                                         <option value="auto">auto</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 uppercase">LR C</label>
+                                    <input type="number" name="lr_C" value="1.0" min="0.01" max="100" step="any"
+                                           class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-300 outline-none mt-0.5">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 uppercase">LR Max Iter</label>
+                                    <input type="number" name="lr_max_iter" value="1000" min="100" max="5000"
+                                           class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-indigo-300 outline-none mt-0.5">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-xs font-bold text-gray-500 uppercase">LR Solver</label>
+                                    <select name="lr_solver" class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:ring-1 outline-none mt-0.5">
+                                        <option value="lbfgs">lbfgs (default)</option>
+                                        <option value="saga">saga</option>
+                                        <option value="liblinear">liblinear</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -411,7 +431,7 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                         </svg>
                         <i data-lucide="play-circle" class="w-4 h-4" x-show="!loading"></i>
-                        <span x-text="loading ? 'Training in Progress (Evaluating 4 Models)...' : 'Run In-System Training & Evaluation'"></span>
+                        <span x-text="loading ? 'Training in Progress (Evaluating 5 Models)...' : 'Run In-System Training & Evaluation'"></span>
                     </button>
                 </form>
             </div>
@@ -481,7 +501,7 @@
         </div>
         @else
 
-        {{-- ── 4-Model Leaderboard Cards ── --}}
+        {{-- ── 5-Model Leaderboard Cards ── --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             @foreach($algos as $key => $algo)
             @php $m = $metrics->get($key); @endphp
@@ -680,8 +700,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ctx) return;
 
     @php
-        $benchLabels = ['Rule-Based', 'Decision Tree', 'Random Forest', 'SVM'];
-        $benchAlgos  = ['rule_based', 'decision_tree', 'random_forest', 'svm'];
+        $benchLabels = ['Rule-Based', 'Decision Tree', 'Random Forest', 'SVM', 'Logistic Regression'];
+        $benchAlgos  = ['rule_based', 'decision_tree', 'random_forest', 'svm', 'logistic_regression'];
 
         $synData = [];
         $kagData = [];

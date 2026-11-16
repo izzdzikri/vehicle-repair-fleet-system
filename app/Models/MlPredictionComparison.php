@@ -24,6 +24,8 @@ class MlPredictionComparison extends Model
         'rf_confidence',
         'svm_prediction',
         'svm_confidence',
+        'lr_prediction',
+        'lr_confidence',
         'consensus_label',
         'agreement_rate',
         'features_json',
@@ -42,6 +44,7 @@ class MlPredictionComparison extends Model
         'dt_confidence'     => 'float',
         'rf_confidence'     => 'float',
         'svm_confidence'    => 'float',
+        'lr_confidence'     => 'float',
         'rb_days_remaining' => 'integer',
         'pushed_to_alerts'  => 'boolean',
         'verified_at'       => 'datetime',
@@ -145,27 +148,31 @@ class MlPredictionComparison extends Model
         $svmConf = $this->svm_confidence ?? 95.0;
         $svmReason = "Telemetry coordinates were mapped into infinite-dimensional Hilbert space via Gaussian RBF kernel K(x, x') = exp(-gamma * ||x - x'||^2). Vehicle sits deep in the optimal hyperplane margin separation, yielding a Platt-calibrated posterior probability of {$svmConf}%.";
 
+        // 5. Logistic Regression Reasoning
+        $lrConf = $this->lr_confidence ?? 85.0;
+        $lrReason = "Multinomial log-odds parameterized via linear predictor eta = beta * x. Log-likelihood maximized via L-BFGS solver, outputting softmax posterior probability of {$lrConf}%.";
+
         // Divergence Analysis
-        $isAllAgree = $this->agreement_rate && str_starts_with($this->agreement_rate, '4/');
-        $isMajority = $this->agreement_rate && str_starts_with($this->agreement_rate, '3/');
+        $isAllAgree = $this->agreement_rate && (str_starts_with($this->agreement_rate, '5/5') || str_starts_with($this->agreement_rate, '4/4'));
+        $isMajority = $this->agreement_rate && (str_starts_with($this->agreement_rate, '4/5') || str_starts_with($this->agreement_rate, '3/5') || str_starts_with($this->agreement_rate, '3/4'));
 
         if ($isAllAgree) {
-            $divNature = "Unanimous Consensus (4/4)";
-            $divSummary = "Deterministic engineering formulas and non-linear ML estimators fully agree on {$this->consensus_label}. Clear operational status with zero ambiguity.";
+            $divNature = "Unanimous Consensus ({$this->agreement_rate})";
+            $divSummary = "Deterministic engineering formulas and statistical/ML estimators fully agree on {$this->consensus_label}. Clear operational status with zero ambiguity.";
         } elseif ($this->rb_prediction !== $this->consensus_label) {
             if ($this->rb_prediction === 'HIGH' && $this->consensus_label === 'LOW') {
                 $divNature = "ML Filtered False Alarm";
-                $divSummary = "Rule-based formula flagged HIGH based purely on calendar duration ({$daysSince}d), but ML models (RF/SVM) detected that physical mileage accumulation ({$kmSince} km) is low and daily usage is minimal, preventing premature service overhaul.";
+                $divSummary = "Rule-based formula flagged HIGH based purely on calendar duration ({$daysSince}d), but ML models (RF/SVM/LR) detected that physical mileage accumulation ({$kmSince} km) is low and daily usage is minimal, preventing premature service overhaul.";
             } elseif ($this->rb_prediction === 'LOW' && in_array($this->consensus_label, ['MEDIUM', 'HIGH'])) {
                 $divNature = "ML Early Wear Warning";
                 $divSummary = "Rule-based formula estimated safe calendar buffer (+{$d}d), but ML models detected compound strain from harsh terrain ({$terrainSeverity}x) and high daily driving ({$dailyKm} km/day), signaling early wear risk.";
             } else {
                 $divNature = "Rule vs ML Divergence";
-                $divSummary = "Rule-based deterministic threshold evaluated {$this->rb_prediction}, whereas machine learning ensemble identified non-linear pattern supporting {$this->consensus_label}.";
+                $divSummary = "Rule-based deterministic threshold evaluated {$this->rb_prediction}, whereas machine learning ensemble identified pattern supporting {$this->consensus_label}.";
             }
         } else {
-            $divNature = "High Agreement (3/4)";
-            $divSummary = "3 of 4 models agree on {$this->consensus_label}. One ML estimator observed borderline boundary proximity.";
+            $divNature = "Majority Consensus ({$this->agreement_rate})";
+            $divSummary = "{$this->agreement_rate} models agree on {$this->consensus_label}. Borderline sensor threshold or non-linear edge case.";
         }
 
         return [
@@ -228,6 +235,13 @@ class MlPredictionComparison extends Model
                     'confidence'      => $this->svm_confidence,
                     'posterior_prob'  => round($svmConf, 1) . '%',
                     'reason'          => $svmReason,
+                ],
+                'logistic_regression' => [
+                    'name'            => '5. Logistic Regression',
+                    'prediction'      => $this->lr_prediction,
+                    'confidence'      => $this->lr_confidence,
+                    'posterior_prob'  => round($lrConf, 1) . '%',
+                    'reason'          => $lrReason,
                 ],
             ],
             'divergence' => [

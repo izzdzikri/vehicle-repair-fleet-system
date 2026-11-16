@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', 'Researcher Panel — 4-Model Predictions & Confidence')
+@section('page-title', 'Researcher Panel — 5-Model Predictions & Confidence')
 
 @push('head')
 <style>
@@ -43,10 +43,11 @@
 @section('content')
 @php
     $algos = [
-        'rule_based'    => ['icon' => 'ruler', 'label' => 'Rule-Based Baseline', 'color' => 'violet'],
-        'decision_tree' => ['icon' => 'git-branch', 'label' => 'Decision Tree (CART)', 'color' => 'sky'],
-        'random_forest' => ['icon' => 'trees', 'label' => 'Random Forest (100 Trees)', 'color' => 'emerald'],
-        'svm'           => ['icon' => 'circle-dot', 'label' => 'Support Vector Machine (RBF)', 'color' => 'amber'],
+        'rule_based'          => ['icon' => 'ruler',        'label' => 'Rule-Based Baseline',         'color' => 'violet'],
+        'decision_tree'       => ['icon' => 'git-branch',   'label' => 'Decision Tree (CART)',        'color' => 'sky'],
+        'random_forest'       => ['icon' => 'trees',        'label' => 'Random Forest (100 Trees)',   'color' => 'emerald'],
+        'svm'                 => ['icon' => 'circle-dot',   'label' => 'Support Vector Machine (RBF)','color' => 'amber'],
+        'logistic_regression' => ['icon' => 'trending-up',  'label' => 'Logistic Regression (lbfgs)', 'color' => 'rose'],
     ];
 
     $labelBadge = [
@@ -144,9 +145,9 @@
 </div>
 
 {{-- ══════════════════════════════════════════════════════════════════════════
-     4-MODEL AVERAGE CONFIDENCE SCORECARDS
+     5-MODEL AVERAGE CONFIDENCE SCORECARDS
 ══════════════════════════════════════════════════════════════════════════ --}}
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
     {{-- Rule-Based Card --}}
     <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-4 relative overflow-hidden">
         <div class="absolute top-0 left-0 right-0 h-1 bg-violet-500"></div>
@@ -246,6 +247,31 @@
             <span>5-Fold CV: <strong class="text-amber-600">{{ isset($summaryModels['svm']['cv_accuracy']) ? round($summaryModels['svm']['cv_accuracy'] * 100, 1) . '%' : '—' }}</strong></span>
         </div>
     </div>
+
+    {{-- Logistic Regression Card --}}
+    <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-4 relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-rose-500"></div>
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                    <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                </div>
+                Logistic Regression
+            </span>
+            <span class="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+                Softmax
+            </span>
+        </div>
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Average Confidence</p>
+        <div class="flex items-baseline gap-2">
+            <span class="text-3xl font-extrabold text-gray-900 font-mono">{{ $confStats['avg_lr'] ?? '—' }}%</span>
+            <span class="text-xs text-gray-400">probability</span>
+        </div>
+        <div class="mt-2.5 pt-2 border-t border-gray-100 text-xs text-gray-600 font-medium flex justify-between">
+            <span>Accuracy: <strong class="text-gray-900">{{ isset($metrics['logistic_regression']) ? round($metrics['logistic_regression']->accuracy * 100, 1) . '%' : '—' }}</strong></span>
+            <span>5-Fold CV: <strong class="text-rose-600">{{ isset($summaryModels['logistic_regression']['cv_accuracy']) ? round($summaryModels['logistic_regression']['cv_accuracy'] * 100, 1) . '%' : '—' }}</strong></span>
+        </div>
+    </div>
 </div>
 
 {{-- ══════════════════════════════════════════════════════════════════════════
@@ -288,13 +314,13 @@
         </div>
     </div>
 
-    {{-- Card 2: 4-Model Consensus --}}
+    {{-- Card 2: 5-Model Consensus --}}
     <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-4 flex flex-col justify-between">
         <div>
             <div class="flex items-center justify-between mb-2.5">
                 <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                     <i data-lucide="users" class="w-4 h-4 text-indigo-500"></i>
-                    4-Model Consensus Breakdown
+                    Multi-Model Consensus Breakdown
                 </h3>
                 <span class="text-xs text-indigo-600 font-semibold">Ensemble Rate</span>
             </div>
@@ -303,7 +329,7 @@
                 <div>
                     <div class="flex justify-between text-xs mb-0.5">
                         <span class="text-gray-600 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Unanimous (4/4 Agree)
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Unanimous (100% Agree)
                         </span>
                         <span class="font-mono font-bold text-emerald-700">{{ $confStats['unanimous_count'] }} ({{ $confStats['unanimous_pct'] }}%)</span>
                     </div>
@@ -315,7 +341,7 @@
                 <div>
                     <div class="flex justify-between text-xs mb-0.5">
                         <span class="text-gray-600 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Majority (3/4 Agree)
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Majority (>= 60% Agree)
                         </span>
                         <span class="font-mono font-bold text-amber-700">{{ $confStats['majority_count'] }} ({{ $confStats['majority_pct'] }}%)</span>
                     </div>
@@ -327,7 +353,7 @@
                 <div>
                     <div class="flex justify-between text-xs mb-0.5">
                         <span class="text-gray-600 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Split Decision (≤2/4)
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Split Decision (< 60%)
                         </span>
                         <span class="font-mono font-bold text-rose-700">{{ $confStats['split_count'] }} ({{ $confStats['split_pct'] }}%)</span>
                     </div>
@@ -519,7 +545,7 @@
         <div>
             <h3 class="font-bold text-gray-900 text-sm flex items-center gap-2 uppercase tracking-wider">
                 <i data-lucide="table" class="w-4 h-4 text-indigo-600"></i>
-                4-Model Side-by-Side Predictions & Confidence Scores
+                5-Model Side-by-Side Predictions & Confidence Scores
             </h3>
         </div>
         <div class="flex items-center gap-3">
@@ -572,6 +598,11 @@
                             <i data-lucide="circle-dot" class="w-3 h-3"></i> 4. SVM (RBF)
                         </span>
                     </th>
+                    <th class="px-3 py-3 text-center min-w-[125px]">
+                        <span class="inline-flex items-center gap-1 text-rose-700">
+                            <i data-lucide="trending-up" class="w-3 h-3"></i> 5. LogReg
+                        </span>
+                    </th>
                     <th class="px-3 py-3 text-center min-w-[95px]">Consensus</th>
                     <th class="px-3 py-3 text-center min-w-[85px]">Push</th>
                     <th class="px-3 py-3 text-center min-w-[90px]">Audit</th>
@@ -580,10 +611,10 @@
             <tbody class="divide-y divide-gray-100">
                 @foreach($predictions as $pred)
                 @php
-                    $isAllAgree = $pred->agreement_rate && str_starts_with($pred->agreement_rate, '4/');
-                    $isMajority = $pred->agreement_rate && str_starts_with($pred->agreement_rate, '3/');
+                    $isAllAgree = $pred->agreement_rate && (str_starts_with($pred->agreement_rate, '5/') || str_starts_with($pred->agreement_rate, '4/4'));
+                    $isMajority = $pred->agreement_rate && (str_starts_with($pred->agreement_rate, '4/5') || str_starts_with($pred->agreement_rate, '3/5') || str_starts_with($pred->agreement_rate, '3/4'));
                     $isSplit    = ! $isAllAgree && ! $isMajority;
-                    $hasRbConflict = $pred->rb_prediction && ($pred->rf_prediction !== $pred->rb_prediction || $pred->dt_prediction !== $pred->rb_prediction);
+                    $hasRbConflict = $pred->rb_prediction && ($pred->rf_prediction !== $pred->rb_prediction || $pred->dt_prediction !== $pred->rb_prediction || $pred->svm_prediction !== $pred->rb_prediction || $pred->lr_prediction !== $pred->rb_prediction);
                 @endphp
                 <tr class="hover:bg-gray-50/80 transition {{ $isSplit ? 'bg-amber-50/20' : '' }}">
                     {{-- Vehicle & Job --}}
@@ -693,6 +724,26 @@
                         @endif
                     </td>
 
+                    {{-- Model 5: Logistic Regression --}}
+                    <td class="px-3 py-3 text-center">
+                        @if($pred->lr_prediction)
+                        <div class="inline-flex flex-col items-center w-full max-w-[110px] mx-auto">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold border {{ $labelBadge[$pred->lr_prediction] ?? 'badge-na' }}">
+                                {{ $pred->lr_prediction }}
+                            </span>
+                            @if($pred->lr_confidence !== null)
+                            <div class="w-full bg-gray-100 rounded-full h-2 mt-1.5 overflow-hidden">
+                                <div class="h-full rounded-full {{ $pred->lr_confidence >= 85 ? 'conf-bar-high' : ($pred->lr_confidence >= 65 ? 'conf-bar-medium' : 'conf-bar-low') }}"
+                                     style="width: {{ $pred->lr_confidence }}%"></div>
+                            </div>
+                            <span class="text-xs text-gray-700 font-mono font-semibold mt-1">{{ round($pred->lr_confidence) }}%</span>
+                            @endif
+                        </div>
+                        @else
+                        <span class="text-gray-300">—</span>
+                        @endif
+                    </td>
+
                     {{-- Consensus --}}
                     <td class="px-3 py-3 text-center whitespace-nowrap">
                         @if($pred->consensus_label)
@@ -732,7 +783,7 @@
                                 <div class="px-3 py-1 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
                                     Push Selected Model
                                 </div>
-                                @foreach(['random_forest'=>'Random Forest','decision_tree'=>'Decision Tree','svm'=>'SVM (RBF)','rule_based'=>'Rule-Based'] as $k => $name)
+                                @foreach(['random_forest'=>'Random Forest','decision_tree'=>'Decision Tree','svm'=>'SVM (RBF)','logistic_regression'=>'Logistic Regression','rule_based'=>'Rule-Based'] as $k => $name)
                                 @php $field = $k . '_prediction'; $cField = $k . '_confidence'; @endphp
                                 @if($pred->$field)
                                 <form action="{{ route('admin.predictive-analytics.predictions.push', $pred) }}" method="POST">
@@ -1095,6 +1146,41 @@
                                 <span class="font-mono font-bold">Infinite-Dim Hilbert Space</span>
                             </div>
                         </div>
+
+                        {{-- Model 5: Logistic Regression --}}
+                        <div class="bg-rose-50/40 border border-rose-200/80 rounded-xl p-4 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between pb-2 mb-2 border-b border-rose-100">
+                                    <span class="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                                        <i data-lucide="trending-up" class="w-4 h-4 text-rose-700"></i>
+                                        5. Logistic Regression
+                                    </span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-bold border"
+                                              :class="urgencyClass(activePrediction && activePrediction.models && activePrediction.models.logistic_regression ? activePrediction.models.logistic_regression.prediction : '')"
+                                              x-text="activePrediction && activePrediction.models && activePrediction.models.logistic_regression ? activePrediction.models.logistic_regression.prediction : ''"></span>
+                                        <span class="text-xs font-mono font-bold text-rose-800"
+                                              x-text="activePrediction && activePrediction.models && activePrediction.models.logistic_regression ? Math.round(activePrediction.models.logistic_regression.confidence) + '%' : ''"></span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 text-xs text-gray-700 leading-relaxed">
+                                    <div>
+                                        <strong class="text-gray-900 block font-semibold mb-0.5">Linear Predictor & Softmax:</strong>
+                                        <p class="font-mono bg-white/80 p-2 rounded-lg border border-rose-100 text-rose-950 text-2xs"
+                                           x-text="activePrediction && activePrediction.models && activePrediction.models.logistic_regression ? 'Multinomial Log-Odds · ' + activePrediction.models.logistic_regression.posterior_prob + ' Softmax Probability' : ''"></p>
+                                    </div>
+                                    <div>
+                                        <strong class="text-gray-900 block font-semibold mb-0.5">Why it chose this label:</strong>
+                                        <p x-text="activePrediction && activePrediction.models && activePrediction.models.logistic_regression ? activePrediction.models.logistic_regression.reason : ''"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pt-2.5 mt-2.5 border-t border-rose-100/80 text-2xs text-rose-800 flex items-center justify-between">
+                                <span>L-BFGS Numerical Optimizer</span>
+                                <span class="font-mono font-bold">Standardized Linear Space</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1359,7 +1445,7 @@
                         <p class="text-xl font-extrabold text-indigo-600 font-mono mt-1">
                             {{ $confStats['overall_mean'] }}%
                         </p>
-                        <span class="text-2xs text-gray-500 mt-1 block">Across 4 models</span>
+                        <span class="text-2xs text-gray-500 mt-1 block">Across all models</span>
                     </div>
 
                     <div class="p-3.5 rounded-xl border border-gray-200 bg-white shadow-2xs">
@@ -1367,7 +1453,7 @@
                         <p class="text-xl font-extrabold text-slate-900 font-mono mt-1">
                             {{ $confStats['unanimous_pct'] }}%
                         </p>
-                        <span class="text-2xs text-gray-500 mt-1 block">{{ $confStats['unanimous_count'] }} Unanimous (4/4)</span>
+                        <span class="text-2xs text-gray-500 mt-1 block">{{ $confStats['unanimous_count'] }} Unanimous Consensus</span>
                     </div>
 
                     <div class="p-3.5 rounded-xl border border-gray-200 bg-white shadow-2xs">
@@ -1380,7 +1466,7 @@
                 </div>
             </div>
 
-            {{-- Section 2: 4-Model Comparative Benchmark Table --}}
+            {{-- Section 2: 5-Model Comparative Benchmark Table --}}
             <div>
                 <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5">2. Comparative Algorithm Performance Leaderboard</h4>
                 <div class="border border-gray-200 rounded-xl overflow-hidden bg-white">
@@ -1409,7 +1495,8 @@
                                     @if($key === 'rule_based') Deterministic d = min(d_km, d_time)
                                     @elseif($key === 'decision_tree') CART Recursive Binary Partitioning (Gini)
                                     @elseif($key === 'random_forest') 100-Tree Bootstrap Bagging Ensemble
-                                    @else RBF Kernel Hyperplane Separation + Platt Scaling
+                                    @elseif($key === 'svm') RBF Kernel Hyperplane Separation + Platt Scaling
+                                    @elseif($key === 'logistic_regression') Multinomial L-BFGS Log-Odds + Softmax
                                     @endif
                                 </td>
                                 <td class="px-3 py-2.5 text-center font-bold {{ isset($m['accuracy']) && $m['accuracy'] >= 0.9 ? 'text-emerald-600' : 'text-gray-900' }}">
@@ -1462,6 +1549,7 @@
                                 <th class="px-3 py-2 text-center min-w-[100px]">2. Decision Tree</th>
                                 <th class="px-3 py-2 text-center min-w-[100px]">3. Random Forest</th>
                                 <th class="px-3 py-2 text-center min-w-[100px]">4. SVM (RBF)</th>
+                                <th class="px-3 py-2 text-center min-w-[100px]">5. LogReg</th>
                                 <th class="px-3 py-2 text-center min-w-[95px]">Consensus</th>
                                 <th class="px-3 py-2 min-w-[200px]">Primary Causal Reason</th>
                                 <th class="px-3 py-2 text-center min-w-[90px]">Audit Status</th>
@@ -1509,10 +1597,14 @@
                                     <span class="font-bold text-gray-900">{{ $pred->svm_prediction }}</span>
                                     <span class="text-2xs text-gray-500 block">{{ round($pred->svm_confidence) }}%</span>
                                 </td>
+                                <td class="px-3 py-2 text-center font-mono">
+                                    <span class="font-bold text-gray-900">{{ $pred->lr_prediction }}</span>
+                                    <span class="text-2xs text-gray-500 block">{{ round($pred->lr_confidence) }}%</span>
+                                </td>
                                 <td class="px-3 py-2 text-center whitespace-nowrap">
                                     <span class="font-bold text-xs px-2 py-0.5 rounded-full border
-                                        @if(str_starts_with($pred->agreement_rate ?? '', '4/')) bg-emerald-50 text-emerald-800 border-emerald-300
-                                        @elseif(str_starts_with($pred->agreement_rate ?? '', '3/')) bg-amber-50 text-amber-800 border-amber-300
+                                        @if(str_starts_with($pred->agreement_rate ?? '', '5/') || str_starts_with($pred->agreement_rate ?? '', '4/4')) bg-emerald-50 text-emerald-800 border-emerald-300
+                                        @elseif(str_starts_with($pred->agreement_rate ?? '', '4/5') || str_starts_with($pred->agreement_rate ?? '', '3/')) bg-amber-50 text-amber-800 border-amber-300
                                         @else bg-rose-50 text-rose-800 border-rose-300 @endif">
                                         {{ $pred->consensus_label }} ({{ $pred->agreement_rate }})
                                     </span>

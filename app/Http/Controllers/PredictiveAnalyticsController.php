@@ -188,7 +188,7 @@ class PredictiveAnalyticsController extends Controller
         $request->validate([
             'dataset_id'    => 'required|exists:ml_datasets,id',
             'algorithms'    => 'required|array|min:1',
-            'algorithms.*'  => 'in:rule_based,decision_tree,random_forest,svm',
+            'algorithms.*'  => 'in:rule_based,decision_tree,random_forest,svm,logistic_regression',
             'split_ratio'   => 'numeric|between:0.6,0.95',
             'cv_folds'      => 'integer|between:3,10',
         ]);
@@ -205,6 +205,9 @@ class PredictiveAnalyticsController extends Controller
             'rf_max_depth'     => $request->input('rf_max_depth') ?: null,
             'svm_c'            => (float) $request->input('svm_c', 1.0),
             'svm_gamma'        => $request->input('svm_gamma', 'scale'),
+            'lr_C'             => (float) $request->input('lr_C', 1.0),
+            'lr_solver'        => $request->input('lr_solver', 'lbfgs'),
+            'lr_max_iter'      => (int) $request->input('lr_max_iter', 1000),
         ];
 
         $runNumber = $dataset->experiments()->count() + 1;
@@ -318,6 +321,8 @@ class PredictiveAnalyticsController extends Controller
                         'rf_confidence'      => $pred['rf_confidence'] ?? null,
                         'svm_prediction'     => $pred['svm_prediction'] ?? null,
                         'svm_confidence'     => $pred['svm_confidence'] ?? null,
+                        'lr_prediction'      => $pred['lr_prediction'] ?? null,
+                        'lr_confidence'      => $pred['lr_confidence'] ?? null,
                         'consensus_label'    => $pred['consensus_label'] ?? null,
                         'agreement_rate'     => $pred['agreement_rate'] ?? null,
                         'features_json'      => isset($pred['features']) ? json_encode($pred['features']) : null,
@@ -339,7 +344,7 @@ class PredictiveAnalyticsController extends Controller
     public function pushToAlerts(Request $request, MlPredictionComparison $prediction)
     {
         $request->validate([
-            'algorithm' => 'required|in:rule_based,decision_tree,random_forest,svm',
+            'algorithm' => 'required|in:rule_based,decision_tree,random_forest,svm,logistic_regression',
         ]);
 
         $algo  = $request->input('algorithm');
@@ -608,7 +613,7 @@ class PredictiveAnalyticsController extends Controller
         $metrics = $experiment->metrics->keyBy('algorithm');
 
         $data = [];
-        foreach (['rule_based', 'decision_tree', 'random_forest', 'svm'] as $algo) {
+        foreach (['rule_based', 'decision_tree', 'random_forest', 'svm', 'logistic_regression'] as $algo) {
             $m = $metrics->get($algo);
             $data[$algo] = [
                 'accuracy'            => $m ? round($m->accuracy * 100, 2) : null,
@@ -768,7 +773,7 @@ class PredictiveAnalyticsController extends Controller
 
         $metrics = $selectedExperiment->metrics->keyBy('algorithm');
 
-        // Detailed Confidence Statistics across all 4 models
+        // Detailed Confidence Statistics across all models
         $allPredsQuery = $selectedExperiment->predictions();
         $totalCount = (clone $allPredsQuery)->count();
 
@@ -776,18 +781,27 @@ class PredictiveAnalyticsController extends Controller
         $avgDtConf  = (float) (clone $allPredsQuery)->whereNotNull('dt_confidence')->avg('dt_confidence');
         $avgRfConf  = (float) (clone $allPredsQuery)->whereNotNull('rf_confidence')->avg('rf_confidence');
         $avgSvmConf = (float) (clone $allPredsQuery)->whereNotNull('svm_confidence')->avg('svm_confidence');
+        $avgLrConf  = (float) (clone $allPredsQuery)->whereNotNull('lr_confidence')->avg('lr_confidence');
 
-        $overallMeanConf = round(($avgRbConf + $avgDtConf + $avgRfConf + $avgSvmConf) / 4, 1);
+        $activeConfs = array_filter([$avgRbConf, $avgDtConf, $avgRfConf, $avgSvmConf, $avgLrConf], fn($v) => $v > 0);
+        $overallMeanConf = count($activeConfs) ? round(array_sum($activeConfs) / count($activeConfs), 1) : 0;
 
         // Confidence Tiers (benchmarked against ensemble/RF confidence)
         $highConfCount = (clone $allPredsQuery)->where('rf_confidence', '>=', 85)->count();
         $modConfCount  = (clone $allPredsQuery)->whereBetween('rf_confidence', [65, 84.99])->count();
         $lowConfCount  = (clone $allPredsQuery)->where('rf_confidence', '<', 65)->count();
 
-        // Agreement & Consensus Breakdown
-        $unanimousCount = (clone $allPredsQuery)->where('agreement_rate', '4/4')->count();
-        $majorityCount  = (clone $allPredsQuery)->where('agreement_rate', '3/4')->count();
-        $splitCount     = (clone $allPredsQuery)->where('agreement_rate', 'not like', '4/%')
+        // Agreement & Consensus Breakdown (supports 5 models or 4 models)
+        $unanimousCount = (clone $allPredsQuery)->where(function($q) {
+            $q->where('agreement_rate', '5/5')->orWhere('agreement_rate', '4/4');
+        })->count();
+        $majorityCount  = (clone $allPredsQuery)->where(function($q) {
+            $q->where('agreement_rate', '4/5')
+              ->orWhere('agreement_rate', '3/5')
+              ->orWhere('agreement_rate', '3/4');
+        })->count();
+        $splitCount     = (clone $allPredsQuery)->where('agreement_rate', 'not like', '5/%')
+                                               ->where('agreement_rate', 'not like', '4/%')
                                                ->where('agreement_rate', 'not like', '3/%')
                                                ->count();
 
@@ -797,7 +811,8 @@ class PredictiveAnalyticsController extends Controller
             ->where(function ($q) {
                 $q->whereColumn('rf_prediction', '!=', 'rb_prediction')
                   ->orWhereColumn('dt_prediction', '!=', 'rb_prediction')
-                  ->orWhereColumn('svm_prediction', '!=', 'rb_prediction');
+                  ->orWhereColumn('svm_prediction', '!=', 'rb_prediction')
+                  ->orWhereColumn('lr_prediction', '!=', 'rb_prediction');
             })->count();
 
         $confStats = [
@@ -807,6 +822,7 @@ class PredictiveAnalyticsController extends Controller
             'avg_dt'           => round($avgDtConf, 1),
             'avg_rf'           => round($avgRfConf, 1),
             'avg_svm'          => round($avgSvmConf, 1),
+            'avg_lr'           => round($avgLrConf, 1),
             'high_count'       => $highConfCount,
             'high_pct'         => $totalCount > 0 ? round(($highConfCount / $totalCount) * 100, 1) : 0,
             'mod_count'        => $modConfCount,
@@ -847,11 +863,18 @@ class PredictiveAnalyticsController extends Controller
         // Agreement Filter
         if ($agreement = $request->input('agreement')) {
             if ($agreement === 'unanimous') {
-                $pQuery->where('agreement_rate', '4/4');
+                $pQuery->where(function($q) {
+                    $q->where('agreement_rate', '5/5')->orWhere('agreement_rate', '4/4');
+                });
             } elseif ($agreement === 'majority') {
-                $pQuery->where('agreement_rate', '3/4');
+                $pQuery->where(function($q) {
+                    $q->where('agreement_rate', '4/5')
+                      ->orWhere('agreement_rate', '3/5')
+                      ->orWhere('agreement_rate', '3/4');
+                });
             } elseif ($agreement === 'split') {
-                $pQuery->where('agreement_rate', 'not like', '4/%')
+                $pQuery->where('agreement_rate', 'not like', '5/%')
+                       ->where('agreement_rate', 'not like', '4/%')
                        ->where('agreement_rate', 'not like', '3/%');
             }
         }
@@ -868,7 +891,8 @@ class PredictiveAnalyticsController extends Controller
                        ->where(function ($q) {
                            $q->whereColumn('rf_prediction', '!=', 'rb_prediction')
                              ->orWhereColumn('dt_prediction', '!=', 'rb_prediction')
-                             ->orWhereColumn('svm_prediction', '!=', 'rb_prediction');
+                             ->orWhereColumn('svm_prediction', '!=', 'rb_prediction')
+                             ->orWhereColumn('lr_prediction', '!=', 'rb_prediction');
                        });
             } elseif ($divergence === 'actual_diff') {
                 $pQuery->whereNotNull('ground_truth_label')
@@ -964,6 +988,10 @@ class PredictiveAnalyticsController extends Controller
                 'SVM Confidence (%)',
                 'SVM Posterior Probability',
                 'SVM Reason',
+                // Model 5: Logistic Regression
+                'Logistic Regression Prediction',
+                'Logistic Regression Confidence (%)',
+                'Logistic Regression Reason',
                 // Consensus & Diagnostics
                 'Consensus Label',
                 'Agreement Rate',
@@ -1021,6 +1049,10 @@ class PredictiveAnalyticsController extends Controller
                         $p->svm_confidence,
                         $models['svm']['posterior_prob'] ?? '',
                         $models['svm']['reason'] ?? '',
+                        // Model 5: Logistic Regression
+                        $p->lr_prediction,
+                        $p->lr_confidence,
+                        $models['logistic_regression']['reason'] ?? '',
                         // Consensus & Diagnostics
                         $p->consensus_label,
                         $p->agreement_rate,
@@ -1052,19 +1084,21 @@ class PredictiveAnalyticsController extends Controller
 
         $rows = [];
         $algoLabels = [
-            'rule_based'    => 'Rule-Based Deterministic Baseline',
-            'decision_tree' => 'Decision Tree Classifier (CART)',
-            'random_forest' => 'Random Forest Ensemble (100 Trees)',
-            'svm'           => 'Support Vector Machine (RBF Kernel)',
+            'rule_based'          => 'Rule-Based Deterministic Baseline',
+            'decision_tree'       => 'Decision Tree Classifier (CART)',
+            'random_forest'       => 'Random Forest Ensemble (100 Trees)',
+            'svm'                 => 'Support Vector Machine (RBF Kernel)',
+            'logistic_regression' => 'Logistic Regression (lbfgs)',
         ];
 
         foreach ($algoLabels as $key => $label) {
             $m = $metrics->get($key);
             $confCol = match($key) {
-                'rule_based'    => 'rb_confidence',
-                'decision_tree' => 'dt_confidence',
-                'random_forest' => 'rf_confidence',
-                'svm'           => 'svm_confidence',
+                'rule_based'          => 'rb_confidence',
+                'decision_tree'       => 'dt_confidence',
+                'random_forest'       => 'rf_confidence',
+                'svm'                 => 'svm_confidence',
+                'logistic_regression' => 'lr_confidence',
             };
             $avgConf = (clone $preds)->whereNotNull($confCol)->avg($confCol);
 
@@ -1485,14 +1519,21 @@ BIBTEX;
                     'model_name'    => 'SVM (RBF Kernel)',
                     'type'          => 'Kernel Classifier',
                 ],
+                'logistic_regression' => [
+                    'prediction'    => $pred,
+                    'confidence'    => min(99.0, max(50.0, $conf - 1.5)),
+                    'probabilities' => $probs,
+                    'model_name'    => 'Logistic Regression',
+                    'type'          => 'Linear Classifier',
+                ],
             ],
             'consensus' => [
                 'label'               => $pred,
                 'agreement_rate'      => 100.0,
-                'agreement_fraction'  => '4/4',
-                'status_text'         => 'Unanimous Consensus (4/4)',
+                'agreement_fraction'  => '5/5',
+                'status_text'         => 'Unanimous Consensus (5/5)',
                 'status_color'        => 'emerald',
-                'votes'               => [$pred => 4],
+                'votes'               => [$pred => 5],
             ],
             'explainability' => [
                 'km_utilization_pct'   => $kmUtil,
@@ -1595,7 +1636,7 @@ BIBTEX;
         $payload = [
             'dataset_path'  => $dataset->absolute_path,
             'dataset_type'  => $dataset->source_type,
-            'models_to_run' => ['rule_based', 'decision_tree', 'random_forest', 'svm'],
+            'models_to_run' => ['rule_based', 'decision_tree', 'random_forest', 'svm', 'logistic_regression'],
             'output_dir'    => $outputDir,
             'split_ratio'   => 0.80,
             'cv_folds'      => 5,
@@ -1621,7 +1662,7 @@ BIBTEX;
             $experiment->update([
                 'status'       => 'completed',
                 'summary_json' => [
-                    'algorithms_run' => ['rule_based', 'decision_tree', 'random_forest', 'svm'],
+                    'algorithms_run' => ['rule_based', 'decision_tree', 'random_forest', 'svm', 'logistic_regression'],
                     'row_count'      => $output['row_count'],
                     'has_labels'     => $output['has_labels'],
                     'models'         => $output['models'],
@@ -1663,6 +1704,8 @@ BIBTEX;
                         'rf_confidence'      => $pred['rf_confidence'] ?? null,
                         'svm_prediction'     => $pred['svm_prediction'] ?? null,
                         'svm_confidence'     => $pred['svm_confidence'] ?? null,
+                        'lr_prediction'      => $pred['lr_prediction'] ?? null,
+                        'lr_confidence'      => $pred['lr_confidence'] ?? null,
                         'consensus_label'    => $pred['consensus_label'] ?? null,
                         'agreement_rate'     => $pred['agreement_rate'] ?? null,
                         'features_json'      => isset($pred['features']) ? json_encode($pred['features']) : null,

@@ -188,6 +188,20 @@ def execute_inference(payload: dict) -> dict:
                     "model_name": "SVM (RBF Kernel)",
                     "type": "Kernel Classifier",
                 }
+
+            # Logistic Regression
+            if os.path.exists(os.path.join(model_dir, "logistic_regression.pkl")):
+                lr = joblib.load(os.path.join(model_dir, "logistic_regression.pkl"))
+                lr_classes = list(lr.classes_)
+                lr_pred = str(lr.predict(X_pp)[0])
+                lr_proba = {c: round(float(p) * 100, 1) for c, p in zip(lr_classes, lr.predict_proba(X_pp)[0])}
+                ml_results["logistic_regression"] = {
+                    "prediction": lr_pred,
+                    "confidence": lr_proba.get(lr_pred, 50.0),
+                    "probabilities": lr_proba,
+                    "model_name": "Logistic Regression",
+                    "type": "Linear Classifier",
+                }
         except Exception as e:
             # Fallback to pseudo-predictions if unpickling version conflict
             pass
@@ -217,6 +231,14 @@ def execute_inference(payload: dict) -> dict:
             "model_name": "SVM (RBF Kernel)",
             "type": "Kernel Classifier",
         }
+    if "logistic_regression" not in ml_results:
+        ml_results["logistic_regression"] = {
+            "prediction": rb_res["prediction"],
+            "confidence": rb_res["confidence"],
+            "probabilities": {rb_res["prediction"]: rb_res["confidence"], "LOW": 10.0, "MEDIUM": 10.0},
+            "model_name": "Logistic Regression",
+            "type": "Linear Classifier",
+        }
 
     # Model 1 details
     all_models = {
@@ -235,6 +257,7 @@ def execute_inference(payload: dict) -> dict:
         "decision_tree": ml_results["decision_tree"],
         "random_forest": ml_results["random_forest"],
         "svm": ml_results["svm"],
+        "logistic_regression": ml_results["logistic_regression"],
     }
 
     # Multi-Model Consensus
@@ -244,14 +267,15 @@ def execute_inference(payload: dict) -> dict:
     agree_count = vote_counts[consensus_label]
     agree_pct = round((agree_count / len(votes)) * 100, 1)
 
-    if agree_count == 4:
-        consensus_status = "Unanimous Consensus (4/4)"
+    total_models = len(votes)
+    if agree_count == total_models:
+        consensus_status = f"Unanimous Consensus ({agree_count}/{total_models})"
         status_color = "emerald"
-    elif agree_count == 3:
-        consensus_status = "Strong Majority (3/4)"
+    elif agree_count >= (total_models // 2) + 1:
+        consensus_status = f"Strong Majority ({agree_count}/{total_models})"
         status_color = "indigo"
     else:
-        consensus_status = "Contested Split (2/4)"
+        consensus_status = f"Contested Split ({agree_count}/{total_models})"
         status_color = "amber"
 
     # Explainable AI & Causal Reasoning

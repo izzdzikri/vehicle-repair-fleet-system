@@ -389,17 +389,17 @@
             </div>
         </div>
 
-        {{-- 2. Side-by-Side 4-Model Comparative Cards --}}
+        {{-- 2. Side-by-Side 5-Model Comparative Cards --}}
         <div>
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-base font-extrabold text-gray-900 uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="layers" class="w-5 h-5 text-indigo-600"></i>
-                    <span>Side-by-Side Model Predictions (N = 4):</span>
+                    <span>Side-by-Side Model Predictions (N = 5):</span>
                 </h3>
                 <span class="text-sm text-gray-500 font-mono">Real-time classification outputs</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
 
                 {{-- Model 1 Card: Rule-Based --}}
                 <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-col justify-between hover:border-indigo-300 transition">
@@ -542,6 +542,41 @@
                     </div>
                 </div>
 
+                {{-- Model 5 Card: Logistic Regression --}}
+                <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex flex-col justify-between hover:border-indigo-300 transition">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-extrabold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md">
+                                Model 5: Logistic Regression
+                            </span>
+                            <span class="text-sm font-mono font-extrabold px-3 py-1 rounded-lg border shadow-2xs"
+                                  :class="{
+                                      'bg-rose-50 text-rose-700 border-rose-200': inferenceResult?.models?.logistic_regression?.prediction === 'HIGH',
+                                      'bg-amber-50 text-amber-700 border-amber-200': inferenceResult?.models?.logistic_regression?.prediction === 'MEDIUM',
+                                      'bg-emerald-50 text-emerald-700 border-emerald-200': inferenceResult?.models?.logistic_regression?.prediction === 'LOW'
+                                  }"
+                                  x-text="inferenceResult?.models?.logistic_regression?.prediction"></span>
+                        </div>
+                        <h4 class="font-bold text-base text-gray-900">Multinomial Logit</h4>
+                        <p class="text-xs md:text-sm text-gray-600 mt-1 leading-snug">L-BFGS optimized log-odds with softmax probability.</p>
+
+                        <div class="mt-4 space-y-2 text-sm font-mono bg-gray-50/90 p-3.5 rounded-xl border border-gray-200">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 font-medium">Logit Confidence:</span>
+                                <span class="font-bold text-gray-900" x-text="inferenceResult?.models?.logistic_regression?.confidence + '%'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 font-medium">HIGH Prob:</span>
+                                <span class="font-bold text-rose-600" x-text="inferenceResult?.models?.logistic_regression?.probabilities?.HIGH + '%'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 font-medium">Classification:</span>
+                                <span class="font-bold text-gray-900">Linear Separator</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -633,6 +668,7 @@
                         <th class="px-4 py-3.5">2. Tree</th>
                         <th class="px-4 py-3.5">3. Forest</th>
                         <th class="px-4 py-3.5">4. SVM</th>
+                        <th class="px-4 py-3.5">5. LogReg</th>
                         <th class="px-4 py-3.5">Consensus</th>
                         <th class="px-4 py-3.5 text-right">Action</th>
                     </tr>
@@ -660,6 +696,10 @@
                             <td class="px-4 py-3">
                                 <span class="font-bold text-sm" :class="item.results.svm.prediction === 'HIGH' ? 'text-rose-600' : (item.results.svm.prediction === 'MEDIUM' ? 'text-amber-600' : 'text-emerald-600')"
                                       x-text="item.results.svm.prediction"></span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="font-bold text-sm" :class="item.results.logistic_regression?.prediction === 'HIGH' ? 'text-rose-600' : (item.results.logistic_regression?.prediction === 'MEDIUM' ? 'text-amber-600' : 'text-emerald-600')"
+                                      x-text="item.results.logistic_regression?.prediction || '—'"></span>
                             </td>
                             <td class="px-4 py-3 font-sans font-bold">
                                 <span class="px-2.5 py-1 rounded-md text-xs font-bold"

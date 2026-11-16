@@ -182,6 +182,7 @@ class PredictiveNotificationTest extends TestCase
                 'decision_tree',
                 'random_forest',
                 'svm',
+                'logistic_regression',
             ],
             'consensus' => [
                 'label',
