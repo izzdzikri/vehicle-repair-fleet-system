@@ -19,10 +19,11 @@ An enterprise-grade workshop and corporate fleet management system developed wit
 ## 🚀 Key Features
 
 1. **Strict 6-Stage Job Card Workflow:**
-   - Sequential progression: `received` ➔ `diagnosing` ➔ `parts_pending` ➔ `in_repair` ➔ `ready_qc` ➔ `completed`.
+   - Sequential progression: `received` ➔ `diagnosing` ➔ `waiting_parts` ➔ `repairing` ➔ `quality_check` ➔ `completed`.
    - Backward rollback allowed for diagnosis re-evaluations while maintaining parts & labour consistency.
    - Concurrency protection: `lockForUpdate` prevents simultaneous stock deductions and negative inventory.
    - Database-level `CHECK (stock >= 0)` constraint on spare parts.
+   - **EDF Job Schedule Board:** Earliest Deadline First ordering of active repair jobs by `estimated_completion`, with overdue and stale-job flags so staff see which jobs are due first.
 
 2. **Corporate Multi-PIC Fleet Portal:**
    - Multi-tenant company isolation: corporate representatives can only view and manage vehicles belonging to their registered company (`company_id`).
@@ -39,7 +40,8 @@ An enterprise-grade workshop and corporate fleet management system developed wit
 4. **Predictive Maintenance & Health Scoring:**
    - Formula-based mileage and timeline interval degradation tracking.
    - Automated high/medium priority alerts for upcoming brake, oil, timing belt, and battery replacements.
-   - PSM 2 ML readiness: Schema prepared for scikit-learn Random Forest model ingestion.
+   - The live alert engine (`MaintenancePredictionService`) is rule-based: it estimates service due dates from recent trip logs and service intervals.
+   - Admin Predictive Analytics research panel: compares Rule-Based, Decision Tree, Random Forest and SVM on uploaded or synthetic datasets using Python (scikit-learn) with multi-model consensus and Explainable AI (XAI) causal reasoning (see `PredictiveAnalyticsController` and `storage/app/ml_engine`).
 
 5. **Financial Management & Billing:**
    - Automated subtotal, SST tax calculation, payments tracking, and PDF invoice generation.
@@ -174,12 +176,12 @@ To verify and format PHP code against PSR-12 and Laravel standards:
 
 ---
 
-## 🔮 PSM 2 Roadmap & Next Steps
+## 🔮 Future Work
 
-1. **Random Forest Predictive Engine:**
-   - Dedicated Python/FastAPI microservice for training on historical telemetry (`mileage`, `operating_hours`, `symptoms`, `part_replacement_history`).
-   - Predicting Remaining Useful Life (RUL) and workshop service duration.
-2. **Earliest Deadline First (EDF) Dynamic Dispatch:**
-   - Algorithmic scheduler prioritizing vehicles based on corporate SLA deadlines, emergency severity, and mechanic skill sets.
+1. **Production ML Predictive Engine:**
+   - Move the best-performing model from the research panel into live maintenance alerts once enough labelled breakdown records exist.
+   - Predict Remaining Useful Life (RUL) and workshop service duration from historical telemetry (`mileage`, `operating_hours`, `symptoms`, `part_replacement_history`).
+2. **Extended EDF Dispatch:**
+   - The EDF job schedule board is already implemented. A possible extension is weighting deadlines by corporate SLA, emergency severity, and mechanic skill sets.
 3. **Automated Supplier Replenishment:**
-   - Automatic purchase order creation when stock reaches `min_stock` threshold, integrated with supplier API webhooks.
+   - Draft purchase orders are already created when stock reaches `min_stock`; a future step is sending them to suppliers via API webhooks.
