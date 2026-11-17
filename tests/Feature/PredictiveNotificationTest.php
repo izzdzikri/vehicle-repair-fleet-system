@@ -250,4 +250,32 @@ class PredictiveNotificationTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_ml_model_metrics_can_store_logistic_regression(): void
+    {
+        $dataset = \App\Models\MlDataset::first();
+        $experiment = \App\Models\MlExperiment::create([
+            'dataset_id'  => $dataset->id,
+            'run_name'    => 'Test LR Metric Run',
+            'split_ratio' => 0.8,
+            'cv_folds'    => 5,
+            'status'      => 'completed',
+            'run_by'      => User::where('role', 'admin')->first()->id,
+        ]);
+
+        $metric = \App\Models\MlModelMetric::create([
+            'experiment_id'       => $experiment->id,
+            'algorithm'           => 'logistic_regression',
+            'accuracy'            => 0.9333,
+            'precision_macro'     => 0.6208,
+            'recall_macro'        => 0.6373,
+            'f1_macro'            => 0.6288,
+            'high_urgency_recall' => 0.9250,
+        ]);
+
+        $this->assertDatabaseHas('ml_model_metrics', [
+            'id'        => $metric->id,
+            'algorithm' => 'logistic_regression',
+        ]);
+    }
 }

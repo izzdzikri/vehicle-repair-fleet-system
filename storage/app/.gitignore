@@ -8,4 +8,7 @@
 !ml_datasets/**
 !ml_models/
 !ml_models/**
+ml_models/exp_*
+!ml_models/exp_1/**
+!ml_models/exp_2/**
 
