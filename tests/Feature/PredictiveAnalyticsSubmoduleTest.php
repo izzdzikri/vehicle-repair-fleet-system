@@ -405,4 +405,25 @@ class PredictiveAnalyticsSubmoduleTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_admin_can_generate_synthetic_datasets_with_custom_noise_selector(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.predictive-analytics.generate'), [
+                'rows'    => 120,
+                'noise'   => 0.15,
+                'missing' => 0.05,
+                'bias'    => 'mountain',
+                'seed'    => 101,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $latestDataset = MlDataset::where('name', 'like', '%(15% noise)%')->latest()->first();
+        $this->assertNotNull($latestDataset);
+        $this->assertEquals(120, $latestDataset->row_count);
+        $this->assertEquals(0.15, $latestDataset->feature_mapping_json['noise']);
+        $this->assertEquals('mountain', $latestDataset->feature_mapping_json['bias']);
+    }
 }

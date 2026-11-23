@@ -1,601 +1,121 @@
-vehicle_id,plate_number,service_type,scan_year,days_since_service,km_since_service,interval_km,interval_months,daily_km,terrain_severity,vehicle_age,total_mileage,fuel_type,owner_type,urgency_label
-VH0001,"Maz 2067","Oil & Filter Change",2024,28,905,5000,6,36.6,1.15,8,120207,petrol,individual,LOW
-VH0002,"For 4567","Full Engine Service",2025,427,11500,10000,12,62.7,1.3,12,309155,hybrid,corporate,HIGH
-VH0003,"Nis 2564","Transmission Fluid Change",2025,409,18748,40000,24,37.4,1.15,3,46023,electric,individual,LOW
-VH0004,"Nis 1370","Transmission Fluid Change",2025,479,30400,40000,24,39.4,1.15,6,89187,electric,individual,LOW
-VH0005,"Hon 6461","Tyre Rotation & Balancing",2025,47,2269,10000,6,56.7,1.3,10,198319,diesel,corporate,LOW
-VH0006,"Toy 6389","Transmission Fluid Change",2025,577,35755,40000,24,53.5,1.2,13,219404,petrol,corporate,HIGH
-VH0007,"Per 1275","Oil & Filter Change",2025,61,1823,5000,6,63.4,1.2,2,38914,diesel,corporate,LOW
-VH0008,"Hyu 1239","Oil & Filter Change",2024,81,2058,5000,6,66.7,1.15,1,22469,petrol,corporate,LOW
-VH0009,"Pro 9848","Transmission Fluid Change",2026,698,37600,40000,24,39.4,1.15,12,175358,hybrid,individual,HIGH
-VH0010,"Toy 5332","Oil & Filter Change",2026,37,934,5000,6,35.9,1.15,9,112124,diesel,individual,LOW
-VH0011,"For 5724","Tyre Rotation & Balancing",2025,164,9589,10000,6,54.9,1,1,23290,hybrid,corporate,MEDIUM
-VH0012,"Nis 4942","Transmission Fluid Change",2025,762,43465,40000,24,28,1.2,4,46618,hybrid,individual,HIGH
-VH0013,"For 2819","Oil & Filter Change",2024,36,943,5000,6,35.1,1.15,8,115676,diesel,individual,LOW
-VH0014,"Hon 9993","Air Conditioning Service",2025,421,12336,20000,24,33.6,1.15,6,77569,diesel,individual,LOW
-VH0015,"Per 6766","Tyre Rotation & Balancing",2025,222,11617,10000,6,35.6,1.15,13,186549,electric,individual,HIGH
-VH0016,"Nis 1951","Full Engine Service",2025,101,3090,10000,12,34.3,1,5,70472,hybrid,individual,LOW
-VH0017,"Pro 2155","Full Vehicle Inspection",2025,169,13362,30000,12,59.9,1.3,6,128268,petrol,corporate,LOW
-VH0018,"Toy 4864","Full Vehicle Inspection",2025,305,23262,30000,12,55.7,1.3,7,143025,diesel,corporate,HIGH
-VH0019,"For 8733","Full Vehicle Inspection",2025,196,15165,30000,12,35.3,1.15,7,92075,electric,individual,LOW
-VH0020,"Nis 6730","Oil & Filter Change",2025,209,5437,5000,6,52.8,0.9,3,61627,hybrid,corporate,HIGH
-VH0021,"Toy 7993","Full Vehicle Inspection",2026,212,18355,30000,12,37.8,0.9,10,130378,hybrid,individual,LOW
-VH0022,"Toy 2827","Full Engine Service",2024,103,3256,10000,12,34.5,1,11,128314,petrol,individual,LOW
-VH0023,"Hon 5784","Full Vehicle Inspection",2024,183,14070,30000,12,37.5,0.9,3,42242,diesel,individual,LOW
-VH0024,"For 7202","Suspension Inspection",2025,708,25590,25000,24,62.7,1,12,278851,electric,corporate,HIGH
-VH0025,"Toy 3319","Transmission Fluid Change",2024,681,35033,40000,24,37.4,1.15,7,87216,diesel,individual,HIGH
-VH0026,"Hon 2464","Full Vehicle Inspection",2025,324,28197,30000,12,33.6,0.9,2,25409,electric,individual,LOW
-VH0027,"Hon 5834","Oil & Filter Change",2025,220,5711,5000,6,64.9,1.3,11,232186,hybrid,corporate,HIGH
-VH0028,"Hyu 7885","Full Vehicle Inspection",2024,308,24191,30000,12,61.1,0.9,9,197077,petrol,corporate,LOW
-VH0029,"Pro 9899","Transmission Fluid Change",2024,962,43359,40000,24,58.4,1,3,78084,electric,corporate,HIGH
-VH0030,"Maz 4258","Full Vehicle Inspection",2024,232,18320,30000,12,36.4,1.2,12,150989,electric,individual,LOW
-VH0031,"Maz 2829","Tyre Rotation & Balancing",2026,53,2328,10000,6,31.3,1,5,56715,diesel,individual,LOW
-VH0032,"Per 5976","Tyre Rotation & Balancing",2024,107,6025,10000,6,31.2,1,9,107151,electric,individual,LOW
-VH0033,"Hyu 3347","Full Engine Service",2026,377,12137,10000,12,32,1.15,4,44214,diesel,individual,HIGH
-VH0034,"Maz 2507","Suspension Inspection",2026,983,34098,25000,24,54.2,1,9,151526,diesel,corporate,HIGH
-VH0035,"Nis 6424","Full Engine Service",2026,368,10522,10000,12,63.7,1.15,13,315210,electric,corporate,HIGH
-VH0036,"Maz 4547","Transmission Fluid Change",2025,186,10552,40000,24,34,0.9,2,24229,diesel,individual,LOW
-VH0037,"Nis 2634","Suspension Inspection",2025,885,34275,25000,24,63.3,1,12,301366,petrol,corporate,HIGH
-VH0038,"Hon 9540","Oil & Filter Change",2026,54,1704,5000,6,60.5,1.3,7,148643,petrol,corporate,LOW
-VH0039,"For 1532","Full Vehicle Inspection",2024,224,15935,30000,12,56.7,0.9,11,199808,hybrid,corporate,LOW
-VH0040,"Hyu 1205","Air Conditioning Service",2024,91,2447,20000,24,36.6,1.15,6,68345,electric,individual,LOW
-VH0041,"Maz 8731","Full Engine Service",2026,47,1401,10000,12,51.2,1.3,8,158132,petrol,corporate,LOW
-VH0042,"Toy 9785","Air Conditioning Service",2026,852,28232,20000,24,31,1.3,13,144593,electric,individual,HIGH
-VH0043,"Toy 9027","Full Engine Service",2025,471,11579,10000,12,50.6,1,11,210841,electric,corporate,HIGH
-VH0044,"For 2401","Air Conditioning Service",2024,552,16229,20000,24,52.6,1,6,134658,hybrid,corporate,LOW
-VH0045,"For 4884","Tyre Rotation & Balancing",2026,175,8611,10000,6,58.4,1,13,261018,diesel,corporate,MEDIUM
-VH0046,"Pro 1308","Full Vehicle Inspection",2026,357,31510,30000,12,33.1,1.3,12,157140,petrol,individual,HIGH
-VH0047,"Maz 4567","Tyre Rotation & Balancing",2025,200,11141,10000,6,30.7,0.9,8,89300,electric,individual,HIGH
-VH0048,"Pro 8429","Transmission Fluid Change",2025,815,51032,40000,24,61.8,0.9,7,188398,electric,corporate,HIGH
-VH0049,"Maz 2507","Full Engine Service",2025,158,4346,10000,12,32.7,1,8,103596,diesel,individual,LOW
-VH0050,"Hyu 1971","Suspension Inspection",2024,938,35039,25000,24,40.6,1.15,1,15072,petrol,individual,HIGH
-VH0051,"Maz 2396","Air Conditioning Service",2025,157,4608,20000,24,35.2,1.15,5,67617,hybrid,individual,LOW
-VH0052,"For 8729","Suspension Inspection",2026,631,21398,25000,24,49.3,1,5,102211,petrol,corporate,LOW
-VH0053,"Hon 6152","Transmission Fluid Change",2025,710,37001,40000,24,32.1,1,11,106058,hybrid,individual,LOW
-VH0054,"Toy 5542","Air Conditioning Service",2026,744,21905,20000,24,31.9,1.2,12,146075,diesel,individual,HIGH
-VH0055,"Pro 7050","Full Vehicle Inspection",2025,142,12158,30000,12,58.7,1.3,12,246361,petrol,corporate,LOW
-VH0056,"Hyu 2855","Suspension Inspection",2025,300,9795,25000,24,37.8,1.3,8,113620,petrol,individual,LOW
-VH0057,"Per 1838","Air Conditioning Service",2024,857,25044,20000,24,34.8,1.15,12,142984,petrol,individual,HIGH
-VH0058,"Per 1271","Oil & Filter Change",2025,162,4049,5000,6,57.6,1,7,155574,electric,corporate,LOW
-VH0059,"Hon 4372","Air Conditioning Service",2025,840,20840,20000,24,47.7,1.3,3,46803,petrol,corporate,HIGH
-VH0060,"Hyu 4477","Oil & Filter Change",2024,35,1018,5000,6,33,1,1,11700,hybrid,individual,LOW
-VH0061,"Hyu 9764","Transmission Fluid Change",2026,658,31071,40000,24,65.8,1.3,5,106719,hybrid,corporate,HIGH
-VH0062,"Toy 8242","Tyre Rotation & Balancing",2025,33,1875,10000,6,37.5,1.3,7,116877,petrol,individual,LOW
-VH0063,"Maz 4116","Oil & Filter Change",2026,80,1729,5000,6,37.1,1.2,11,144061,diesel,individual,LOW
-VH0064,"Pro 8970","Full Vehicle Inspection",2026,143,14766,30000,12,35.1,1.3,8,89744,petrol,individual,LOW
-VH0065,"Per 6365","Transmission Fluid Change",2025,888,44010,40000,24,33.3,1,1,13043,diesel,individual,HIGH
-VH0066,"Maz 6654","Tyre Rotation & Balancing",2026,140,10349,10000,6,35.8,0.9,9,120384,hybrid,individual,LOW
-VH0067,"Nis 3894","Full Engine Service",2024,223,5242,10000,12,31.9,1,6,73162,hybrid,individual,LOW
-VH0068,"Pro 9004","Tyre Rotation & Balancing",2025,27,1532,10000,6,60.7,1.3,9,163449,petrol,corporate,LOW
-VH0069,"Hyu 1917","Suspension Inspection",2024,197,7548,25000,24,37.2,0.9,11,128488,hybrid,individual,LOW
-VH0070,"Hon 5999","Oil & Filter Change",2024,163,4209,5000,6,54.2,0.9,12,239475,electric,corporate,LOW
-VH0071,"Hon 4161","Oil & Filter Change",2026,94,2251,5000,6,54.8,1,7,155678,petrol,corporate,LOW
-VH0072,"Toy 5360","Air Conditioning Service",2026,439,13146,20000,24,28.8,1.15,13,155147,diesel,individual,LOW
-VH0073,"Pro 1767","Full Engine Service",2025,281,8080,10000,12,32.9,1.15,6,72656,petrol,individual,LOW
-VH0074,"Per 9165","Oil & Filter Change",2024,23,760,5000,6,61.3,0.9,12,252518,hybrid,corporate,LOW
-VH0075,"Toy 9682","Transmission Fluid Change",2024,275,12985,40000,24,68.8,1,12,320925,hybrid,corporate,LOW
-VH0076,"Pro 2552","Full Vehicle Inspection",2026,270,23854,30000,12,58,1.3,6,137547,petrol,corporate,HIGH
-VH0077,"For 6503","Tyre Rotation & Balancing",2025,157,7197,10000,6,55.4,0.9,3,57123,petrol,corporate,LOW
-VH0078,"Nis 1012","Suspension Inspection",2025,855,31522,25000,24,31.4,1.15,13,156594,petrol,individual,HIGH
-VH0079,"Maz 8911","Oil & Filter Change",2024,46,1137,5000,6,28.3,1,1,10485,hybrid,individual,LOW
-VH0080,"Toy 1803","Suspension Inspection",2025,644,22021,25000,24,58.5,1.3,5,111609,hybrid,corporate,HIGH
-VH0081,"Toy 2652","Transmission Fluid Change",2025,271,16694,40000,24,32.9,1.3,8,95296,electric,individual,LOW
-VH0082,"Nis 8815","Air Conditioning Service",2026,336,9632,20000,24,33.5,1,6,79042,diesel,individual,LOW
-VH0083,"Maz 7929","Full Engine Service",2026,334,8738,10000,12,59.7,0.9,9,209852,electric,corporate,LOW
-VH0084,"Nis 2254","Tyre Rotation & Balancing",2025,225,12967,10000,6,59.9,1,9,211731,hybrid,corporate,HIGH
-VH0085,"Hon 9370","Full Engine Service",2025,396,10734,10000,12,38.8,1,13,197850,hybrid,individual,HIGH
-VH0086,"Toy 7244","Tyre Rotation & Balancing",2026,140,7699,10000,6,37.7,1,5,74790,petrol,individual,LOW
-VH0087,"Maz 3295","Air Conditioning Service",2026,254,8277,20000,24,59.9,1.15,2,40101,diesel,corporate,LOW
-VH0088,"Per 5773","Oil & Filter Change",2025,193,4683,5000,6,51,1.3,6,102479,petrol,corporate,HIGH
-VH0089,"Maz 2310","Transmission Fluid Change",2024,346,18975,40000,24,35.7,1.15,8,104489,petrol,individual,LOW
-VH0090,"Pro 3733","Suspension Inspection",2024,519,16335,25000,24,60.1,1.3,12,282680,electric,corporate,LOW
-VH0091,"For 9315","Transmission Fluid Change",2025,685,32775,40000,24,35.4,1.3,2,26071,electric,individual,HIGH
-VH0092,"Hon 2715","Full Engine Service",2024,133,3371,10000,12,40,1,6,78718,diesel,individual,LOW
-VH0093,"Nis 7274","Air Conditioning Service",2026,706,24638,20000,24,52.1,1.15,9,165346,electric,corporate,HIGH
-VH0094,"For 7483","Full Engine Service",2024,70,1996,10000,12,61.2,0.9,11,224130,petrol,corporate,LOW
-VH0095,"For 4712","Air Conditioning Service",2026,197,5201,20000,24,39.7,1.3,7,103307,diesel,individual,LOW
-VH0096,"Nis 2502","Suspension Inspection",2024,832,20684,25000,24,59.6,1.2,8,182106,hybrid,corporate,HIGH
-VH0097,"Maz 3635","Air Conditioning Service",2024,376,13022,20000,24,56.6,1.15,6,130699,petrol,corporate,LOW
-VH0098,"Toy 6306","Full Engine Service",2024,384,10217,10000,12,66.2,0.9,6,133482,diesel,corporate,HIGH
-VH0099,"Hon 3009","Air Conditioning Service",2024,126,4411,20000,24,37.1,1.2,4,57849,petrol,individual,LOW
-VH0100,"Maz 8168","Suspension Inspection",2025,412,14843,25000,24,36.5,1.2,5,68762,electric,individual,LOW
-VH0101,"Nis 3511","Air Conditioning Service",2026,419,11590,20000,24,32.8,0.9,3,32727,electric,individual,LOW
-VH0102,"Toy 5806","Suspension Inspection",2024,889,27245,25000,24,35,1,11,138168,electric,individual,HIGH
-VH0103,"Maz 3518","Transmission Fluid Change",2025,301,14065,40000,24,66.3,1.15,7,168822,electric,corporate,LOW
-VH0104,"For 5965","Full Engine Service",2025,369,12095,10000,12,32.6,1.3,1,12524,petrol,individual,HIGH
-VH0105,"For 8989","Oil & Filter Change",2026,229,6914,5000,6,62.7,1.3,9,194397,hybrid,corporate,HIGH
-VH0106,"Pro 2662","Tyre Rotation & Balancing",2025,205,11498,10000,6,33.2,1.15,9,114773,petrol,individual,HIGH
-VH0107,"Per 6022","Air Conditioning Service",2026,550,13650,20000,24,33.8,1.15,12,150406,diesel,individual,LOW
-VH0108,"Toy 5923","Full Engine Service",2024,218,6800,10000,12,57.7,1.2,2,42577,diesel,corporate,LOW
-VH0109,"Toy 3880","Air Conditioning Service",2025,677,24344,20000,24,34.8,1.15,1,11466,diesel,individual,HIGH
-VH0110,"Hyu 5908","Full Engine Service",2025,237,7796,10000,12,33.8,1.3,10,117774,diesel,individual,HIGH
-VH0111,"Pro 5429","Full Engine Service",2025,375,10893,10000,12,66.2,1.15,5,120356,diesel,corporate,HIGH
-VH0112,"Hyu 8776","Air Conditioning Service",2026,508,10672,20000,24,32,1.3,3,33032,petrol,individual,LOW
-VH0113,"Toy 3072","Air Conditioning Service",2026,378,10468,20000,24,30,0.9,5,48376,hybrid,individual,LOW
-VH0114,"For 8378","Oil & Filter Change",2024,83,1687,5000,6,61.1,1,2,45543,diesel,corporate,LOW
-VH0115,"Toy 6387","Full Engine Service",2026,82,2516,10000,12,32.3,1.15,3,33354,hybrid,individual,LOW
-VH0116,"Pro 7000","Tyre Rotation & Balancing",2026,21,1097,10000,6,39.2,1.3,6,90590,petrol,individual,LOW
-VH0117,"Per 3267","Full Vehicle Inspection",2026,192,19746,30000,12,35.5,1.2,7,89857,hybrid,individual,LOW
-VH0118,"For 9815","Air Conditioning Service",2025,879,28329,20000,24,59.3,1.3,2,45208,hybrid,corporate,HIGH
-VH0119,"Maz 1858","Tyre Rotation & Balancing",2025,63,2917,10000,6,33.1,1.15,11,137087,diesel,individual,LOW
-VH0120,"Maz 6877","Air Conditioning Service",2024,802,21024,20000,24,35.8,1,9,129215,hybrid,individual,HIGH
-VH0121,"Maz 1234","Transmission Fluid Change",2025,176,10626,40000,24,32.9,1.15,1,10480,diesel,individual,LOW
-VH0122,"Toy 6847","Tyre Rotation & Balancing",2026,151,8857,10000,6,36.4,1,5,67927,diesel,individual,LOW
-VH0123,"For 1292","Suspension Inspection",2025,926,24590,25000,24,64.1,1.2,5,142953,diesel,corporate,HIGH
-VH0124,"For 2874","Full Vehicle Inspection",2025,245,18904,30000,12,36.7,1.15,5,53362,hybrid,individual,LOW
-VH0125,"Maz 2288","Suspension Inspection",2025,165,5464,25000,24,59.6,1.3,4,98795,diesel,corporate,LOW
-VH0126,"Per 7667","Transmission Fluid Change",2026,177,8459,40000,24,71.5,1.3,4,85704,diesel,corporate,LOW
-VH0127,"Hon 4138","Full Vehicle Inspection",2024,438,34084,30000,12,32.5,1.15,6,73333,diesel,individual,HIGH
-VH0128,"Per 7336","Suspension Inspection",2024,906,29264,25000,24,60.9,1,11,218394,hybrid,corporate,HIGH
-VH0129,"Per 2632","Oil & Filter Change",2025,250,6973,5000,6,34,1.3,8,86280,diesel,individual,HIGH
-VH0130,"Hon 5569","Transmission Fluid Change",2024,775,44737,40000,24,32.9,1.15,5,60276,petrol,individual,HIGH
-VH0131,"For 3092","Oil & Filter Change",2024,82,2279,5000,6,36.3,1.2,11,141123,hybrid,individual,LOW
-VH0132,"Toy 6928","Air Conditioning Service",2024,356,8738,20000,24,64,1,10,246122,diesel,corporate,LOW
-VH0133,"For 8138","Air Conditioning Service",2025,113,3851,20000,24,60.2,1.2,11,255004,petrol,corporate,LOW
-VH0134,"Hyu 8647","Tyre Rotation & Balancing",2025,199,11225,10000,6,32.9,1.15,8,88298,diesel,individual,HIGH
-VH0135,"Toy 5255","Tyre Rotation & Balancing",2024,150,9248,10000,6,57.6,0.9,9,189857,electric,corporate,LOW
-VH0136,"Toy 4349","Full Engine Service",2026,39,1135,10000,12,33.6,1.2,11,137417,electric,individual,LOW
-VH0137,"Nis 2406","Suspension Inspection",2025,363,9643,25000,24,56.4,1.2,3,67252,hybrid,corporate,LOW
-VH0138,"Pro 2448","Air Conditioning Service",2024,296,9317,20000,24,36.3,1.2,10,149298,electric,individual,LOW
-VH0139,"For 6369","Full Engine Service",2024,335,9741,10000,12,62.9,1.3,12,279160,hybrid,corporate,HIGH
-VH0140,"For 8952","Suspension Inspection",2024,814,29248,25000,24,66.5,0.9,6,171085,electric,corporate,HIGH
-VH0141,"Hyu 6331","Suspension Inspection",2024,359,10838,25000,24,38.8,0.9,1,15521,electric,individual,LOW
-VH0142,"Toy 3321","Full Engine Service",2025,421,9563,10000,12,60.3,0.9,11,202652,hybrid,corporate,HIGH
-VH0143,"Hyu 8426","Transmission Fluid Change",2024,733,50274,40000,24,55.4,1.3,12,263777,electric,corporate,HIGH
-VH0144,"Hyu 1508","Transmission Fluid Change",2025,344,18101,40000,24,60.4,1.3,11,267161,hybrid,corporate,LOW
-VH0145,"Maz 3569","Air Conditioning Service",2024,517,14514,20000,24,33.4,1.3,1,11673,petrol,individual,LOW
-VH0146,"Pro 2112","Air Conditioning Service",2025,909,20190,20000,24,33.4,1.15,1,10249,petrol,individual,HIGH
-VH0147,"Hon 4241","Transmission Fluid Change",2024,692,32439,40000,24,73,1.15,5,116252,hybrid,corporate,LOW
-VH0148,"For 1520","Full Vehicle Inspection",2025,359,40712,30000,12,31.2,1,5,54759,electric,individual,HIGH
-VH0149,"Per 5973","Full Vehicle Inspection",2025,428,34122,30000,12,59,1.2,6,129601,electric,corporate,HIGH
-VH0150,"Toy 8621","Air Conditioning Service",2025,477,13839,20000,24,59.3,1.15,10,167488,hybrid,corporate,LOW
-VH0151,"Per 4975","Oil & Filter Change",2026,23,730,5000,6,64.6,1,9,233560,electric,corporate,LOW
-VH0152,"Maz 4793","Full Engine Service",2025,348,10512,10000,12,35.8,1.15,12,172505,diesel,individual,HIGH
-VH0153,"Toy 5210","Air Conditioning Service",2025,857,22768,20000,24,32.3,1.15,6,75046,diesel,individual,HIGH
-VH0154,"Hon 9485","Full Vehicle Inspection",2026,408,28095,30000,12,33.8,1.15,10,127481,hybrid,individual,HIGH
-VH0155,"Pro 6411","Tyre Rotation & Balancing",2025,234,11635,10000,6,60.1,1.15,2,37205,diesel,corporate,HIGH
-VH0156,"Nis 9387","Transmission Fluid Change",2024,85,4816,40000,24,64.2,1.15,8,160549,petrol,corporate,LOW
-VH0157,"For 8991","Transmission Fluid Change",2025,95,5434,40000,24,33.4,1.2,4,40970,petrol,individual,LOW
-VH0158,"Pro 8013","Air Conditioning Service",2026,600,20168,20000,24,32.5,1.15,14,158894,petrol,individual,HIGH
-VH0159,"Pro 4442","Tyre Rotation & Balancing",2024,213,11241,10000,6,31.2,1.15,8,88005,electric,individual,HIGH
-VH0160,"Toy 6298","Oil & Filter Change",2026,66,1965,5000,6,55.4,0.9,2,40237,diesel,corporate,LOW
-VH0161,"For 6213","Full Vehicle Inspection",2024,282,20759,30000,12,62.3,1.15,7,165657,hybrid,corporate,LOW
-VH0162,"Hyu 9502","Full Vehicle Inspection",2024,188,14009,30000,12,64.1,0.9,4,88222,diesel,corporate,LOW
-VH0163,"Hyu 5284","Suspension Inspection",2026,294,9923,25000,24,38.7,0.9,9,128359,hybrid,individual,LOW
-VH0164,"For 8105","Suspension Inspection",2026,818,30925,25000,24,54.1,1.3,12,222477,petrol,corporate,HIGH
-VH0165,"Hon 9763","Air Conditioning Service",2025,802,19472,20000,24,31.9,1,8,91948,petrol,individual,HIGH
-VH0166,"Nis 3259","Transmission Fluid Change",2025,121,5641,40000,24,39.8,1.15,4,65442,hybrid,individual,LOW
-VH0167,"Nis 3916","Oil & Filter Change",2026,251,7027,5000,6,37.8,0.9,3,36221,petrol,individual,HIGH
-VH0168,"Nis 3481","Suspension Inspection",2024,415,11878,25000,24,59.8,0.9,9,178560,petrol,corporate,LOW
-VH0169,"For 9117","Oil & Filter Change",2025,33,1032,5000,6,58.2,0.9,2,42803,petrol,corporate,LOW
-VH0170,"Nis 6564","Transmission Fluid Change",2025,92,4858,40000,24,62.8,1.3,12,262501,hybrid,corporate,LOW
-VH0171,"For 4670","Suspension Inspection",2026,252,8835,25000,24,34.3,1.15,12,141662,electric,individual,LOW
-VH0172,"For 5324","Suspension Inspection",2025,833,31547,25000,24,59.9,0.9,4,97934,petrol,corporate,HIGH
-VH0173,"Pro 5924","Full Engine Service",2025,330,9340,10000,12,32.9,1.2,5,66455,petrol,individual,HIGH
-VH0174,"Hyu 5528","Full Vehicle Inspection",2024,165,13606,30000,12,33.3,1.15,12,156695,hybrid,individual,LOW
-VH0175,"Maz 5758","Oil & Filter Change",2026,64,2252,5000,6,35.2,1.15,13,149397,petrol,individual,LOW
-VH0176,"For 6109","Air Conditioning Service",2024,885,24192,20000,24,53.6,1.2,7,133517,diesel,corporate,HIGH
-VH0177,"Per 8728","Full Engine Service",2026,367,10522,10000,12,30.4,1.3,7,72788,electric,individual,HIGH
-VH0178,"Hon 7034","Oil & Filter Change",2024,222,5756,5000,6,42,1,5,87948,hybrid,individual,HIGH
-VH0179,"Maz 6499","Transmission Fluid Change",2026,326,17228,40000,24,29.7,1.15,3,28276,petrol,individual,LOW
-VH0180,"Hon 8034","Transmission Fluid Change",2025,879,36442,40000,24,56.8,1,9,183815,electric,corporate,HIGH
-VH0181,"Maz 2731","Transmission Fluid Change",2024,267,16841,40000,24,38.4,1.2,1,14489,diesel,individual,LOW
-VH0182,"Nis 6622","Suspension Inspection",2026,611,20551,25000,24,37,1.15,13,136630,diesel,individual,LOW
-VH0183,"Pro 3897","Full Engine Service",2026,196,5278,10000,12,37.1,0.9,11,149640,petrol,individual,LOW
-VH0184,"Hon 5929","Suspension Inspection",2026,214,6365,25000,24,35.9,1.2,5,62796,electric,individual,LOW
-VH0185,"Maz 8136","Oil & Filter Change",2026,137,3885,5000,6,64.4,1.15,14,301607,hybrid,corporate,MEDIUM
-VH0186,"Pro 6461","Oil & Filter Change",2024,150,4096,5000,6,34.9,1.2,2,24778,petrol,individual,MEDIUM
-VH0187,"Pro 2050","Full Engine Service",2025,174,4506,10000,12,59.2,1.15,13,300397,hybrid,corporate,LOW
-VH0188,"Hyu 5544","Tyre Rotation & Balancing",2025,105,6593,10000,6,32.3,1,10,126294,electric,individual,LOW
-VH0189,"Hyu 6963","Full Vehicle Inspection",2026,166,13944,30000,12,57.1,0.9,13,273862,hybrid,corporate,LOW
-VH0190,"Per 8054","Tyre Rotation & Balancing",2024,149,8546,10000,6,56.4,1.15,4,91417,electric,corporate,HIGH
-VH0191,"Maz 6758","Oil & Filter Change",2026,95,2422,5000,6,31.5,1.3,6,73111,petrol,individual,LOW
-VH0192,"Toy 5415","Suspension Inspection",2024,730,25648,25000,24,40.4,1.15,12,186864,diesel,individual,HIGH
-VH0193,"Hyu 5635","Transmission Fluid Change",2026,898,39905,40000,24,61.8,1.15,9,192982,diesel,corporate,HIGH
-VH0194,"Hon 5368","Full Engine Service",2025,255,7516,10000,12,54,0.9,8,137547,hybrid,corporate,LOW
-VH0195,"Maz 6433","Oil & Filter Change",2025,222,5767,5000,6,56.7,1.3,8,164045,electric,corporate,HIGH
-VH0196,"Pro 2865","Transmission Fluid Change",2025,207,10921,40000,24,57.6,1.3,1,21492,diesel,corporate,LOW
-VH0197,"Pro 4118","Transmission Fluid Change",2024,671,35223,40000,24,32.2,1.2,8,92525,petrol,individual,HIGH
-VH0198,"Hyu 4021","Full Engine Service",2026,184,5242,10000,12,63.9,0.9,2,47686,petrol,corporate,LOW
-VH0199,"Pro 1284","Tyre Rotation & Balancing",2024,118,8016,10000,6,63.7,1.3,11,260672,petrol,corporate,HIGH
-VH0200,"Hon 5076","Full Engine Service",2025,42,1136,10000,12,66.1,1.2,7,180337,hybrid,corporate,LOW
-VH0201,"Toy 3702","Suspension Inspection",2024,139,4121,25000,24,39.6,0.9,11,159028,hybrid,individual,LOW
-VH0202,"Maz 2738","Tyre Rotation & Balancing",2026,159,8007,10000,6,34.6,1.3,14,167461,petrol,individual,HIGH
-VH0203,"Maz 7823","Oil & Filter Change",2026,116,3190,5000,6,31.3,0.9,5,60110,petrol,individual,LOW
-VH0204,"Maz 6365","Suspension Inspection",2025,413,14909,25000,24,31.3,1,11,123746,electric,individual,LOW
-VH0205,"Per 6685","Suspension Inspection",2026,607,18875,25000,24,35.2,1.15,9,122453,hybrid,individual,LOW
-VH0206,"Per 8369","Full Engine Service",2025,138,3967,10000,12,35.8,1.2,11,156224,petrol,individual,LOW
-VH0207,"Hon 4127","Full Engine Service",2026,230,6465,10000,12,34.3,1.15,6,72401,hybrid,individual,LOW
-VH0208,"Hyu 5837","Transmission Fluid Change",2025,982,50488,40000,24,35.7,1.2,5,63250,diesel,individual,HIGH
-VH0209,"Hyu 5168","Full Engine Service",2026,304,9690,10000,12,56.7,1.15,12,229492,diesel,corporate,HIGH
-VH0210,"Pro 5654","Suspension Inspection",2025,552,16858,25000,24,67.4,1.15,3,72899,petrol,corporate,LOW
-VH0211,"Pro 9766","Air Conditioning Service",2026,699,18389,20000,24,40.9,1.15,11,160301,hybrid,individual,HIGH
-VH0212,"Hon 8914","Transmission Fluid Change",2024,584,31455,40000,24,31.9,0.9,2,25308,electric,individual,LOW
-VH0213,"For 4257","Transmission Fluid Change",2026,633,33542,40000,24,34.6,1.2,12,152767,diesel,individual,HIGH
-VH0214,"Toy 8704","Tyre Rotation & Balancing",2025,223,11646,10000,6,64.4,1.15,3,77133,electric,corporate,HIGH
-VH0215,"Hon 1074","Full Engine Service",2026,290,9826,10000,12,60,1,4,84233,electric,corporate,MEDIUM
-VH0216,"Per 7726","Tyre Rotation & Balancing",2024,73,4806,10000,6,32.3,1.15,1,13470,petrol,individual,LOW
-VH0217,"For 3234","Transmission Fluid Change",2024,814,49761,40000,24,36,1.15,4,54227,diesel,individual,HIGH
-VH0218,"Hyu 1396","Air Conditioning Service",2024,120,3084,20000,24,32.9,0.9,6,66121,diesel,individual,LOW
-VH0219,"Toy 9112","Suspension Inspection",2025,714,27165,25000,24,66.9,1,2,51457,diesel,corporate,HIGH
-VH0220,"Maz 2023","Air Conditioning Service",2025,175,4767,20000,24,34.9,1.15,2,24882,electric,individual,LOW
-VH0221,"Maz 6219","Oil & Filter Change",2025,75,1962,5000,6,29.8,1.2,2,23767,hybrid,individual,LOW
-VH0222,"Hon 6695","Full Vehicle Inspection",2025,372,30433,30000,12,56.8,1.3,8,164769,hybrid,corporate,HIGH
-VH0223,"Pro 1007","Air Conditioning Service",2025,769,21303,20000,24,35.1,1,5,70636,petrol,individual,HIGH
-VH0224,"Hyu 2496","Suspension Inspection",2024,171,5711,25000,24,30.8,1.3,7,86083,electric,individual,LOW
-VH0225,"Hon 3497","Full Vehicle Inspection",2025,34,2631,30000,12,56.3,1.2,11,232747,electric,corporate,LOW
-VH0226,"Hon 7576","Full Engine Service",2025,80,2279,10000,12,54.2,1,13,272380,petrol,corporate,LOW
-VH0227,"Hon 1287","Transmission Fluid Change",2025,584,29795,40000,24,59.4,1,12,254522,diesel,corporate,LOW
-VH0228,"For 7636","Tyre Rotation & Balancing",2026,99,6098,10000,6,61.5,1,12,246455,electric,corporate,LOW
-VH0229,"Maz 6672","Transmission Fluid Change",2025,774,45002,40000,24,34.8,0.9,7,88872,diesel,individual,HIGH
-VH0230,"Nis 6963","Oil & Filter Change",2025,185,5338,5000,6,66.4,1,12,277595,electric,corporate,HIGH
-VH0231,"Pro 9611","Suspension Inspection",2024,310,9971,25000,24,64,1.2,1,22389,petrol,corporate,LOW
-VH0232,"Toy 6612","Transmission Fluid Change",2026,540,25764,40000,24,58.2,1.15,4,88275,hybrid,corporate,LOW
-VH0233,"Hyu 4547","Full Vehicle Inspection",2024,393,29980,30000,12,57.8,1.15,6,129041,diesel,corporate,HIGH
-VH0234,"Nis 8083","Transmission Fluid Change",2025,361,20805,40000,24,55.7,1.2,1,24666,electric,corporate,LOW
-VH0235,"Hon 6750","Tyre Rotation & Balancing",2025,131,6447,10000,6,34.9,0.9,9,108510,hybrid,individual,LOW
-VH0236,"Pro 1316","Suspension Inspection",2025,384,12130,25000,24,58,1,13,243793,electric,corporate,LOW
-VH0237,"Maz 8878","Suspension Inspection",2026,118,3893,25000,24,51,1,5,90966,diesel,corporate,LOW
-VH0238,"Nis 4152","Transmission Fluid Change",2025,376,19513,40000,24,59.3,0.9,9,168807,petrol,corporate,LOW
-VH0239,"For 4147","Full Engine Service",2024,374,10483,10000,12,35.4,1.3,5,71894,petrol,individual,HIGH
-VH0240,"For 8572","Tyre Rotation & Balancing",2026,161,8578,10000,6,62.9,0.9,10,210214,petrol,corporate,LOW
-VH0241,"Pro 5185","Full Engine Service",2025,204,5596,10000,12,32.6,1.15,1,12664,petrol,individual,LOW
-VH0242,"Hon 8951","Suspension Inspection",2024,555,16084,25000,24,65.9,1,12,292186,hybrid,corporate,LOW
-VH0243,"Hon 5321","Oil & Filter Change",2025,213,6384,5000,6,63.8,1.2,6,136653,hybrid,corporate,HIGH
-VH0244,"Hyu 8216","Suspension Inspection",2025,349,12719,25000,24,47.8,1.15,13,188375,electric,corporate,LOW
-VH0245,"Hon 7178","Tyre Rotation & Balancing",2025,196,13094,10000,6,32.2,1.2,8,89025,diesel,individual,HIGH
-VH0246,"For 6151","Full Engine Service",2025,111,3440,10000,12,58.3,0.9,3,60026,electric,corporate,LOW
-VH0247,"Per 4995","Full Vehicle Inspection",2025,167,14915,30000,12,63,1.2,13,307413,electric,corporate,LOW
-VH0248,"Hon 6688","Transmission Fluid Change",2024,859,45602,40000,24,61.9,1.3,5,100153,hybrid,corporate,HIGH
-VH0249,"For 9064","Tyre Rotation & Balancing",2024,175,8632,10000,6,34.6,1.2,1,12759,electric,individual,HIGH
-VH0250,"Hon 3853","Tyre Rotation & Balancing",2024,25,1391,10000,6,31.8,1.15,10,96132,diesel,individual,LOW
-VH0251,"Nis 8117","Air Conditioning Service",2025,687,18601,20000,24,36.8,1,1,14346,petrol,individual,LOW
-VH0252,"Per 4598","Transmission Fluid Change",2026,560,29376,40000,24,62.4,1.15,6,133834,electric,corporate,LOW
-VH0253,"For 6985","Air Conditioning Service",2026,675,19053,20000,24,34.3,1,7,90831,diesel,individual,LOW
-VH0254,"For 8869","Full Engine Service",2025,343,10420,10000,12,35,1,5,73318,petrol,individual,HIGH
-VH0255,"For 6487","Full Engine Service",2026,153,3860,10000,12,35.4,0.9,8,107795,electric,individual,LOW
-VH0256,"Per 4416","Suspension Inspection",2026,742,25871,25000,24,61,1.15,9,188121,hybrid,corporate,HIGH
-VH0257,"Maz 4528","Tyre Rotation & Balancing",2025,126,8618,10000,6,63.7,1.2,8,199303,hybrid,corporate,HIGH
-VH0258,"Nis 5717","Full Vehicle Inspection",2026,203,22359,30000,12,54.3,0.9,12,247527,diesel,corporate,LOW
-VH0259,"For 4789","Oil & Filter Change",2025,192,5139,5000,6,59,0.9,9,196897,diesel,corporate,HIGH
-VH0260,"Hyu 9982","Suspension Inspection",2025,490,16522,25000,24,33.3,1,7,89602,diesel,individual,LOW
-VH0261,"Hyu 6083","Oil & Filter Change",2025,143,3872,5000,6,32.1,1.3,13,160835,electric,individual,HIGH
-VH0262,"Nis 6493","Full Engine Service",2024,167,5279,10000,12,61.9,0.9,7,142464,petrol,corporate,LOW
-VH0263,"Maz 2087","Full Engine Service",2024,439,10326,10000,12,54.6,1.2,4,79865,petrol,corporate,HIGH
-VH0264,"For 9067","Full Engine Service",2025,434,11936,10000,12,29,1.15,1,9508,petrol,individual,HIGH
-VH0265,"Pro 2879","Transmission Fluid Change",2026,515,35906,40000,24,33.9,1.2,8,102670,petrol,individual,HIGH
-VH0266,"Nis 4863","Air Conditioning Service",2026,193,5248,20000,24,33.5,1.15,9,102286,petrol,individual,LOW
-VH0267,"Hyu 7090","Suspension Inspection",2026,628,23606,25000,24,59.8,1.2,9,194264,diesel,corporate,HIGH
-VH0268,"Per 1216","Transmission Fluid Change",2026,435,22620,40000,24,60.7,1.15,10,242999,petrol,corporate,LOW
-VH0269,"For 5093","Full Vehicle Inspection",2025,42,3400,30000,12,55.1,1.2,2,46540,hybrid,corporate,LOW
-VH0270,"Hon 9099","Full Engine Service",2026,58,1525,10000,12,61,1.2,11,237726,petrol,corporate,LOW
-VH0271,"Hyu 4776","Oil & Filter Change",2026,152,3389,5000,6,33.6,1,2,25528,petrol,individual,LOW
-VH0272,"Toy 1452","Suspension Inspection",2026,637,22552,25000,24,59.2,1.3,10,223315,hybrid,corporate,HIGH
-VH0273,"For 9488","Oil & Filter Change",2025,31,804,5000,6,63.9,1.3,10,250973,petrol,corporate,LOW
-VH0274,"Pro 4710","Tyre Rotation & Balancing",2025,35,1822,10000,6,62.1,0.9,11,237023,electric,corporate,LOW
-VH0275,"Hon 1416","Air Conditioning Service",2026,646,17404,20000,24,63.4,1.3,7,154923,petrol,corporate,HIGH
-VH0276,"Hyu 8097","Tyre Rotation & Balancing",2025,152,8574,10000,6,62.7,1,6,133957,diesel,corporate,LOW
-VH0277,"Nis 7034","Transmission Fluid Change",2024,551,23027,40000,24,56.4,1.15,1,18145,electric,corporate,LOW
-VH0278,"Hyu 5124","Tyre Rotation & Balancing",2026,94,5880,10000,6,35.9,1,13,188236,diesel,individual,LOW
-VH0279,"Toy 2364","Air Conditioning Service",2026,852,23113,20000,24,32.3,1.3,10,113167,hybrid,individual,HIGH
-VH0280,"Pro 2454","Tyre Rotation & Balancing",2026,93,5326,10000,6,55.4,0.9,14,266363,hybrid,corporate,LOW
-VH0281,"For 9347","Tyre Rotation & Balancing",2025,22,1232,10000,6,33.8,0.9,2,22634,petrol,individual,LOW
-VH0282,"Toy 6754","Suspension Inspection",2026,473,19574,25000,24,38.4,1.2,6,81046,hybrid,individual,LOW
-VH0283,"Hon 7557","Full Engine Service",2025,227,7684,10000,12,34.3,1.2,13,197303,petrol,individual,LOW
-VH0284,"Nis 7101","Air Conditioning Service",2024,510,14891,20000,24,54.9,1.15,8,136045,hybrid,corporate,LOW
-VH0285,"Hyu 3916","Air Conditioning Service",2025,1008,24537,20000,24,55.1,1.2,7,134113,diesel,corporate,HIGH
-VH0286,"Nis 1019","Suspension Inspection",2024,540,19271,25000,24,38.1,0.9,5,63154,petrol,individual,LOW
-VH0287,"Toy 3462","Tyre Rotation & Balancing",2026,106,5064,10000,6,35.8,1.15,9,95152,hybrid,individual,LOW
-VH0288,"Toy 1158","Suspension Inspection",2024,806,27688,25000,24,40.6,0.9,10,132003,electric,individual,HIGH
-VH0289,"Pro 3130","Transmission Fluid Change",2025,401,26448,40000,24,57.6,1.2,11,227281,electric,corporate,LOW
-VH0290,"Hyu 4803","Suspension Inspection",2024,473,16921,25000,24,34,1.3,6,66057,diesel,individual,LOW
-VH0291,"Toy 9086","Air Conditioning Service",2024,222,5431,20000,24,37.5,0.9,1,14052,electric,individual,LOW
-VH0292,"Hon 1115","Suspension Inspection",2025,517,18315,25000,24,53.3,1,4,79873,electric,corporate,LOW
-VH0293,"Toy 3551","Full Engine Service",2026,370,11011,10000,12,36.3,1,10,119181,petrol,individual,HIGH
-VH0294,"Maz 5212","Oil & Filter Change",2026,78,2296,5000,6,62.7,0.9,5,119375,hybrid,corporate,LOW
-VH0295,"Nis 6906","Transmission Fluid Change",2026,473,26574,40000,24,39.4,1.3,14,204917,hybrid,individual,LOW
-VH0296,"Toy 4149","Oil & Filter Change",2025,180,4218,5000,6,62.9,1,2,44939,diesel,corporate,MEDIUM
-VH0297,"Toy 4553","Full Vehicle Inspection",2024,449,32878,30000,12,76.7,1.3,3,81130,electric,corporate,HIGH
-VH0298,"Hyu 8263","Tyre Rotation & Balancing",2024,40,1933,10000,6,36.5,1.3,9,113779,electric,individual,LOW
-VH0299,"Nis 8341","Full Vehicle Inspection",2026,415,34645,30000,12,55.7,1.2,3,54087,electric,corporate,HIGH
-VH0300,"Hyu 7604","Transmission Fluid Change",2025,320,14596,40000,24,39.8,1.3,10,147151,hybrid,individual,LOW
-VH0301,"Per 7481","Tyre Rotation & Balancing",2025,246,10590,10000,6,59.5,1.2,13,278384,petrol,corporate,HIGH
-VH0302,"Nis 7532","Tyre Rotation & Balancing",2026,66,3221,10000,6,35.5,0.9,10,108088,hybrid,individual,LOW
-VH0303,"Nis 1910","Air Conditioning Service",2026,137,3606,20000,24,32,0.9,7,75787,petrol,individual,LOW
-VH0304,"Per 5227","Air Conditioning Service",2026,785,23752,20000,24,55.2,0.9,7,155522,diesel,corporate,HIGH
-VH0305,"Maz 4534","Full Vehicle Inspection",2025,150,16896,30000,12,63.7,1,2,44186,diesel,corporate,LOW
-VH0306,"Hyu 6417","Transmission Fluid Change",2024,391,22871,40000,24,50.2,1,7,140920,diesel,corporate,LOW
-VH0307,"Hyu 7843","Tyre Rotation & Balancing",2024,186,10755,10000,6,36.6,1.3,10,118938,hybrid,individual,HIGH
-VH0308,"Toy 8048","Air Conditioning Service",2026,592,17102,20000,24,67.9,1,11,217804,diesel,corporate,LOW
-VH0309,"For 1990","Air Conditioning Service",2024,725,23387,20000,24,34.3,0.9,11,137200,diesel,individual,HIGH
-VH0310,"Pro 1509","Full Engine Service",2025,271,6858,10000,12,37.6,1.2,2,24474,petrol,individual,LOW
-VH0311,"Pro 6826","Full Engine Service",2024,387,8914,10000,12,57.6,1.15,3,70822,hybrid,corporate,HIGH
-VH0312,"Hon 8862","Tyre Rotation & Balancing",2025,208,10574,10000,6,59.3,1.3,5,109946,diesel,corporate,HIGH
-VH0313,"Per 6144","Air Conditioning Service",2025,432,11299,20000,24,58.5,1.3,7,160072,electric,corporate,LOW
-VH0314,"Pro 2323","Full Vehicle Inspection",2025,270,24951,30000,12,65.1,1.15,1,22435,petrol,corporate,LOW
-VH0315,"Hyu 9277","Full Engine Service",2026,207,5168,10000,12,58.7,0.9,12,254987,electric,corporate,LOW
-VH0316,"Hon 8487","Transmission Fluid Change",2025,477,25676,40000,24,32.4,0.9,5,57809,petrol,individual,LOW
-VH0317,"For 9651","Suspension Inspection",2024,197,6018,25000,24,61.4,0.9,10,216199,diesel,corporate,LOW
-VH0318,"For 3900","Oil & Filter Change",2024,133,3656,5000,6,32.4,1.15,8,102625,petrol,individual,LOW
-VH0319,"Maz 4418","Oil & Filter Change",2025,109,2742,5000,6,60.9,1.2,13,296665,petrol,corporate,LOW
-VH0320,"Hyu 2400","Transmission Fluid Change",2024,585,32695,40000,24,63.4,1.15,7,172794,petrol,corporate,LOW
-VH0321,"Hyu 7575","Transmission Fluid Change",2025,284,15135,40000,24,64.6,1,12,291909,electric,corporate,LOW
-VH0322,"Pro 4233","Full Engine Service",2025,415,12550,10000,12,69.3,0.9,12,285489,petrol,corporate,HIGH
-VH0323,"Toy 4008","Transmission Fluid Change",2024,722,40390,40000,24,32.8,1,1,12401,petrol,individual,HIGH
-VH0324,"Per 2364","Transmission Fluid Change",2026,806,37204,40000,24,51.7,1.15,12,198895,electric,corporate,HIGH
-VH0325,"Hyu 3861","Suspension Inspection",2025,472,16973,25000,24,56.6,1.15,9,192864,petrol,corporate,LOW
-VH0326,"Nis 7780","Tyre Rotation & Balancing",2024,124,7070,10000,6,61.8,1.2,12,271266,electric,corporate,LOW
-VH0327,"For 1643","Transmission Fluid Change",2024,292,14942,40000,24,61.5,0.9,8,182519,hybrid,corporate,LOW
-VH0328,"Maz 8934","Oil & Filter Change",2026,94,2607,5000,6,64.2,1.15,3,74017,diesel,corporate,LOW
-VH0329,"Hyu 1559","Transmission Fluid Change",2024,275,14495,40000,24,57.3,1.3,11,224548,diesel,corporate,LOW
-VH0330,"Pro 4074","Air Conditioning Service",2025,738,19114,20000,24,55.5,0.9,7,148595,electric,corporate,HIGH
-VH0331,"Per 2350","Air Conditioning Service",2025,177,3777,20000,24,38,1,10,141860,hybrid,individual,LOW
-VH0332,"Hyu 7426","Transmission Fluid Change",2025,729,49369,40000,24,37.5,1.3,4,55291,electric,individual,HIGH
-VH0333,"Hyu 3662","Suspension Inspection",2025,590,18227,25000,24,41.4,1,2,29501,petrol,individual,LOW
-VH0334,"Hyu 5739","Suspension Inspection",2025,984,29761,25000,24,62.5,1.3,12,277314,petrol,corporate,HIGH
-VH0335,"Per 8970","Full Vehicle Inspection",2024,146,14902,30000,12,35.4,1.2,11,139527,hybrid,individual,LOW
-VH0336,"For 4658","Full Vehicle Inspection",2024,228,19059,30000,12,36.1,1.3,1,11924,electric,individual,LOW
-VH0337,"For 8748","Full Engine Service",2024,278,8511,10000,12,57.7,1,4,87630,petrol,corporate,LOW
-VH0338,"For 3758","Full Vehicle Inspection",2025,244,21289,30000,12,56.9,1.15,11,219200,diesel,corporate,LOW
-VH0339,"For 3662","Suspension Inspection",2024,807,26006,25000,24,56.1,0.9,7,121170,petrol,corporate,HIGH
-VH0340,"Hon 8142","Air Conditioning Service",2026,123,3267,20000,24,33,0.9,5,55943,petrol,individual,LOW
-VH0341,"Per 1719","Tyre Rotation & Balancing",2025,182,11141,10000,6,35.4,0.9,12,197484,hybrid,individual,HIGH
-VH0342,"Toy 5014","Suspension Inspection",2026,785,27009,25000,24,32.2,0.9,13,150179,electric,individual,HIGH
-VH0343,"Nis 4976","Air Conditioning Service",2026,383,10584,20000,24,66.4,1.15,7,170451,diesel,corporate,LOW
-VH0344,"For 6178","Full Vehicle Inspection",2025,124,12459,30000,12,34.4,1,10,115592,hybrid,individual,LOW
-VH0345,"Pro 8712","Tyre Rotation & Balancing",2024,118,6691,10000,6,60.5,0.9,7,159642,electric,corporate,LOW
-VH0346,"Pro 1768","Full Vehicle Inspection",2024,93,7750,30000,12,63.2,1.15,12,289696,hybrid,corporate,LOW
-VH0347,"Nis 5288","Suspension Inspection",2024,884,34897,25000,24,54.7,0.9,3,56298,petrol,corporate,HIGH
-VH0348,"Pro 1003","Full Engine Service",2025,272,6782,10000,12,33.7,0.9,1,12918,electric,individual,LOW
-VH0349,"Per 1200","Oil & Filter Change",2025,111,3177,5000,6,34.5,1,1,12729,hybrid,individual,LOW
-VH0350,"Hyu 7642","Suspension Inspection",2026,567,17511,25000,24,28.8,1.15,14,143614,diesel,individual,LOW
-VH0351,"For 1877","Tyre Rotation & Balancing",2025,93,4626,10000,6,35.9,1.3,8,97700,hybrid,individual,LOW
-VH0352,"Nis 4362","Full Vehicle Inspection",2025,469,37403,30000,12,37.5,1.15,5,69986,petrol,individual,HIGH
-VH0353,"For 4319","Oil & Filter Change",2024,153,4165,5000,6,33.7,1.2,7,77655,electric,individual,HIGH
-VH0354,"Hon 9885","Tyre Rotation & Balancing",2024,176,10105,10000,6,66.6,0.9,2,46343,petrol,corporate,MEDIUM
-VH0355,"Hon 3624","Suspension Inspection",2024,730,26652,25000,24,63.1,1,1,23566,petrol,corporate,HIGH
-VH0356,"For 6521","Tyre Rotation & Balancing",2025,48,2196,10000,6,49.4,1,5,90822,hybrid,corporate,LOW
-VH0357,"Nis 7664","Air Conditioning Service",2025,277,8528,20000,24,55.1,1,3,66193,petrol,corporate,LOW
-VH0358,"Toy 3695","Oil & Filter Change",2026,57,1781,5000,6,60.8,0.9,12,285512,diesel,corporate,LOW
-VH0359,"Toy 8480","Oil & Filter Change",2024,22,629,5000,6,53.8,1.3,9,162277,diesel,corporate,LOW
-VH0360,"Toy 3793","Air Conditioning Service",2024,76,2089,20000,24,30.8,1.3,11,110186,petrol,individual,LOW
-VH0361,"Per 6312","Tyre Rotation & Balancing",2024,140,7862,10000,6,35.7,0.9,7,93035,diesel,individual,LOW
-VH0362,"Hyu 6171","Suspension Inspection",2026,257,8964,25000,24,30.5,1.3,7,80049,petrol,individual,LOW
-VH0363,"Per 4175","Tyre Rotation & Balancing",2025,44,2111,10000,6,65.7,0.9,6,136957,electric,corporate,LOW
-VH0364,"Pro 8883","Suspension Inspection",2025,264,8665,25000,24,32.9,1.15,3,35814,hybrid,individual,LOW
-VH0365,"Per 1569","Suspension Inspection",2025,87,2919,25000,24,36.3,1.3,12,167402,electric,individual,LOW
-VH0366,"Nis 8324","Full Vehicle Inspection",2025,261,23051,30000,12,54.7,0.9,11,195499,hybrid,corporate,LOW
-VH0367,"For 4878","Oil & Filter Change",2024,62,1564,5000,6,65.2,1.3,8,194231,diesel,corporate,LOW
-VH0368,"Maz 9063","Transmission Fluid Change",2026,841,40494,40000,24,53.9,1,10,172613,hybrid,corporate,HIGH
-VH0369,"Hon 7648","Suspension Inspection",2024,278,9743,25000,24,33.1,0.9,5,63665,diesel,individual,LOW
-VH0370,"For 9499","Oil & Filter Change",2025,203,4779,5000,6,50.2,1.3,6,107213,diesel,corporate,HIGH
-VH0371,"Hon 9973","Full Engine Service",2024,322,9609,10000,12,41.7,1.2,7,103040,electric,individual,HIGH
-VH0372,"Pro 7648","Suspension Inspection",2024,745,24719,25000,24,62.5,1,10,224902,diesel,corporate,HIGH
-VH0373,"Hon 5666","Suspension Inspection",2026,522,17038,25000,24,60,1.3,14,279918,hybrid,corporate,LOW
-VH0374,"Per 2187","Air Conditioning Service",2025,619,15787,20000,24,35.4,0.9,1,12589,electric,individual,LOW
-VH0375,"Maz 4927","Oil & Filter Change",2024,59,1759,5000,6,29,1.15,10,100072,petrol,individual,LOW
-VH0376,"Maz 5072","Full Vehicle Inspection",2025,232,18353,30000,12,38.6,0.9,8,120224,electric,individual,LOW
-VH0377,"Nis 4963","Air Conditioning Service",2025,762,18505,20000,24,63.7,1.15,13,282998,hybrid,corporate,HIGH
-VH0378,"Nis 7136","Full Vehicle Inspection",2025,347,22032,30000,12,36,0.9,9,106425,diesel,individual,LOW
-VH0379,"Hon 2546","Oil & Filter Change",2025,226,5865,5000,6,35.5,1.3,12,155407,diesel,individual,HIGH
-VH0380,"Pro 6462","Air Conditioning Service",2024,226,6584,20000,24,56.5,1.3,5,106044,petrol,corporate,LOW
-VH0381,"Nis 1480","Suspension Inspection",2024,367,13424,25000,24,33.1,1.2,7,97361,diesel,individual,LOW
-VH0382,"Pro 4086","Oil & Filter Change",2024,195,4265,5000,6,35.7,1.2,1,12743,petrol,individual,HIGH
-VH0383,"Pro 7450","Suspension Inspection",2024,76,2770,25000,24,33.2,1.2,9,119699,petrol,individual,LOW
-VH0384,"For 9176","Oil & Filter Change",2026,143,3318,5000,6,37.3,1,14,196836,petrol,individual,LOW
-VH0385,"Per 7128","Full Vehicle Inspection",2024,488,36767,30000,12,32.2,1.15,6,74232,petrol,individual,HIGH
-VH0386,"For 9509","Suspension Inspection",2025,830,26400,25000,24,60.7,1,1,20992,diesel,corporate,HIGH
-VH0387,"Hyu 1909","Transmission Fluid Change",2024,408,19903,40000,24,54.8,0.9,1,22521,hybrid,corporate,LOW
-VH0388,"Maz 7117","Air Conditioning Service",2025,422,11860,20000,24,33.5,1.2,7,88211,electric,individual,LOW
-VH0389,"Pro 6568","Transmission Fluid Change",2025,758,37106,40000,24,29.3,1,13,116413,electric,individual,HIGH
-VH0390,"For 6748","Transmission Fluid Change",2025,643,36448,40000,24,40.5,1.15,8,106058,diesel,individual,HIGH
-VH0391,"Pro 1278","Oil & Filter Change",2024,155,4619,5000,6,60.4,1,5,102053,electric,corporate,MEDIUM
-VH0392,"Nis 6377","Full Vehicle Inspection",2025,128,8617,30000,12,54.1,0.9,2,38223,electric,corporate,LOW
-VH0393,"Nis 9845","Full Engine Service",2024,193,5842,10000,12,64.6,1.3,2,49302,electric,corporate,LOW
-VH0394,"Nis 3007","Air Conditioning Service",2025,286,6527,20000,24,54.9,1.2,13,250107,petrol,corporate,LOW
-VH0395,"Hon 9548","Oil & Filter Change",2026,198,5437,5000,6,59.7,1,4,88223,diesel,corporate,HIGH
-VH0396,"Maz 6573","Transmission Fluid Change",2026,394,25968,40000,24,64,1.15,3,79690,electric,corporate,LOW
-VH0397,"Hyu 6319","Tyre Rotation & Balancing",2025,206,13062,10000,6,34.2,1,12,133544,hybrid,individual,HIGH
-VH0398,"Maz 3596","Tyre Rotation & Balancing",2024,187,11207,10000,6,60,1.15,6,125401,hybrid,corporate,HIGH
-VH0399,"Hon 2027","Full Engine Service",2025,127,4217,10000,12,36.6,1.3,11,146157,hybrid,individual,LOW
-VH0400,"Hyu 9208","Transmission Fluid Change",2026,163,7630,40000,24,57.2,1,3,56993,hybrid,corporate,LOW
-VH0401,"Nis 2758","Suspension Inspection",2025,604,16057,25000,24,67.1,1,5,116631,diesel,corporate,LOW
-VH0402,"Hyu 6532","Full Engine Service",2025,301,9505,10000,12,59.6,1,11,225187,petrol,corporate,MEDIUM
-VH0403,"Toy 7926","Oil & Filter Change",2025,223,7130,5000,6,32.3,1,5,50791,electric,individual,HIGH
-VH0404,"Nis 4080","Tyre Rotation & Balancing",2026,106,5596,10000,6,71,1.15,2,50688,diesel,corporate,LOW
-VH0405,"Maz 7370","Transmission Fluid Change",2026,302,18045,40000,24,58.5,0.9,6,136749,petrol,corporate,LOW
-VH0406,"Maz 1979","Tyre Rotation & Balancing",2026,206,14117,10000,6,31.9,1,10,122552,petrol,individual,HIGH
-VH0407,"For 4088","Air Conditioning Service",2024,532,13740,20000,24,36.1,1.3,3,40284,hybrid,individual,LOW
-VH0408,"Hyu 2996","Air Conditioning Service",2025,147,3869,20000,24,36,1.2,13,161980,diesel,individual,LOW
-VH0409,"For 2916","Full Vehicle Inspection",2024,345,27250,30000,12,63.5,1.3,10,228405,electric,corporate,HIGH
-VH0410,"Toy 3318","Full Vehicle Inspection",2024,123,10676,30000,12,65.7,0.9,8,223125,electric,corporate,LOW
-VH0411,"Maz 7166","Full Engine Service",2025,69,1988,10000,12,36.8,1.2,13,162740,hybrid,individual,LOW
-VH0412,"Pro 5295","Oil & Filter Change",2025,60,1304,5000,6,61.6,1.15,12,276777,diesel,corporate,LOW
-VH0413,"Nis 9135","Transmission Fluid Change",2024,881,42644,40000,24,65.3,1.2,11,270017,diesel,corporate,HIGH
-VH0414,"Maz 4175","Full Engine Service",2024,192,5011,10000,12,68.1,1,10,248067,hybrid,corporate,LOW
-VH0415,"For 3323","Oil & Filter Change",2026,43,1590,5000,6,58.1,1.2,9,199064,petrol,corporate,LOW
-VH0416,"Maz 2910","Oil & Filter Change",2024,91,2184,5000,6,50.5,1.3,11,191346,hybrid,corporate,LOW
-VH0417,"For 2723","Tyre Rotation & Balancing",2024,27,1497,10000,6,34.8,1.15,7,87949,diesel,individual,LOW
-VH0418,"Nis 4388","Full Engine Service",2025,54,1636,10000,12,58.2,1,4,80202,petrol,corporate,LOW
-VH0419,"Pro 7591","Full Vehicle Inspection",2026,262,18955,30000,12,54.5,1.15,6,115246,petrol,corporate,LOW
-VH0420,"Hon 6414","Full Vehicle Inspection",2025,291,24373,30000,12,33.7,1,5,62012,petrol,individual,LOW
-VH0421,"Pro 3096","Air Conditioning Service",2026,269,7376,20000,24,54.5,1.15,2,37342,petrol,corporate,LOW
-VH0422,"Hyu 9263","Transmission Fluid Change",2026,524,24173,40000,24,64.5,1.3,14,332486,hybrid,corporate,LOW
-VH0423,"Nis 9223","Full Vehicle Inspection",2026,399,31112,30000,12,64.2,1.2,12,280642,petrol,corporate,HIGH
-VH0424,"Hon 1976","Transmission Fluid Change",2025,282,13894,40000,24,40.2,1.2,3,45779,hybrid,individual,LOW
-VH0425,"Maz 8318","Full Vehicle Inspection",2025,319,32379,30000,12,61.3,0.9,13,274827,diesel,corporate,MEDIUM
-VH0426,"Hyu 9120","Air Conditioning Service",2024,857,24920,20000,24,71.4,1.3,11,292683,electric,corporate,HIGH
-VH0427,"Maz 1012","Suspension Inspection",2025,598,21775,25000,24,55.3,0.9,2,36187,petrol,corporate,LOW
-VH0428,"Per 9188","Air Conditioning Service",2025,616,17755,20000,24,61,1.3,13,258470,diesel,corporate,HIGH
-VH0429,"Pro 8835","Suspension Inspection",2026,459,15902,25000,24,64.5,1,14,346945,diesel,corporate,LOW
-VH0430,"Hon 9450","Full Engine Service",2025,487,12336,10000,12,48.5,1.2,3,55435,hybrid,corporate,HIGH
-VH0431,"Nis 1131","Tyre Rotation & Balancing",2024,180,10392,10000,6,35,0.9,7,80970,petrol,individual,MEDIUM
-VH0432,"For 2166","Full Vehicle Inspection",2026,66,6080,30000,12,60,1,8,157237,electric,corporate,LOW
-VH0433,"Toy 3503","Full Vehicle Inspection",2025,286,24211,30000,12,41.5,1,4,54126,petrol,individual,LOW
-VH0434,"Hon 5409","Oil & Filter Change",2025,83,2485,5000,6,33.7,1,10,122176,diesel,individual,LOW
-VH0435,"For 9280","Full Engine Service",2024,71,1725,10000,12,58.8,1.3,4,92168,petrol,corporate,LOW
-VH0436,"Per 5641","Oil & Filter Change",2026,62,1854,5000,6,68.2,1.15,9,244368,electric,corporate,LOW
-VH0437,"For 5471","Transmission Fluid Change",2025,260,11785,40000,24,31.7,1.3,3,35924,electric,individual,LOW
-VH0438,"Pro 7241","Transmission Fluid Change",2025,678,51211,40000,24,59.4,1.3,10,218408,electric,corporate,HIGH
-VH0439,"Hon 3088","Suspension Inspection",2024,831,28321,25000,24,62,1.15,1,22670,petrol,corporate,HIGH
-VH0440,"For 4616","Transmission Fluid Change",2025,744,46799,40000,24,31.7,1.15,7,82705,diesel,individual,HIGH
-VH0441,"Pro 1771","Tyre Rotation & Balancing",2025,49,3156,10000,6,30.4,1.15,2,20645,diesel,individual,LOW
-VH0442,"Nis 3480","Tyre Rotation & Balancing",2026,205,10508,10000,6,56.2,1.2,6,132079,hybrid,corporate,HIGH
-VH0443,"Toy 6767","Full Vehicle Inspection",2024,68,5730,30000,12,65,1.15,4,95847,diesel,corporate,LOW
-VH0444,"Hyu 2703","Full Vehicle Inspection",2025,360,23808,30000,12,40.2,0.9,12,175388,hybrid,individual,MEDIUM
-VH0445,"Hon 7926","Air Conditioning Service",2024,1128,25521,20000,24,37.8,1,11,144957,diesel,individual,HIGH
-VH0446,"Per 8380","Oil & Filter Change",2026,61,2058,5000,6,41.7,1.15,5,69417,electric,individual,LOW
-VH0447,"Pro 4728","Air Conditioning Service",2026,401,10052,20000,24,61.6,0.9,8,193759,hybrid,corporate,LOW
-VH0448,"Pro 4144","Full Vehicle Inspection",2025,305,24698,30000,12,56.3,1.3,4,83716,diesel,corporate,HIGH
-VH0449,"Hyu 4254","Air Conditioning Service",2024,164,5159,20000,24,33.5,0.9,1,12591,diesel,individual,LOW
-VH0450,"Maz 2016","Tyre Rotation & Balancing",2026,166,8350,10000,6,60,1,4,84018,diesel,corporate,LOW
-VH0451,"Hyu 6702","Transmission Fluid Change",2024,122,7337,40000,24,63.2,1.15,11,247319,electric,corporate,LOW
-VH0452,"Toy 3127","Tyre Rotation & Balancing",2026,229,10550,10000,6,55.6,1,7,141882,diesel,corporate,HIGH
-VH0453,"Hyu 5693","Tyre Rotation & Balancing",2025,54,3168,10000,6,53.4,1,13,218271,diesel,corporate,LOW
-VH0454,"Hon 8748","Full Engine Service",2024,457,12562,10000,12,64.3,1.3,4,82506,diesel,corporate,HIGH
-VH0455,"Hyu 6633","Suspension Inspection",2026,376,14635,25000,24,32.4,1.2,6,69742,electric,individual,LOW
-VH0456,"Per 1340","Transmission Fluid Change",2025,80,4752,40000,24,36.4,1.3,8,110160,petrol,individual,LOW
-VH0457,"Nis 5403","Full Engine Service",2026,253,6838,10000,12,37,0.9,6,73566,electric,individual,LOW
-VH0458,"Nis 8439","Suspension Inspection",2025,363,12365,25000,24,32.9,1.15,3,38419,electric,individual,LOW
-VH0459,"Hyu 8143","Full Vehicle Inspection",2026,162,13834,30000,12,52.2,0.9,13,237554,diesel,corporate,LOW
-VH0460,"Pro 2507","Air Conditioning Service",2025,115,3788,20000,24,33.1,1.2,10,128103,electric,individual,LOW
-VH0461,"Maz 8003","Oil & Filter Change",2025,194,5261,5000,6,37.7,1.2,1,12401,electric,individual,HIGH
-VH0462,"Nis 5441","Tyre Rotation & Balancing",2025,39,1946,10000,6,36.4,1.3,4,56409,diesel,individual,LOW
-VH0463,"Hyu 3333","Suspension Inspection",2026,501,15536,25000,24,38,0.9,11,157219,petrol,individual,LOW
-VH0464,"For 5920","Full Vehicle Inspection",2024,163,14317,30000,12,64.7,0.9,6,143544,hybrid,corporate,LOW
-VH0465,"Hon 4475","Transmission Fluid Change",2026,276,17881,40000,24,58.2,1.2,5,99772,petrol,corporate,LOW
-VH0466,"Maz 5501","Transmission Fluid Change",2025,367,19086,40000,24,61.5,1,4,91793,hybrid,corporate,LOW
-VH0467,"Hyu 7353","Transmission Fluid Change",2024,276,14160,40000,24,63.2,1,9,200735,electric,corporate,LOW
-VH0468,"Hon 1355","Air Conditioning Service",2024,259,7346,20000,24,33.7,1,12,154402,petrol,individual,LOW
-VH0469,"Toy 9702","Tyre Rotation & Balancing",2025,175,10446,10000,6,32.4,1.3,2,25436,electric,individual,HIGH
-VH0470,"Nis 1052","Tyre Rotation & Balancing",2024,100,4976,10000,6,37.6,0.9,2,29866,hybrid,individual,LOW
-VH0471,"Maz 7418","Air Conditioning Service",2024,884,18836,20000,24,61.5,1,7,146403,hybrid,corporate,HIGH
-VH0472,"Maz 9197","Suspension Inspection",2024,467,13396,25000,24,39.5,1.15,8,139747,hybrid,individual,LOW
-VH0473,"Toy 4793","Full Engine Service",2025,220,6331,10000,12,37.2,1.2,9,137530,diesel,individual,LOW
-VH0474,"Per 5321","Oil & Filter Change",2025,116,3039,5000,6,58.3,1.15,13,332165,diesel,corporate,LOW
-VH0475,"Maz 5012","Tyre Rotation & Balancing",2024,240,12393,10000,6,39.5,1,1,13861,electric,individual,HIGH
-VH0476,"Hyu 6601","Suspension Inspection",2025,160,5665,25000,24,69.5,1.15,10,285429,hybrid,corporate,LOW
-VH0477,"Hon 1402","Oil & Filter Change",2024,114,3019,5000,6,34.2,1,5,67665,diesel,individual,LOW
-VH0478,"For 4700","Air Conditioning Service",2026,304,7134,20000,24,57.5,1,2,42581,diesel,corporate,LOW
-VH0479,"Nis 2848","Oil & Filter Change",2024,187,5754,5000,6,59.8,1.2,2,40134,electric,corporate,HIGH
-VH0480,"Per 5512","Tyre Rotation & Balancing",2024,141,8946,10000,6,47.2,0.9,11,179881,diesel,corporate,LOW
-VH0481,"Toy 8689","Oil & Filter Change",2026,157,3038,5000,6,36.4,0.9,5,69240,hybrid,individual,LOW
-VH0482,"Nis 9125","Full Engine Service",2026,402,11954,10000,12,61.3,0.9,6,147231,petrol,corporate,HIGH
-VH0483,"Nis 7126","Oil & Filter Change",2024,255,6029,5000,6,33.1,1.2,11,125868,electric,individual,HIGH
-VH0484,"Hyu 7962","Suspension Inspection",2025,121,3678,25000,24,36.9,0.9,2,29675,electric,individual,LOW
-VH0485,"Hyu 5238","Oil & Filter Change",2026,241,5677,5000,6,36.5,1.3,2,25389,diesel,individual,HIGH
-VH0486,"Toy 8747","Oil & Filter Change",2024,96,2173,5000,6,67.7,1.15,2,46690,hybrid,corporate,LOW
-VH0487,"Nis 3149","Suspension Inspection",2026,136,4803,25000,24,57.3,1.15,8,152735,hybrid,corporate,LOW
-VH0488,"Per 3156","Transmission Fluid Change",2025,146,8454,40000,24,49.7,1.3,3,61537,petrol,corporate,LOW
-VH0489,"For 3906","Air Conditioning Service",2026,324,9517,20000,24,58,1.3,6,124231,petrol,corporate,LOW
-VH0490,"Per 9700","Full Vehicle Inspection",2025,309,28650,30000,12,53.6,1.3,8,163260,electric,corporate,HIGH
-VH0491,"Hyu 7915","Suspension Inspection",2024,234,8668,25000,24,35,1.15,4,51859,petrol,individual,LOW
-VH0492,"Hon 9283","Suspension Inspection",2024,517,17588,25000,24,35.8,0.9,12,170140,hybrid,individual,LOW
-VH0493,"Toy 8884","Oil & Filter Change",2024,120,3838,5000,6,36.3,1,5,60837,electric,individual,LOW
-VH0494,"Per 5098","Full Vehicle Inspection",2026,335,27696,30000,12,56.7,1.3,7,140700,hybrid,corporate,HIGH
-VH0495,"For 4887","Tyre Rotation & Balancing",2025,57,3213,10000,6,53.1,1.15,3,63890,hybrid,corporate,LOW
-VH0496,"Hon 8946","Transmission Fluid Change",2024,897,43026,40000,24,38.8,0.9,4,56753,hybrid,individual,HIGH
-VH0497,"Nis 3835","Transmission Fluid Change",2024,262,16683,40000,24,53.7,0.9,11,209584,hybrid,corporate,LOW
-VH0498,"Toy 4486","Full Vehicle Inspection",2024,64,4819,30000,12,66.3,1.2,6,156766,petrol,corporate,LOW
-VH0499,"For 7437","Full Vehicle Inspection",2024,191,16222,30000,12,64.5,1,12,312492,diesel,corporate,LOW
-VH0500,"Nis 1555","Full Engine Service",2025,122,3593,10000,12,59.8,1.3,2,50356,diesel,corporate,LOW
-VH0501,"Maz 1727","Suspension Inspection",2026,220,7232,25000,24,65.2,0.9,4,90495,petrol,corporate,LOW
-VH0502,"Nis 5089","Tyre Rotation & Balancing",2026,68,3991,10000,6,36.2,1.3,5,59877,electric,individual,LOW
-VH0503,"Toy 2954","Transmission Fluid Change",2024,187,10835,40000,24,57.4,1.3,9,160809,hybrid,corporate,LOW
-VH0504,"Hyu 2528","Full Vehicle Inspection",2025,186,14700,30000,12,55,0.9,3,67786,hybrid,corporate,LOW
-VH0505,"Nis 4843","Tyre Rotation & Balancing",2025,227,13321,10000,6,63,1.3,6,143654,diesel,corporate,HIGH
-VH0506,"Hon 9967","Tyre Rotation & Balancing",2024,217,12413,10000,6,65,0.9,4,84143,electric,corporate,HIGH
-VH0507,"Nis 4869","Full Vehicle Inspection",2026,90,6924,30000,12,38.3,1.3,9,111160,hybrid,individual,LOW
-VH0508,"Maz 3732","Tyre Rotation & Balancing",2025,231,12486,10000,6,57.9,0.9,6,128409,electric,corporate,HIGH
-VH0509,"Per 3178","Full Engine Service",2025,407,10695,10000,12,36,1.15,8,106934,electric,individual,HIGH
-VH0510,"Maz 4504","Tyre Rotation & Balancing",2026,23,1082,10000,6,36.6,1.2,7,95342,petrol,individual,LOW
-VH0511,"Hyu 9245","Full Engine Service",2024,305,9883,10000,12,30.6,0.9,2,19371,electric,individual,LOW
-VH0512,"Toy 6894","Transmission Fluid Change",2024,881,49016,40000,24,31.8,1.15,1,10580,hybrid,individual,HIGH
-VH0513,"For 9007","Air Conditioning Service",2025,580,14453,20000,24,73.9,1.15,12,267455,hybrid,corporate,LOW
-VH0514,"Pro 7211","Transmission Fluid Change",2026,803,43188,40000,24,36,0.9,11,147401,diesel,individual,HIGH
-VH0515,"Pro 9553","Full Engine Service",2026,87,2621,10000,12,65.4,1.15,10,274486,hybrid,corporate,LOW
-VH0516,"Nis 9728","Full Engine Service",2025,435,13269,10000,12,34.7,1,7,99621,electric,individual,HIGH
-VH0517,"Per 9282","Oil & Filter Change",2025,105,3211,5000,6,31.5,1.15,5,52780,electric,individual,LOW
-VH0518,"Hon 9477","Transmission Fluid Change",2024,185,8471,40000,24,55.4,0.9,2,40088,petrol,corporate,LOW
-VH0519,"Pro 2443","Tyre Rotation & Balancing",2024,216,12677,10000,6,55.3,1.3,7,134498,diesel,corporate,HIGH
-VH0520,"Maz 8640","Transmission Fluid Change",2026,661,33664,40000,24,33.2,0.9,14,171494,hybrid,individual,LOW
-VH0521,"Toy 4834","Suspension Inspection",2024,466,14259,25000,24,55.6,0.9,1,20112,hybrid,corporate,LOW
-VH0522,"Hon 7826","Full Vehicle Inspection",2026,219,18777,30000,12,36.9,1.3,8,100868,electric,individual,LOW
-VH0523,"Maz 7339","Transmission Fluid Change",2024,225,12319,40000,24,57.2,1.3,4,96899,diesel,corporate,LOW
-VH0524,"Per 3559","Transmission Fluid Change",2025,760,34266,40000,24,33.7,0.9,7,80677,petrol,individual,HIGH
-VH0525,"Toy 1137","Tyre Rotation & Balancing",2025,67,3490,10000,6,30.2,1,5,55858,hybrid,individual,LOW
-VH0526,"Toy 4209","Full Engine Service",2026,204,6056,10000,12,56.2,0.9,5,96822,hybrid,corporate,LOW
-VH0527,"For 2812","Tyre Rotation & Balancing",2025,147,6913,10000,6,33.9,1,10,120284,petrol,individual,LOW
-VH0528,"Pro 6205","Transmission Fluid Change",2025,203,8813,40000,24,31.8,1,10,134479,hybrid,individual,LOW
-VH0529,"For 8122","Air Conditioning Service",2025,260,7564,20000,24,50.3,0.9,1,17929,diesel,corporate,LOW
-VH0530,"Nis 9986","Transmission Fluid Change",2026,319,18173,40000,24,35.7,1.3,7,91207,diesel,individual,LOW
-VH0531,"Toy 9712","Transmission Fluid Change",2024,507,29852,40000,24,57.7,1.3,8,156340,diesel,corporate,LOW
-VH0532,"Toy 2590","Air Conditioning Service",2026,320,10214,20000,24,52.6,1.2,3,46744,hybrid,corporate,LOW
-VH0533,"Maz 6895","Transmission Fluid Change",2026,793,43541,40000,24,39.5,1,7,86305,petrol,individual,HIGH
-VH0534,"Maz 9145","Full Vehicle Inspection",2024,87,7582,30000,12,60,1.2,7,148267,hybrid,corporate,LOW
-VH0535,"Nis 4351","Full Vehicle Inspection",2025,258,19991,30000,12,61.4,1.3,13,294580,petrol,corporate,LOW
-VH0536,"Hon 9839","Transmission Fluid Change",2026,760,45336,40000,24,65.8,1.3,10,258742,petrol,corporate,HIGH
-VH0537,"Nis 5713","Tyre Rotation & Balancing",2024,47,2390,10000,6,40.3,1.3,10,162234,hybrid,individual,LOW
-VH0538,"Per 6342","Transmission Fluid Change",2025,310,18270,40000,24,64.4,1.15,1,21463,electric,corporate,LOW
-VH0539,"Toy 1923","Oil & Filter Change",2026,189,5488,5000,6,62.6,1.15,8,188550,hybrid,corporate,HIGH
-VH0540,"Nis 9520","Tyre Rotation & Balancing",2025,86,4480,10000,6,61.7,1.3,7,151976,hybrid,corporate,LOW
-VH0541,"Hon 8319","Full Engine Service",2025,367,10968,10000,12,35.7,1.3,1,13157,electric,individual,HIGH
-VH0542,"Per 1446","Transmission Fluid Change",2025,319,14800,40000,24,33.4,1,11,115783,diesel,individual,LOW
-VH0543,"Toy 4274","Transmission Fluid Change",2026,761,40502,40000,24,32,1,14,164591,diesel,individual,HIGH
-VH0544,"For 1231","Full Vehicle Inspection",2025,311,23818,30000,12,33.1,1.15,9,100198,diesel,individual,LOW
-VH0545,"Nis 6524","Full Vehicle Inspection",2025,103,9294,30000,12,37.9,1.2,4,57427,electric,individual,LOW
-VH0546,"Pro 7745","Full Engine Service",2025,495,13344,10000,12,55.2,1.15,6,124014,hybrid,corporate,HIGH
-VH0547,"Nis 6762","Air Conditioning Service",2026,662,21752,20000,24,58.7,1.3,14,295888,electric,corporate,HIGH
-VH0548,"Nis 2669","Full Engine Service",2024,347,8487,10000,12,36.6,1.3,8,104992,diesel,individual,HIGH
-VH0549,"Pro 3385","Full Engine Service",2025,426,11049,10000,12,60.5,1,12,269152,electric,corporate,HIGH
-VH0550,"Nis 9264","Tyre Rotation & Balancing",2026,108,6869,10000,6,62.4,1,11,209464,petrol,corporate,LOW
-VH0551,"Nis 6409","Tyre Rotation & Balancing",2026,193,10598,10000,6,32.3,1.2,14,150371,petrol,individual,HIGH
-VH0552,"Per 2641","Suspension Inspection",2026,632,22262,25000,24,39.4,0.9,5,69734,electric,individual,LOW
-VH0553,"Maz 6232","Tyre Rotation & Balancing",2025,129,6074,10000,6,38.7,1.3,5,60647,petrol,individual,LOW
-VH0554,"Toy 7667","Air Conditioning Service",2024,844,22777,20000,24,60.2,1.3,11,255593,diesel,corporate,HIGH
-VH0555,"Pro 6768","Transmission Fluid Change",2024,745,42527,40000,24,52.2,1.15,4,74769,electric,corporate,HIGH
-VH0556,"Hon 9133","Full Vehicle Inspection",2025,72,5622,30000,12,58.7,1.2,13,261720,diesel,corporate,LOW
-VH0557,"Hyu 2922","Full Engine Service",2024,455,9440,10000,12,36.3,0.9,1,16406,hybrid,individual,HIGH
-VH0558,"Maz 3975","Full Engine Service",2025,207,5951,10000,12,61.6,1.2,11,257024,diesel,corporate,LOW
-VH0559,"Hyu 2193","Full Engine Service",2026,219,5133,10000,12,35.1,1.15,7,94186,diesel,individual,LOW
-VH0560,"For 1152","Tyre Rotation & Balancing",2025,30,1773,10000,6,37.6,1.3,5,61901,diesel,individual,LOW
-VH0561,"Nis 7668","Air Conditioning Service",2026,891,27601,20000,24,33.9,0.9,6,80972,diesel,individual,HIGH
-VH0562,"Per 7592","Suspension Inspection",2024,380,10178,25000,24,62.9,0.9,3,65907,diesel,corporate,LOW
-VH0563,"Toy 9401","Transmission Fluid Change",2025,312,16483,40000,24,40.1,1.3,3,42860,petrol,individual,LOW
-VH0564,"Toy 4764","Transmission Fluid Change",2025,89,4768,40000,24,61.8,1.15,4,97355,diesel,corporate,LOW
-VH0565,"Hon 3204","Suspension Inspection",2026,220,7081,25000,24,58.8,1.3,2,39358,hybrid,corporate,LOW
-VH0566,"Per 9796","Oil & Filter Change",2025,46,1123,5000,6,33.2,1,4,50433,petrol,individual,LOW
-VH0567,"Per 9021","Tyre Rotation & Balancing",2026,98,5544,10000,6,39.8,1.2,10,148786,petrol,individual,LOW
-VH0568,"Maz 6623","Full Vehicle Inspection",2024,291,22544,30000,12,36,1.2,3,43064,hybrid,individual,LOW
-VH0569,"Per 5922","Oil & Filter Change",2024,218,5622,5000,6,38.3,1,7,97769,hybrid,individual,HIGH
-VH0570,"Toy 7366","Suspension Inspection",2026,757,26413,25000,24,37.4,1.3,14,200027,petrol,individual,HIGH
-VH0571,"Nis 7163","Suspension Inspection",2026,565,19965,25000,24,34.2,1,2,26680,petrol,individual,LOW
-VH0572,"Nis 9970","Suspension Inspection",2025,546,17406,25000,24,33.2,1,8,105283,electric,individual,LOW
-VH0573,"Maz 9603","Suspension Inspection",2024,320,8422,25000,24,62.5,1.15,2,43304,diesel,corporate,LOW
-VH0574,"For 1351","Oil & Filter Change",2025,67,2097,5000,6,61.2,1.3,7,139456,diesel,corporate,LOW
-VH0575,"Pro 9984","Full Vehicle Inspection",2025,350,30661,30000,12,59.8,0.9,7,140185,petrol,corporate,LOW
-VH0576,"Per 7679","Air Conditioning Service",2026,72,2040,20000,24,38,1.3,14,177067,electric,individual,LOW
-VH0577,"For 1102","Tyre Rotation & Balancing",2026,166,11460,10000,6,54.5,1,14,305218,hybrid,corporate,HIGH
-VH0578,"Per 1345","Suspension Inspection",2026,528,18613,25000,24,62.1,0.9,7,163113,diesel,corporate,LOW
-VH0579,"Pro 7943","Oil & Filter Change",2024,223,5791,5000,6,33.9,0.9,4,50184,hybrid,individual,HIGH
-VH0580,"Hon 4639","Tyre Rotation & Balancing",2025,97,5155,10000,6,41.8,0.9,13,181119,electric,individual,LOW
-VH0581,"Hon 8277","Oil & Filter Change",2025,65,2250,5000,6,52,1.3,12,201058,electric,corporate,LOW
-VH0582,"Hon 2998","Suspension Inspection",2024,306,11905,25000,24,58.9,1.3,9,183433,hybrid,corporate,LOW
-VH0583,"Hyu 8765","Suspension Inspection",2024,108,4482,25000,24,61.5,1.3,10,287714,electric,corporate,LOW
-VH0584,"Hyu 2814","Tyre Rotation & Balancing",2025,131,6775,10000,6,65.8,1.2,6,140789,petrol,corporate,LOW
-VH0585,"Hon 3637","Oil & Filter Change",2026,45,1120,5000,6,37.9,1.3,2,28115,electric,individual,LOW
-VH0586,"Nis 6149","Full Engine Service",2026,395,12924,10000,12,33.6,1.2,8,107626,petrol,individual,HIGH
-VH0587,"Toy 1804","Oil & Filter Change",2026,162,4537,5000,6,34.4,1.15,10,133789,hybrid,individual,HIGH
-VH0588,"Per 3652","Transmission Fluid Change",2024,334,18657,40000,24,36.4,1.2,4,50104,electric,individual,LOW
-VH0589,"Hon 4773","Full Vehicle Inspection",2024,154,13196,30000,12,34.7,0.9,4,52828,electric,individual,LOW
-VH0590,"Maz 5187","Oil & Filter Change",2024,45,1274,5000,6,37.2,0.9,8,107359,diesel,individual,LOW
-VH0591,"Per 5125","Transmission Fluid Change",2026,451,27477,40000,24,28.9,0.9,5,48522,electric,individual,LOW
-VH0592,"Hon 4137","Transmission Fluid Change",2025,859,45087,40000,24,52,1.2,7,126108,petrol,corporate,HIGH
-VH0593,"Hyu 1515","Oil & Filter Change",2024,172,5152,5000,6,53.4,1.3,6,114734,diesel,corporate,HIGH
-VH0594,"Nis 7963","Tyre Rotation & Balancing",2025,89,4490,10000,6,32.8,1.3,4,38922,diesel,individual,LOW
-VH0595,"For 4173","Air Conditioning Service",2026,167,4786,20000,24,31.9,1.3,2,23291,petrol,individual,LOW
-VH0596,"Per 7418","Full Vehicle Inspection",2024,317,26207,30000,12,71.2,1.15,6,167214,diesel,corporate,HIGH
-VH0597,"Nis 9614","Transmission Fluid Change",2026,410,26809,40000,24,35.5,1.3,6,85955,petrol,individual,LOW
-VH0598,"Toy 7297","Oil & Filter Change",2026,73,1621,5000,6,54.6,1.3,13,252209,petrol,corporate,LOW
-VH0599,"Toy 6001","Full Engine Service",2024,274,7996,10000,12,57.7,1.2,10,226044,diesel,corporate,MEDIUM
-VH0600,"Toy 7133","Suspension Inspection",2025,598,19689,25000,24,40.1,1.3,6,99073,electric,individual,HIGH
+vehicle_id,plate_number,service_type,year,scan_date,days_since_service,km_since_service,interval_km,interval_months,daily_km,terrain_severity,vehicle_age,total_mileage,fuel_type,owner_type,urgency_label
+VH0038,EB811C,Full Engine Service,2024,2024-02-27,261.0,6698.0,10000,12,60.8,1.3271,3,69222.0,diesel,corporate,MEDIUM
+VH0043,CKW249A,Air Conditioning Service,2024,2024-10-25,,0.0,0,24,78.9,1.3079,5,161937.0,hybrid,corporate,LOW
+VH0034,UT364D,Full Vehicle Inspection,2026,2026-01-29,119.0,0.0,0,12,30.9,1.3681,16,148166.0,electric,individual,LOW
+VH0049,JN074B,Tyre Rotation & Balancing,2024,2024-06-15,,7514.0,10000,6,27.5,1.2673,4,30745.0,diesel,individual,LOW
+VH0010,YW3059C,Tyre Rotation & Balancing,2024,2024-01-13,133.0,6983.0,10000,6,40.2,1.2542,11,163025.0,petrol,individual,LOW
+VH0026,DVX6232A,Full Vehicle Inspection,2026,2026-03-31,440.0,0.0,0,12,83.7,1.3343,4,123623.0,electric,corporate,HIGH
+VH0025,TSC922C,Tyre Rotation & Balancing,2025,2025-06-14,129.0,8188.0,10000,6,36.2,1.2791,6,97702.0,electric,individual,HIGH
+VH0050,GE915B,Air Conditioning Service,2025,2025-04-06,207.0,0.0,0,24,47.7,,13,206429.0,electric,individual,LOW
+VH0006,KG498D,Oil & Filter Change,2026,2026-08-06,181.0,4932.0,5000,6,36.1,1.3295,5,81539.0,hybrid,individual,HIGH
+VH0019,LU086,Oil & Filter Change,2025,2025-07-23,212.0,5004.0,5000,6,45.9,1.2509,3,40636.0,diesel,individual,HIGH
+VH0047,SFH476A,Air Conditioning Service,2024,2024-12-12,685.0,0.0,0,24,40.6,1.3032,8,117727.0,hybrid,individual,LOW
+VH0047,SFH476A,Transmission Fluid Change,2024,2024-06-22,337.0,22107.0,40000,24,22.2,1.3,11,75292.0,diesel,individual,LOW
+VH0028,UEM732D,Full Vehicle Inspection,2024,2024-06-09,55.0,0.0,0,12,42.6,1.2916,2,23275.0,electric,corporate,LOW
+VH0002,SEY214D,Suspension Inspection,2025,2025-06-04,544.0,14984.0,20000,24,78.1,1.3201,5,178552.0,diesel,corporate,HIGH
+VH0030,LYV0001C,Full Engine Service,2025,2025-01-09,361.0,10375.0,10000,12,22.4,1.3222,5,44045.0,diesel,individual,HIGH
+VH0004,RWJ2074C,Air Conditioning Service,2025,2025-05-01,100.0,0.0,0,24,56.4,1.3234,12,268792.0,diesel,corporate,LOW
+VH0004,RWJ2074C,Oil & Filter Change,2026,2026-07-05,249.0,5212.0,5000,6,61.4,1.3274,3,76632.0,diesel,corporate,HIGH
+VH0045,BSH628B,Oil & Filter Change,2024,2024-12-30,131.0,4758.0,5000,6,40.5,1.2706,9,132808.0,petrol,individual,HIGH
+VH0029,UWL8060,Oil & Filter Change,2024,2024-03-19,144.0,5404.0,5000,6,27.4,1.3157,2,14918.0,hybrid,individual,HIGH
+VH0005,MH332A,Transmission Fluid Change,2024,2024-05-05,174.0,6900.0,40000,24,66.3,1.2832,4,90152.0,electric,corporate,LOW
+VH0036,TTX381A,Full Vehicle Inspection,2024,2024-08-18,257.0,0.0,0,12,,1.3285,4,102057.0,electric,corporate,LOW
+VH0049,JN074B,Tyre Rotation & Balancing,2025,2025-05-01,163.0,6858.0,10000,6,52.4,1.2691,6,109101.0,hybrid,corporate,LOW
+VH0012,FGY068C,Full Engine Service,2025,2025-04-12,363.0,12269.0,10000,12,43.1,1.3342,5,62258.0,electric,corporate,HIGH
+VH0003,EUF4042D,Oil & Filter Change,2025,2025-08-15,227.0,5100.0,5000,6,79.9,1.3346,10,324606.0,electric,corporate,HIGH
+VH0018,UL096D,Tyre Rotation & Balancing,2026,2026-04-27,54.0,3382.0,10000,6,47.4,1.2562,10,204519.0,hybrid,corporate,LOW
+VH0044,CK8011D,Air Conditioning Service,2024,2024-07-30,690.0,0.0,0,24,41.0,1.2908,9,160846.0,petrol,individual,LOW
+VH0034,UT364D,Oil & Filter Change,2024,2024-03-14,216.0,6529.0,5000,6,53.1,1.3231,10,165441.0,diesel,corporate,HIGH
+VH0045,BSH628B,Full Vehicle Inspection,2025,2025-05-28,88.0,0.0,0,12,53.4,1.3713,7,125424.0,diesel,corporate,LOW
+VH0001,WM4622B,Suspension Inspection,2025,2025-08-07,82.0,2718.0,20000,24,37.1,1.3574,3,41723.0,diesel,corporate,LOW
+VH0007,DVM660,Full Engine Service,2024,2024-06-11,512.0,11044.0,10000,12,24.1,1.3558,12,113026.0,diesel,individual,HIGH
+VH0024,WCY6796B,Full Vehicle Inspection,2026,2026-10-01,266.0,0.0,0,12,69.4,1.3116,15,329989.0,hybrid,corporate,LOW
+VH0041,RE753C,Transmission Fluid Change,2026,2026-04-16,608.0,27243.0,40000,24,31.1,1.2335,2,27206.0,diesel,individual,LOW
+VH0045,BSH628B,Tyre Rotation & Balancing,2025,2025-05-16,239.0,11668.0,10000,6,78.5,1.372,8,200393.0,diesel,corporate,HIGH
+VH0033,SA2661C,Tyre Rotation & Balancing,2026,2026-09-07,262.0,12378.0,10000,6,22.7,1.3069,12,123390.0,petrol,individual,HIGH
+VH0024,WCY6796B,Tyre Rotation & Balancing,2024,2024-09-07,46.0,2356.0,10000,6,48.7,1.3016,12,230969.0,diesel,corporate,LOW
+VH0036,TTX381A,Suspension Inspection,2024,2024-08-30,88.0,2340.0,20000,24,46.7,1.2711,10,192939.0,electric,corporate,LOW
+VH0004,RWJ2074C,Tyre Rotation & Balancing,2026,2026-07-21,239.0,10920.0,10000,6,65.2,1.3545,7,127699.0,hybrid,corporate,HIGH
+VH0018,UL096D,Full Vehicle Inspection,2026,2026-08-09,52.0,0.0,0,12,78.8,,5,159172.0,electric,corporate,LOW
+VH0024,WCY6796B,Suspension Inspection,2024,2024-12-06,410.0,12390.0,20000,24,,1.26,10,131461.0,diesel,corporate,LOW
+VH0026,DVX6232A,Oil & Filter Change,2026,2026-04-06,229.0,6984.0,5000,6,80.7,1.2933,8,267260.0,hybrid,corporate,HIGH
+VH0008,AH8177C,Tyre Rotation & Balancing,2025,2025-03-30,,10833.0,10000,6,29.8,1.246,12,121786.0,petrol,individual,HIGH
+VH0004,RWJ2074C,Tyre Rotation & Balancing,2026,2026-10-12,206.0,12117.0,10000,6,41.5,1.2562,13,142137.0,diesel,individual,HIGH
+VH0017,YTF7462A,Air Conditioning Service,2024,2024-04-05,192.0,0.0,0,24,66.3,1.3037,14,246898.0,petrol,corporate,LOW
+VH0041,RE753C,Transmission Fluid Change,2024,2024-04-05,220.0,11219.0,40000,24,53.8,1.3706,8,150535.0,electric,corporate,LOW
+VH0040,RA0296C,Suspension Inspection,2026,2026-10-24,787.0,25358.0,20000,24,42.1,1.318,8,124379.0,petrol,individual,HIGH
+VH0019,LU086,Suspension Inspection,2025,2025-03-29,533.0,14357.0,20000,24,,,14,204201.0,diesel,individual,LOW
+VH0039,EEL7180B,Full Vehicle Inspection,2025,2025-10-14,126.0,0.0,0,12,65.2,1.3439,1,28653.0,electric,corporate,LOW
+VH0011,ER0922,Suspension Inspection,2025,2025-06-17,573.0,15738.0,20000,24,81.8,1.3177,5,116131.0,hybrid,corporate,HIGH
+VH0049,JN074B,Air Conditioning Service,2024,2024-05-24,103.0,0.0,0,24,53.7,1.3135,14,258250.0,diesel,corporate,LOW
+VH0024,WCY6796B,Tyre Rotation & Balancing,2024,2024-02-25,52.0,3819.0,10000,6,44.9,1.3278,11,227674.0,hybrid,corporate,LOW
+VH0040,RA0296C,Suspension Inspection,2025,2025-03-31,642.0,15778.0,20000,24,46.3,1.2528,3,53668.0,diesel,individual,HIGH
+VH0005,MH332A,Full Engine Service,2024,2024-11-24,77.0,2463.0,10000,12,47.2,1.2314,3,59275.0,hybrid,corporate,LOW
+VH0024,WCY6796B,Full Engine Service,2024,2024-07-16,151.0,5028.0,10000,12,64.4,1.2725,9,,hybrid,corporate,LOW
+VH0038,EB811C,Transmission Fluid Change,2024,2024-01-22,952.0,50018.0,40000,24,45.0,1.3532,8,124449.0,diesel,individual,HIGH
+VH0008,AH8177C,Air Conditioning Service,2026,2026-05-21,204.0,0.0,0,24,76.0,1.2716,11,351144.0,petrol,corporate,LOW
+VH0030,LYV0001C,Transmission Fluid Change,2026,2026-07-04,738.0,44748.0,40000,24,44.1,1.2756,7,117159.0,petrol,individual,HIGH
+VH0024,WCY6796B,Tyre Rotation & Balancing,2026,2026-03-03,212.0,12170.0,10000,6,54.9,1.3247,15,351520.0,diesel,corporate,HIGH
+VH0046,DB9576D,Full Vehicle Inspection,2024,2024-10-04,225.0,0.0,0,12,44.1,1.2367,3,36410.0,petrol,individual,LOW
+VH0043,CKW249A,Full Vehicle Inspection,2025,2025-12-16,118.0,0.0,0,12,24.7,1.3069,14,142341.0,petrol,individual,LOW
+VH0039,EEL7180B,Full Engine Service,2026,2026-04-30,51.0,1285.0,10000,12,36.6,1.3112,8,81138.0,petrol,corporate,LOW
+VH0050,GE915B,Suspension Inspection,2024,2024-01-24,660.0,15301.0,20000,24,26.8,1.338,2,24224.0,petrol,individual,HIGH
+VH0045,BSH628B,Transmission Fluid Change,2025,2025-04-16,123.0,6825.0,40000,24,83.9,1.3356,10,355761.0,hybrid,corporate,LOW
+VH0026,DVX6232A,Full Engine Service,2024,2024-10-13,57.0,,10000,12,51.5,1.2443,10,175283.0,petrol,corporate,LOW
+VH0048,WHK3963,Transmission Fluid Change,2024,2024-08-13,759.0,35267.0,40000,24,63.4,1.2918,4,76044.0,petrol,corporate,HIGH
+VH0015,DC466B,Tyre Rotation & Balancing,2026,2026-07-12,233.0,12440.0,10000,6,66.4,,11,234477.0,petrol,corporate,HIGH
+VH0026,DVX6232A,Air Conditioning Service,2024,2024-06-20,700.0,0.0,0,24,51.0,1.2923,14,228487.0,hybrid,corporate,LOW
+VH0010,YW3059C,Tyre Rotation & Balancing,2025,2025-04-07,186.0,12672.0,10000,6,64.3,1.2416,11,314061.0,petrol,corporate,HIGH
+VH0013,UF4153,Tyre Rotation & Balancing,2024,2024-01-13,170.0,9604.0,10000,6,75.4,1.322,9,250764.0,petrol,corporate,HIGH
+VH0041,RE753C,Transmission Fluid Change,2025,2025-09-14,274.0,15484.0,40000,24,78.9,1.3694,10,293217.0,diesel,corporate,LOW
+VH0044,CK8011D,Tyre Rotation & Balancing,2026,2026-03-17,136.0,7945.0,10000,6,47.0,1.3312,10,145146.0,petrol,corporate,HIGH
+VH0020,YU5049,Full Vehicle Inspection,2024,2024-08-15,50.0,,0,12,40.8,1.3565,1,14891.0,electric,individual,LOW
+VH0034,UT364D,Tyre Rotation & Balancing,2025,2025-05-24,216.0,11704.0,10000,6,26.9,1.3115,10,94353.0,petrol,individual,HIGH
+VH0012,FGY068C,Full Engine Service,2026,2026-06-25,361.0,10026.0,10000,12,77.5,1.2444,7,218455.0,petrol,corporate,HIGH
+VH0045,BSH628B,Full Vehicle Inspection,2025,2025-05-03,129.0,0.0,0,12,57.2,1.2713,12,241249.0,hybrid,corporate,LOW
+VH0034,UT364D,Full Engine Service,2024,2024-04-18,157.0,3417.0,10000,12,,1.2866,1,20802.0,hybrid,corporate,LOW
+VH0036,TTX381A,Full Vehicle Inspection,2024,2024-11-28,234.0,0.0,0,12,44.7,1.2318,1,14588.0,electric,individual,LOW
+VH0046,DB9576D,Oil & Filter Change,2024,2024-10-24,159.0,,5000,6,48.8,1.3615,3,67445.0,electric,individual,HIGH
+VH0015,DC466B,Suspension Inspection,2026,2026-06-01,408.0,9040.0,20000,24,67.5,1.2397,5,122216.0,hybrid,corporate,LOW
+VH0023,CM399D,Transmission Fluid Change,2025,2025-04-26,757.0,41196.0,40000,24,44.9,1.3542,6,85580.0,electric,individual,HIGH
+VH0031,XE2976B,Suspension Inspection,2025,2025-10-25,490.0,10021.0,20000,24,21.9,1.3603,1,9772.0,electric,individual,LOW
+VH0008,AH8177C,Suspension Inspection,2024,2024-02-22,862.0,21310.0,20000,24,,1.2468,8,91868.0,petrol,individual,HIGH
+VH0045,BSH628B,Oil & Filter Change,2024,2024-11-08,54.0,1545.0,5000,6,44.1,1.258,3,34736.0,petrol,individual,LOW
+VH0016,CN3328A,Tyre Rotation & Balancing,2024,2024-05-14,19.0,1071.0,10000,6,65.6,1.3266,3,,diesel,corporate,LOW
+VH0029,UWL8060,Air Conditioning Service,2024,2024-05-25,247.0,0.0,0,24,34.0,1.2308,1,,hybrid,individual,LOW
+VH0023,CM399D,Suspension Inspection,2024,2024-04-13,454.0,11387.0,20000,24,33.5,1.328,8,104642.0,diesel,individual,LOW
+VH0012,FGY068C,Full Vehicle Inspection,2026,2026-08-08,493.0,0.0,0,12,22.1,1.3393,9,78440.0,petrol,individual,HIGH
+VH0043,CKW249A,Full Vehicle Inspection,2026,2026-07-02,254.0,0.0,0,12,39.2,1.2857,11,145816.0,diesel,corporate,LOW
+VH0006,KG498D,Full Engine Service,2024,2024-11-07,339.0,12749.0,10000,12,44.8,1.2607,9,179985.0,petrol,corporate,HIGH
+VH0034,UT364D,Suspension Inspection,2025,2025-12-20,38.0,1193.0,20000,24,36.0,1.2699,1,13237.0,hybrid,corporate,LOW
+VH0047,SFH476A,Full Engine Service,2025,2025-09-30,99.0,3855.0,10000,12,33.0,1.2645,9,105030.0,hybrid,individual,LOW
+VH0031,XE2976B,Transmission Fluid Change,2026,2026-02-08,525.0,28149.0,40000,24,21.1,1.3608,4,31365.0,hybrid,individual,LOW
+VH0011,ER0922,Oil & Filter Change,2026,2026-01-28,200.0,5599.0,5000,6,31.2,1.2759,10,115727.0,petrol,individual,HIGH
+VH0036,TTX381A,Suspension Inspection,2024,2024-02-22,672.0,,20000,24,40.5,1.2771,2,35940.0,electric,individual,LOW
+VH0031,XE2976B,Tyre Rotation & Balancing,2026,2026-10-11,167.0,7304.0,10000,6,51.1,1.3269,9,205650.0,diesel,corporate,HIGH
+VH0037,VDC5562D,Suspension Inspection,2024,2024-07-09,646.0,18972.0,20000,24,37.2,1.2333,3,51968.0,diesel,individual,HIGH
+VH0047,SFH476A,Tyre Rotation & Balancing,2025,2025-04-19,236.0,12686.0,10000,6,46.0,1.3376,11,208400.0,hybrid,individual,HIGH
+VH0040,RA0296C,Transmission Fluid Change,2026,2026-08-15,823.0,43525.0,40000,24,23.1,1.3119,10,80687.0,diesel,individual,HIGH
+VH0018,UL096D,Full Vehicle Inspection,2024,2024-07-24,358.0,0.0,0,12,22.2,1.2825,1,10106.0,electric,individual,LOW
+VH0020,YU5049,Air Conditioning Service,2025,2025-12-16,368.0,0.0,0,24,21.3,1.2794,11,89102.0,hybrid,individual,LOW
+VH0031,XE2976B,Full Vehicle Inspection,2025,2025-01-06,,0.0,0,12,29.3,1.3635,8,69181.0,hybrid,individual,HIGH
+VH0048,WHK3963,Suspension Inspection,2026,2026-07-20,318.0,7685.0,20000,24,73.1,1.2765,11,360721.0,petrol,corporate,LOW
+VH0015,DC466B,Oil & Filter Change,2024,2024-07-04,85.0,2177.0,5000,6,42.3,1.2995,11,205153.0,electric,corporate,LOW
+VH0021,AHR976A,Full Engine Service,2024,2024-09-04,148.0,4846.0,10000,12,,1.3091,8,173980.0,electric,corporate,LOW
+VH0010,YW3059C,Suspension Inspection,2026,2026-05-13,342.0,,20000,24,40.0,1.3447,11,172685.0,electric,corporate,LOW
+VH0015,DC466B,Oil & Filter Change,2026,2026-01-13,149.0,3541.0,5000,6,81.9,1.2658,13,415544.0,petrol,corporate,HIGH
+VH0012,FGY068C,Full Vehicle Inspection,2025,2025-10-29,463.0,0.0,0,12,73.4,1.2939,6,188170.0,hybrid,corporate,HIGH
+VH0042,EGY9197,Suspension Inspection,2025,2025-04-12,585.0,,20000,24,,1.232,2,16845.0,electric,individual,LOW
+VH0012,FGY068C,Air Conditioning Service,2024,2024-06-11,807.0,0.0,0,24,67.5,1.3158,11,240108.0,electric,corporate,HIGH
+VH0028,UEM732D,Full Vehicle Inspection,2025,2025-09-23,419.0,0.0,0,12,58.9,1.3479,12,281705.0,diesel,corporate,HIGH
+VH0008,AH8177C,Oil & Filter Change,2026,2026-06-07,102.0,2622.0,5000,6,52.0,1.3593,4,66657.0,petrol,corporate,LOW
+VH0030,LYV0001C,Oil & Filter Change,2025,2025-08-19,99.0,2260.0,5000,6,62.9,1.3388,9,160882.0,diesel,corporate,LOW
+VH0012,FGY068C,Air Conditioning Service,2024,2024-07-22,731.0,0.0,0,24,28.2,1.2703,5,38434.0,electric,individual,HIGH
+VH0017,YTF7462A,Air Conditioning Service,2024,2024-04-02,647.0,0.0,0,24,49.2,1.2279,4,56209.0,petrol,corporate,LOW
+VH0033,SA2661C,Tyre Rotation & Balancing,2025,2025-05-12,82.0,4798.0,10000,6,39.9,1.2857,4,63631.0,petrol,individual,LOW
+VH0004,RWJ2074C,Air Conditioning Service,2025,2025-05-05,243.0,0.0,0,24,23.5,1.2295,9,56140.0,electric,individual,LOW
+VH0032,DDR9480D,Air Conditioning Service,2026,2026-06-18,62.0,0.0,0,24,21.5,1.3527,10,60537.0,hybrid,individual,LOW
+VH0042,EGY9197,Full Engine Service,2024,2024-09-21,462.0,12852.0,10000,12,77.6,1.3451,6,128023.0,electric,corporate,HIGH
+VH0012,FGY068C,Transmission Fluid Change,2026,2026-05-19,816.0,48591.0,40000,24,42.2,1.317,15,217597.0,petrol,individual,HIGH
+VH0026,DVX6232A,Transmission Fluid Change,2026,2026-02-03,619.0,36609.0,40000,24,67.0,1.3396,14,338646.0,petrol,corporate,HIGH
+VH0027,JP4987A,Full Engine Service,2025,2025-08-30,274.0,5768.0,10000,12,50.7,1.2729,12,248021.0,electric,corporate,LOW

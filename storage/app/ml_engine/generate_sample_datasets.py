@@ -70,15 +70,29 @@ def compute_label(d: float) -> str:
 
 def add_noise(val: float, noise_pct: float = 0.08) -> float:
     """Add stochastic wear noise so ML models don't trivially hit 100%."""
-    return val * (1 + np.random.uniform(-noise_pct, noise_pct))
+    effective_noise = max(0.005, noise_pct)
+    return val * (1 + np.random.uniform(-effective_noise, effective_noise))
 
 
-def generate_row(vehicle_id: int, plate: str, is_kaggle: bool = False) -> dict:
+def generate_row(vehicle_id: int, plate: str, is_kaggle: bool = False, noise_level: float = 0.08, bias: str = "none") -> dict:
     brand = random.choice(BRANDS)
     fuel_type = random.choice(FUEL_TYPES)
     owner_type = random.choice(OWNER_TYPES)
     vehicle_year = random.randint(2010, 2024)
     terrain = random.choice(TERRAINS)
+
+    # Apply bias condition
+    if bias == "mountain":
+        terrain = "mountain"
+    elif bias == "urban":
+        terrain = "urban"
+    elif bias == "rural":
+        terrain = "rural"
+    elif bias == "highway":
+        terrain = "highway"
+    elif bias == "corporate":
+        owner_type = "corporate"
+
     terrain_sev = TERRAIN_SEVERITY[terrain]
 
     # Scan date — spread across 2024–2026
@@ -88,9 +102,12 @@ def generate_row(vehicle_id: int, plate: str, is_kaggle: bool = False) -> dict:
     # Vehicle age in years at scan date
     vehicle_age = scan_date.year - vehicle_year
 
+    # Relative noise multiplier based on default 0.08
+    rel_mult = max(0.1, noise_level / 0.08)
+
     # Daily KM usage (varies by owner type)
     base_daily_km = 60 if owner_type == "corporate" else 35
-    daily_km = round(add_noise(base_daily_km, 0.30), 1)
+    daily_km = round(add_noise(base_daily_km, min(0.40, 0.30 * rel_mult)), 1)
     daily_km = max(10, min(daily_km, 180))
 
     # Pick service type
@@ -100,21 +117,21 @@ def generate_row(vehicle_id: int, plate: str, is_kaggle: bool = False) -> dict:
     interval_months = interval["months"]
 
     # Total mileage at scan date
-    total_mileage = round(daily_km * 365 * max(vehicle_age, 1) * add_noise(1.0, 0.15))
+    total_mileage = round(daily_km * 365 * max(vehicle_age, 1) * add_noise(1.0, min(0.35, 0.15 * rel_mult)))
 
     # Compute km_since_service from last service date
     # Randomly place last service within 0–130% of interval
     pct_elapsed = random.uniform(0.05, 1.30)
-    km_since_service = round(interval_km * pct_elapsed * add_noise(1.0, 0.10)) if interval["km"] else 0
-    days_since_service = round(interval_months * 30.44 * pct_elapsed * add_noise(1.0, 0.10))
+    km_since_service = round(interval_km * pct_elapsed * add_noise(1.0, min(0.30, 0.10 * rel_mult))) if interval["km"] else 0
+    days_since_service = round(interval_months * 30.44 * pct_elapsed * add_noise(1.0, min(0.30, 0.10 * rel_mult)))
 
     # Kaggle benchmark uses slightly different distributions (urban bias, newer vehicles)
     if is_kaggle:
-        terrain_sev = TERRAIN_SEVERITY.get("urban", 1.15) * add_noise(1.0, 0.05)
-        daily_km = round(add_noise(45, 0.20), 1)
+        terrain_sev = TERRAIN_SEVERITY.get("urban", 1.15) * add_noise(1.0, min(0.20, 0.05 * rel_mult))
+        daily_km = round(add_noise(45, min(0.35, 0.20 * rel_mult)), 1)
         vehicle_age = max(1, vehicle_age - 2)
     else:
-        terrain_sev = terrain_sev * add_noise(1.0, 0.03)
+        terrain_sev = terrain_sev * add_noise(1.0, min(0.15, 0.03 * rel_mult))
 
     # Compute effective due date using rule-based logic
     eff_km = max(interval_km / max(terrain_sev, 0.1), 1)
@@ -123,9 +140,10 @@ def generate_row(vehicle_id: int, plate: str, is_kaggle: bool = False) -> dict:
     days_via_time = (interval_months * 30.44) - days_since_service
     d = min(days_via_km, days_via_time)
 
-    # Inject boundary noise for MEDIUM zone (makes the problem harder)
+    # Inject boundary noise for MEDIUM zone scaled by noise selector
     if 0 < d <= 21:
-        d += np.random.normal(0, 3)
+        jitter_std = max(0.5, 3.0 * rel_mult)
+        d += np.random.normal(0, jitter_std)
 
     label = compute_label(round(d))
 
@@ -156,21 +174,24 @@ def generate_plate() -> str:
     return f"{letters}{digits}{suffix}"
 
 
-def generate_dataset(n_rows: int, is_kaggle: bool = False) -> pd.DataFrame:
+def generate_dataset(n_rows: int, is_kaggle: bool = False, noise_level: float = 0.08, missing_rate: float = 0.0, bias: str = "none") -> pd.DataFrame:
     rows = []
     n_vehicles = max(50, n_rows // 5)
     plates = [generate_plate() for _ in range(n_vehicles)]
 
     for i in range(n_rows):
         vid = random.randint(1, n_vehicles)
-        row = generate_row(vid, plates[vid - 1], is_kaggle=is_kaggle)
+        row = generate_row(vid, plates[vid - 1], is_kaggle=is_kaggle, noise_level=noise_level, bias=bias)
         rows.append(row)
 
     df = pd.DataFrame(rows)
 
-    # Ensure class balance is reasonable (not perfectly balanced to simulate real data)
-    # Synthetic: ~30% HIGH, 30% MEDIUM, 40% LOW
-    # This is enforced by the stochastic generation, but let's log distribution
+    if missing_rate > 0.0:
+        numeric_cols = ["days_since_service", "km_since_service", "daily_km", "terrain_severity", "total_mileage"]
+        for col in numeric_cols:
+            mask = np.random.rand(len(df)) < min(0.40, missing_rate)
+            df.loc[mask, col] = np.nan
+
     return df
 
 
@@ -180,13 +201,25 @@ def main():
                         help="Directory to save generated CSV files")
     parser.add_argument("--rows", type=int, default=800,
                         help="Number of rows per dataset (default 800)")
+    parser.add_argument("--noise", type=float, default=0.08,
+                        help="Gaussian noise jitter standard deviation (default 0.08)")
+    parser.add_argument("--missing", type=float, default=0.0,
+                        help="Fraction of missing nulls to inject (default 0.0)")
+    parser.add_argument("--bias", type=str, default="none",
+                        choices=["none", "mountain", "urban", "rural", "highway", "corporate"],
+                        help="Operating condition bias (default none)")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Deterministic random seed (default 42)")
     args = parser.parse_args()
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
 
     os.makedirs(args.output_dir, exist_ok=True)
 
     # Generate synthetic dataset
-    print(f"[*] Generating synthetic dataset ({args.rows} rows)...", flush=True)
-    syn_df = generate_dataset(args.rows, is_kaggle=False)
+    print(f"[*] Generating synthetic dataset ({args.rows} rows, noise={args.noise}, missing={args.missing}, bias={args.bias})...", flush=True)
+    syn_df = generate_dataset(args.rows, is_kaggle=False, noise_level=args.noise, missing_rate=args.missing, bias=args.bias)
     syn_path = os.path.join(args.output_dir, "synthetic_fleet_data.csv")
     syn_df.to_csv(syn_path, index=False)
     syn_dist = syn_df["urgency_label"].value_counts().to_dict()
@@ -194,8 +227,8 @@ def main():
     print(f"    Distribution: {syn_dist}")
 
     # Generate kaggle benchmark dataset
-    print(f"[*] Generating Kaggle benchmark dataset ({args.rows} rows)...", flush=True)
-    kag_df = generate_dataset(args.rows, is_kaggle=True)
+    print(f"[*] Generating Kaggle benchmark dataset ({args.rows} rows, noise={args.noise})...", flush=True)
+    kag_df = generate_dataset(args.rows, is_kaggle=True, noise_level=args.noise, missing_rate=args.missing, bias=args.bias)
     kag_path = os.path.join(args.output_dir, "kaggle_benchmark_data.csv")
     kag_df.to_csv(kag_path, index=False)
     kag_dist = kag_df["urgency_label"].value_counts().to_dict()
@@ -208,11 +241,19 @@ def main():
             "path": syn_path,
             "row_count": len(syn_df),
             "distribution": syn_dist,
+            "noise": args.noise,
+            "missing": args.missing,
+            "bias": args.bias,
+            "seed": args.seed,
         },
         "kaggle_benchmark": {
             "path": kag_path,
             "row_count": len(kag_df),
             "distribution": kag_dist,
+            "noise": args.noise,
+            "missing": args.missing,
+            "bias": args.bias,
+            "seed": args.seed,
         },
     }
     print("\n[JSON_OUTPUT]")

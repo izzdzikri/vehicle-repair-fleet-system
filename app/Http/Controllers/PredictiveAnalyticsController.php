@@ -212,6 +212,19 @@ class PredictiveAnalyticsController extends Controller
         $rows = (int) $request->input('rows', 600);
         $rows = max(100, min($rows, 2000));
 
+        $noise = (float) $request->input('noise', 0.08);
+        $noise = max(0.01, min($noise, 0.50));
+
+        $missing = (float) $request->input('missing', 0.0);
+        $missing = max(0.0, min($missing, 0.40));
+
+        $bias = (string) $request->input('bias', 'none');
+        if (! in_array($bias, ['none', 'mountain', 'urban', 'rural', 'highway', 'corporate'], true)) {
+            $bias = 'none';
+        }
+
+        $seed = (int) $request->input('seed', 42);
+
         $outputDir = storage_path('app/ml_datasets');
         $scriptPath = storage_path('app/ml_engine/generate_sample_datasets.py');
 
@@ -219,12 +232,19 @@ class PredictiveAnalyticsController extends Controller
             'python3', $scriptPath,
             '--output_dir', $outputDir,
             '--rows', (string) $rows,
+            '--noise', (string) $noise,
+            '--missing', (string) $missing,
+            '--bias', $bias,
+            '--seed', (string) $seed,
         ]);
 
         if (! $result->successful()) {
             Log::error('ML dataset generator failed', ['stderr' => $result->errorOutput()]);
             return back()->with('error', 'Dataset generator failed: ' . Str::limit($result->errorOutput(), 200));
         }
+
+        $noisePct = round($noise * 100);
+        $noiseLabel = "{$noisePct}% noise";
 
         // Parse the JSON output section
         $output = $result->output();
@@ -236,18 +256,28 @@ class PredictiveAnalyticsController extends Controller
             if ($parsed) {
                 foreach ($parsed as $type => $info) {
                     $relPath = str_replace(storage_path('app/'), '', $info['path']);
+                    $baseName = $type === 'kaggle_benchmark' ? 'Kaggle benchmark' : 'Synthetic';
+
                     MlDataset::create([
-                        'name'        => ucfirst(str_replace('_', ' ', $type)) . ' - ' . now()->format('Y-m-d H:i'),
-                        'source_type' => $type === 'kaggle_benchmark' ? 'kaggle_benchmark' : 'synthetic',
-                        'file_path'   => $relPath,
-                        'row_count'   => $info['row_count'],
-                        'uploaded_by' => Auth::id(),
+                        'name'                 => "{$baseName} ({$noiseLabel}) - " . now()->format('Y-m-d H:i'),
+                        'source_type'          => $type === 'kaggle_benchmark' ? 'kaggle_benchmark' : 'synthetic',
+                        'file_path'            => $relPath,
+                        'row_count'            => $info['row_count'],
+                        'feature_mapping_json' => [
+                            'features' => ['days_since_service', 'km_since_service', 'interval_km', 'interval_months', 'daily_km', 'terrain_severity', 'total_mileage', 'vehicle_age', 'fuel_type', 'owner_type'],
+                            'target'   => 'urgency_label',
+                            'noise'    => $noise,
+                            'missing'  => $missing,
+                            'bias'     => $bias,
+                            'seed'     => $seed,
+                        ],
+                        'uploaded_by'          => Auth::id(),
                     ]);
                 }
             }
         }
 
-        return back()->with('success', "Generated {$rows}-row synthetic + Kaggle benchmark datasets.");
+        return back()->with('success', "Generated {$rows}-row synthetic + Kaggle benchmark datasets with {$noisePct}% telemetry noise jitter.");
     }
 
     // ─────────────────────────── Run ML Experiment ────────────────────────────

@@ -337,24 +337,146 @@
                     </form>
                 </div>
 
-                {{-- Synthetic Generator Card --}}
-                <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-5">
+                {{-- Synthetic Generator Card with Noise Selector --}}
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-5"
+                     x-data="{ noise: 0.08, rows: 600, missing: 0.0, bias: 'none', seed: 42, showAdvanced: false }">
                     <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
+                        <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 shrink-0">
                             <i data-lucide="wand-sparkles" class="w-5 h-5"></i>
                         </div>
                         <div>
                             <h3 class="font-bold text-gray-900 text-base">Generate Synthetic + Kaggle Datasets</h3>
-                            <p class="text-sm text-gray-500">Stochastic wear-noise generation for realistic testing</p>
+                            <p class="text-xs text-gray-500">Stochastic wear-noise telemetry generator for realistic model evaluation</p>
                         </div>
                     </div>
-                    <form action="{{ route('admin.predictive-analytics.generate') }}" method="POST" class="flex gap-2">
+
+                    <form action="{{ route('admin.predictive-analytics.generate') }}" method="POST" class="space-y-4">
                         @csrf
-                        <input type="number" name="rows" value="600" min="100" max="2000"
-                               class="border border-gray-200 rounded-lg px-3 py-2 text-sm w-24 focus:ring-2 focus:ring-violet-300 outline-none">
-                        <button type="submit" class="flex-1 bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2">
-                            <i data-lucide="cpu" class="w-4 h-4"></i> Generate (rows)
+
+                        {{-- Noise Level Selector --}}
+                        <div class="bg-gray-50/70 p-3.5 rounded-xl border border-gray-200/80 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i data-lucide="activity" class="w-3.5 h-3.5 text-violet-600"></i>
+                                    Telemetry Noise Jitter
+                                </label>
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                                      :class="noise <= 0.05 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : (noise <= 0.10 ? 'bg-violet-100 text-violet-800 border border-violet-200' : (noise <= 0.18 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-rose-100 text-rose-800 border border-rose-200'))"
+                                      x-text="Math.round(noise * 100) + '% — ' + (noise <= 0.05 ? 'Clean Sensor' : (noise <= 0.10 ? 'Standard Benchmark' : (noise <= 0.18 ? 'Harsh Vibration' : 'Severe Noise')))">
+                                </span>
+                            </div>
+
+                            {{-- Range Slider --}}
+                            <div>
+                                <input type="range" min="0.01" max="0.35" step="0.01" x-model.number="noise" name="noise"
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-violet-600">
+                                <div class="flex justify-between text-[10px] text-gray-400 font-medium mt-1">
+                                    <span>1% (Clean)</span>
+                                    <span>8% (Default)</span>
+                                    <span>15% (Harsh)</span>
+                                    <span>35% (Extreme)</span>
+                                </div>
+                            </div>
+
+                            {{-- Quick Preset Pills --}}
+                            <div class="flex items-center gap-1.5 pt-1 flex-wrap">
+                                <span class="text-[11px] font-semibold text-gray-500 mr-1">Presets:</span>
+                                <button type="button" @click="noise = 0.03"
+                                        class="px-2 py-1 rounded-md text-xs font-semibold transition"
+                                        :class="noise === 0.03 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                    Clean 3%
+                                </button>
+                                <button type="button" @click="noise = 0.08"
+                                        class="px-2 py-1 rounded-md text-xs font-semibold transition"
+                                        :class="noise === 0.08 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                    Default 8%
+                                </button>
+                                <button type="button" @click="noise = 0.15"
+                                        class="px-2 py-1 rounded-md text-xs font-semibold transition"
+                                        :class="noise === 0.15 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                    Harsh 15%
+                                </button>
+                                <button type="button" @click="noise = 0.25"
+                                        class="px-2 py-1 rounded-md text-xs font-semibold transition"
+                                        :class="noise === 0.25 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                    Severe 25%
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Row Count Input & Presets --}}
+                        <div class="flex items-center justify-between gap-3 bg-gray-50/70 p-3 rounded-xl border border-gray-200/80">
+                            <div>
+                                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">Sample Rows</label>
+                                <span class="text-[11px] text-gray-400">Records per dataset</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" @click="rows = 300"
+                                        class="px-2 py-1 rounded text-xs font-medium border"
+                                        :class="rows === 300 ? 'bg-violet-50 text-violet-700 border-violet-300 font-bold' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'">
+                                    300
+                                </button>
+                                <button type="button" @click="rows = 600"
+                                        class="px-2 py-1 rounded text-xs font-medium border"
+                                        :class="rows === 600 ? 'bg-violet-50 text-violet-700 border-violet-300 font-bold' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'">
+                                    600
+                                </button>
+                                <button type="button" @click="rows = 1000"
+                                        class="px-2 py-1 rounded text-xs font-medium border"
+                                        :class="rows === 1000 ? 'bg-violet-50 text-violet-700 border-violet-300 font-bold' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'">
+                                    1000
+                                </button>
+                                <input type="number" name="rows" x-model.number="rows" min="100" max="2000" step="50"
+                                       class="border border-gray-200 rounded-lg px-2.5 py-1 text-xs font-mono w-20 text-center font-bold text-gray-800 focus:ring-2 focus:ring-violet-300 outline-none bg-white">
+                            </div>
+                        </div>
+
+                        {{-- Advanced Options Collapsible --}}
+                        <div>
+                            <button type="button" @click="showAdvanced = !showAdvanced"
+                                    class="text-xs font-semibold text-violet-600 hover:text-violet-700 flex items-center gap-1">
+                                <span x-text="showAdvanced ? 'Hide Advanced Options ▴' : 'Show Advanced Options (Missing Nulls, Bias, Seed) ▾'"></span>
+                            </button>
+
+                            <div x-show="showAdvanced" x-transition class="mt-2.5 p-3 rounded-xl bg-gray-50 border border-gray-200 space-y-2.5 text-xs">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block font-bold text-gray-600 uppercase text-[10px] mb-1">Missing Nulls Rate</label>
+                                        <select name="missing" x-model.number="missing" class="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700">
+                                            <option value="0.0">0% (Complete Data)</option>
+                                            <option value="0.05">5% (Occasional Dropouts)</option>
+                                            <option value="0.10">10% (Faulty Telemetry)</option>
+                                            <option value="0.20">20% (Sparse Sensors)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold text-gray-600 uppercase text-[10px] mb-1">Operating Bias</label>
+                                        <select name="bias" x-model="bias" class="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700">
+                                            <option value="none">None (Balanced Mixed)</option>
+                                            <option value="mountain">Mountain (High Strain)</option>
+                                            <option value="urban">Urban (Stop-and-Go)</option>
+                                            <option value="highway">Highway (High Speed)</option>
+                                            <option value="corporate">Corporate (Heavy Duty)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-bold text-gray-600 uppercase text-[10px] mb-1">Random Generator Seed</label>
+                                    <input type="number" name="seed" x-model.number="seed"
+                                           class="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 font-mono">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Submit Button --}}
+                        <button type="submit"
+                                class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-xs">
+                            <i data-lucide="cpu" class="w-4 h-4"></i>
+                            <span>Generate Datasets (<span x-text="rows"></span> rows, <span x-text="Math.round(noise * 100) + '% noise'"></span>)</span>
                         </button>
+                        <p class="text-[11px] text-gray-400 text-center">
+                            Produces 1&times; Synthetic system dataset + 1&times; Kaggle benchmark dataset with selected noise.
+                        </p>
                     </form>
                 </div>
             </div>
