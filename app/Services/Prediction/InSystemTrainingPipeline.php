@@ -69,18 +69,25 @@ class InSystemTrainingPipeline
         }
 
         // Apply column mapping if dataset was uploaded with mapping
-        if (! empty($dataset->feature_mapping_json)) {
-            $mappedRows = [];
-            foreach ($rawRows as $r) {
-                $mapped = $r;
-                foreach ($dataset->feature_mapping_json as $targetKey => $srcCol) {
-                    if (isset($r[$srcCol])) {
-                        $mapped[$targetKey] = $r[$srcCol];
+        if (! empty($dataset->feature_mapping_json) && is_array($dataset->feature_mapping_json)) {
+            $mapping = $dataset->feature_mapping_json['mapping'] ?? $dataset->feature_mapping_json;
+            if (is_array($mapping)) {
+                $mappedRows = [];
+                foreach ($rawRows as $r) {
+                    $mapped = $r;
+                    foreach ($mapping as $targetKey => $srcCol) {
+                        // Skip non-string column names or metadata entries (e.g. 'features' => [...], 'noise' => 0.08)
+                        if (! is_string($srcCol)) {
+                            continue;
+                        }
+                        if (is_array($r) && isset($r[$srcCol])) {
+                            $mapped[$targetKey] = $r[$srcCol];
+                        }
                     }
+                    $mappedRows[] = $mapped;
                 }
-                $mappedRows[] = $mapped;
+                $rawRows = $mappedRows;
             }
-            $rawRows = $mappedRows;
         }
 
         // 2. Preprocess dataset (Imputation + IQR Outlier Clipping)

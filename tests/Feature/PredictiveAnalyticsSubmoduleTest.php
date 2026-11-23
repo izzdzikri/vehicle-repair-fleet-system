@@ -144,11 +144,17 @@ class PredictiveAnalyticsSubmoduleTest extends TestCase
         $this->createdFiles[] = $fullPath;
 
         $dataset = MlDataset::create([
-            'name'        => 'Pipeline Experiment Benchmark',
-            'source_type' => 'synthetic',
-            'file_path'   => $relPath,
-            'row_count'   => 20,
-            'uploaded_by' => $this->admin->id,
+            'name'                 => 'Pipeline Experiment Benchmark',
+            'source_type'          => 'synthetic',
+            'file_path'            => $relPath,
+            'row_count'            => 20,
+            'feature_mapping_json' => [
+                'features' => ['days_since_service', 'km_since_service', 'interval_km', 'interval_months', 'daily_km', 'terrain_severity', 'total_mileage', 'vehicle_age', 'fuel_type'],
+                'target'   => 'urgency_label',
+                'noise'    => 0.08,
+                'missing'  => 0.0,
+            ],
+            'uploaded_by'          => $this->admin->id,
         ]);
 
         $response = $this->actingAs($this->admin)
