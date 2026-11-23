@@ -59,6 +59,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/notifications/{notification}/go', [NotificationController::class, 'go'])->name('notifications.go');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/predictions/{prediction}/verify', [PredictiveAnalyticsController::class, 'verifyPrediction'])->name('predictions.verify');
 
     // Two-Factor settings — enable/confirm/disable/recovery codes
     Route::post('/profile/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])->name('two-factor.enable');
@@ -179,6 +180,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         ->name('admin.predictive-analytics.index');
     Route::post('/maintenance-alerts/predictive-analytics/upload', [PredictiveAnalyticsController::class, 'uploadDataset'])
         ->name('admin.predictive-analytics.upload');
+    Route::post('/maintenance-alerts/predictive-analytics/preview-dataset', [PredictiveAnalyticsController::class, 'previewDataset'])
+        ->name('admin.predictive-analytics.preview-dataset');
+    Route::post('/maintenance-alerts/predictive-analytics/import-mapped', [PredictiveAnalyticsController::class, 'importMappedDataset'])
+        ->name('admin.predictive-analytics.import-mapped');
     Route::post('/maintenance-alerts/predictive-analytics/export', [PredictiveAnalyticsController::class, 'exportSystemData'])
         ->name('admin.predictive-analytics.export');
     Route::post('/maintenance-alerts/predictive-analytics/generate', [PredictiveAnalyticsController::class, 'generateSyntheticData'])
@@ -372,6 +377,15 @@ Route::middleware(['auth', 'role:corporate'])->prefix('client')->group(function 
     Route::post('/account-requests', [AccountRequestController::class, 'store'])->name('client.account-requests.store');
     Route::patch('/maintenance/{alert}/read', [MaintenanceAlertController::class, 'markRead'])->name('client.maintenance.read');
     Route::get('/company', [ClientController::class, 'company'])->name('client.company');
+
+    // Fleet Health Report & Printable Package
+    Route::get('/fleet-health-report', [ClientController::class, 'fleetHealthReport'])->name('client.fleet-health-report');
+    Route::get('/fleet-health-report/csv', [ClientController::class, 'exportFleetHealthCsv'])->name('client.fleet-health-report.csv');
+
+    // Corporate Bulk Fleet Check
+    Route::get('/fleet-check', [ClientController::class, 'fleetCheck'])->name('client.fleet-check');
+    Route::post('/fleet-check', [ClientController::class, 'runBulkFleetCheck'])->name('client.fleet-check.run');
+
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('client.invoices');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('client.invoices.show');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('client.invoices.pdf');

@@ -255,6 +255,8 @@
                     {!! $link('/client/vehicles',       'car',              'My Fleet',          'client/vehicles*') !!}
                     {!! $link('/client/trip-logs',      'map-pin',          'Trip Logs',         'client/trip-logs*') !!}
                     {!! $link('/client/maintenance',    'bell',             'Maintenance Alerts','client/maintenance*') !!}
+                    {!! $link('/client/fleet-check',    'cpu',              'Bulk Fleet Check',  'client/fleet-check*') !!}
+                    {!! $link('/client/fleet-health-report', 'activity',     'Fleet Health Report','client/fleet-health-report*') !!}
 
                     {!! $section('Finance') !!}
                     {!! $link('/client/invoices',       'receipt',          'Invoices',          'client/invoices*') !!}

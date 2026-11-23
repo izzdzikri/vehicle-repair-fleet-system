@@ -20,12 +20,16 @@
         'svm'                 => ['icon' => 'circle-dot',   'label' => 'SVM (RBF)',           'color' => 'amber'],
         'logistic_regression' => ['icon' => 'trending-up',  'label' => 'Logistic Regression', 'color' => 'rose'],
     ];
+    $evalAlgos = array_merge($algos, [
+        'ensemble' => ['icon' => 'layers', 'label' => '5-Model Ensemble', 'color' => 'indigo'],
+    ]);
     $colorMap = [
         'violet'  => ['bg'=>'bg-violet-500', 'text'=>'text-violet-400', 'light'=>'bg-violet-50'],
         'sky'     => ['bg'=>'bg-sky-500',    'text'=>'text-sky-400',    'light'=>'bg-sky-50'],
         'emerald' => ['bg'=>'bg-emerald-500','text'=>'text-emerald-400','light'=>'bg-emerald-50'],
         'amber'   => ['bg'=>'bg-amber-500',  'text'=>'text-amber-400',  'light'=>'bg-amber-50'],
         'rose'    => ['bg'=>'bg-rose-500',   'text'=>'text-rose-400',   'light'=>'bg-rose-50'],
+        'indigo'  => ['bg'=>'bg-indigo-600', 'text'=>'text-indigo-400', 'light'=>'bg-indigo-50'],
     ];
     $labelBadge = [
         'LOW'    => 'badge-low',
@@ -103,19 +107,91 @@
     <div x-show="tab === 'data'" x-transition.opacity>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-            {{-- Upload Dataset Card --}}
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6">
-                <div class="flex items-center gap-3 mb-5">
-                    <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+            {{-- Upload & Ingest Dataset Card with Column Mapping Wizard --}}
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-6"
+                 x-data="{
+                     wizardStep: 1,
+                     fileName: null,
+                     dragging: false,
+                     previewLoading: false,
+                     previewError: null,
+                     previewData: null,
+                     selectedMappings: {},
+
+                     inspectFile() {
+                         const fileInput = this.$refs.fileInput;
+                         if (!fileInput || !fileInput.files.length) {
+                             this.previewError = 'Please select a CSV or XLSX file first.';
+                             return;
+                         }
+                         this.previewLoading = true;
+                         this.previewError = null;
+
+                         const formData = new FormData();
+                         formData.append('dataset_file', fileInput.files[0]);
+
+                         fetch('{{ route('admin.predictive-analytics.preview-dataset') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                 'Accept': 'application/json'
+                             },
+                             body: formData
+                         })
+                         .then(res => {
+                             if (!res.ok) return res.json().then(j => { throw new Error(j.message || 'Failed to inspect dataset.') });
+                             return res.json();
+                         })
+                         .then(data => {
+                             this.previewLoading = false;
+                             if (data.status === 'success') {
+                                 this.previewData = data;
+                                 this.selectedMappings = Object.assign({}, data.suggested_mapping);
+                                 this.wizardStep = 2;
+                                 this.$nextTick(() => { if (window.lucide) lucide.createIcons(); });
+                             } else {
+                                 this.previewError = data.message || 'Failed to parse file preview.';
+                             }
+                         })
+                         .catch(err => {
+                             this.previewLoading = false;
+                             this.previewError = err.message || 'Error inspecting file.';
+                         });
+                     },
+
+                     resetWizard() {
+                         this.wizardStep = 1;
+                         this.previewData = null;
+                         this.selectedMappings = {};
+                         this.previewError = null;
+                         this.fileName = null;
+                         if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+                     }
+                 }">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-base">Upload Dataset</h3>
+                            <p class="text-sm text-gray-500">CSV or XLSX — preview & schema mapping</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 text-base">Upload Dataset</h3>
-                        <p class="text-sm text-gray-500">CSV or XLSX — mapped to ML schema</p>
-                    </div>
+                    <span x-show="wizardStep === 2" class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2.5 py-1 rounded-full">
+                        Step 2: Schema Mapping
+                    </span>
                 </div>
-                <form action="{{ route('admin.predictive-analytics.upload') }}" method="POST" enctype="multipart/form-data"
-                      x-data="{ fileName: null, dragging: false }">
+
+                {{-- Alert for preview error --}}
+                <div x-show="previewError" class="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-rose-500 shrink-0"></i>
+                    <span x-text="previewError"></span>
+                </div>
+
+                <form id="datasetUploadForm"
+                      :action="wizardStep === 2 ? '{{ route('admin.predictive-analytics.import-mapped') }}' : '{{ route('admin.predictive-analytics.upload') }}'"
+                      method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-3">
                         <label class="block text-sm font-semibold text-gray-700 mb-1.5">Dataset Name</label>
@@ -131,20 +207,112 @@
                             <option value="unlabeled_test">Unlabeled New Fleet Data</option>
                         </select>
                     </div>
-                    <div class="mb-4"
-                         @dragover.prevent="dragging = true" @dragleave="dragging = false"
-                         @drop.prevent="dragging = false; fileName = $event.dataTransfer.files[0]?.name; $el.querySelector('input').files = $event.dataTransfer.files">
-                        <label class="flex flex-col items-center justify-center border-2 border-dashed rounded-xl py-6 cursor-pointer transition"
-                               :class="dragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/50'">
-                            <i data-lucide="file-spreadsheet" class="w-6 h-6 text-indigo-400 mb-1"></i>
-                            <span class="text-sm text-gray-600 font-medium" x-text="fileName || 'Drop CSV/XLSX or click to browse'"></span>
-                            <input type="file" name="dataset_file" accept=".csv,.xlsx,.xls" class="sr-only" required
-                                   @change="fileName = $event.target.files[0]?.name">
-                        </label>
+
+                    {{-- Step 1: File Dropzone --}}
+                    <div x-show="wizardStep === 1">
+                        <div class="mb-4"
+                             @dragover.prevent="dragging = true" @dragleave="dragging = false"
+                             @drop.prevent="dragging = false; fileName = $event.dataTransfer.files[0]?.name; $refs.fileInput.files = $event.dataTransfer.files">
+                            <label class="flex flex-col items-center justify-center border-2 border-dashed rounded-xl py-6 cursor-pointer transition"
+                                   :class="dragging ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/50'">
+                                <i data-lucide="file-spreadsheet" class="w-6 h-6 text-indigo-400 mb-1"></i>
+                                <span class="text-sm text-gray-600 font-medium" x-text="fileName || 'Drop CSV/XLSX or click to browse'"></span>
+                                <input type="file" name="dataset_file" x-ref="fileInput" accept=".csv,.xlsx,.xls" class="sr-only" required
+                                       @change="fileName = $event.target.files[0]?.name">
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button type="submit" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-gray-200">
+                                <i data-lucide="zap" class="w-3.5 h-3.5"></i> Direct Upload
+                            </button>
+                            <button type="button" @click="inspectFile()" :disabled="previewLoading"
+                                    class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs">
+                                <svg x-show="previewLoading" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                <i data-lucide="table" class="w-3.5 h-3.5" x-show="!previewLoading"></i>
+                                <span x-text="previewLoading ? 'Inspecting...' : 'Preview & Map Columns →'"></span>
+                            </button>
+                        </div>
                     </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm py-2.5 rounded-xl transition flex items-center justify-center gap-2">
-                        <i data-lucide="upload" class="w-4 h-4"></i> Upload Dataset
-                    </button>
+
+                    {{-- Step 2: Data Preview & Column Mapping --}}
+                    <div x-show="wizardStep === 2" class="space-y-4">
+                        <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-3 text-xs text-indigo-900 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5 font-semibold">
+                                <i data-lucide="check-circle" class="w-4 h-4 text-indigo-600"></i>
+                                Detected <strong x-text="previewData ? previewData.headers.length : 0"></strong> columns across <strong x-text="previewData ? previewData.total_rows : 0"></strong> rows
+                            </span>
+                            <button type="button" @click="resetWizard()" class="text-indigo-600 hover:text-indigo-800 font-bold underline">
+                                Change File
+                            </button>
+                        </div>
+
+                        {{-- Preview Rows Table --}}
+                        <div class="border border-gray-200 rounded-xl overflow-hidden">
+                            <div class="bg-gray-50 px-3 py-1.5 border-b border-gray-200 text-2xs font-bold text-gray-500 uppercase tracking-wider">
+                                File Sample (First 5 Rows)
+                            </div>
+                            <div class="overflow-x-auto max-h-40">
+                                <table class="w-full text-2xs">
+                                    <thead class="bg-gray-100 text-gray-600">
+                                        <tr>
+                                            <template x-for="header in (previewData ? previewData.headers : [])" :key="header">
+                                                <th class="px-2 py-1.5 text-left font-mono font-semibold whitespace-nowrap" x-text="header"></th>
+                                            </template>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <template x-for="(row, rIdx) in (previewData ? previewData.preview_rows : [])" :key="rIdx">
+                                            <tr class="hover:bg-gray-50">
+                                                <template x-for="header in (previewData ? previewData.headers : [])" :key="header">
+                                                    <td class="px-2 py-1 text-gray-700 font-mono whitespace-nowrap" x-text="row[header] !== undefined && row[header] !== null ? row[header] : '—'"></td>
+                                                </template>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {{-- Column Mapping Selectors --}}
+                        <div class="border border-gray-200 rounded-xl p-3 bg-gray-50/50 max-h-60 overflow-y-auto space-y-2">
+                            <p class="text-2xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                Map Columns to System Schema
+                            </p>
+                            <template x-for="(meta, targetKey) in (previewData ? previewData.target_fields : {})" :key="targetKey">
+                                <div class="flex items-center justify-between gap-2 bg-white p-2 rounded-lg border border-gray-200">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-gray-800 flex items-center gap-1">
+                                            <span x-text="meta.label"></span>
+                                            <span x-show="meta.required" class="text-rose-500 font-bold">*</span>
+                                        </p>
+                                        <p class="text-3xs text-gray-400 font-mono" x-text="targetKey"></p>
+                                    </div>
+                                    <select :name="'column_mapping[' + targetKey + ']'"
+                                            x-model="selectedMappings[targetKey]"
+                                            class="border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-700 bg-white focus:ring-1 focus:ring-indigo-300 outline-none w-44">
+                                        <option value="">— Skip / Auto —</option>
+                                        <template x-for="h in (previewData ? previewData.headers : [])" :key="h">
+                                            <option :value="h" :selected="selectedMappings[targetKey] === h" x-text="h"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="flex gap-2 pt-1">
+                            <button type="button" @click="wizardStep = 1"
+                                    class="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold py-2.5 rounded-xl transition">
+                                ← Back
+                            </button>
+                            <button type="submit"
+                                    class="w-2/3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i> Import & Preprocess Dataset
+                            </button>
+                        </div>
+                    </div>
                 </form>
             </div>
 
@@ -346,8 +514,8 @@
                         </div>
                     </div>
 
-                    {{-- Split + CV --}}
-                    <div class="grid grid-cols-2 gap-3 mb-4">
+                    {{-- Split + CV + Seed --}}
+                    <div class="grid grid-cols-3 gap-3 mb-4">
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1.5">Train Split</label>
                             <select name="split_ratio" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 outline-none">
@@ -363,6 +531,12 @@
                                 <option value="5" selected>5-fold</option>
                                 <option value="10">10-fold</option>
                             </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1.5">Random Seed</label>
+                            <input type="number" name="seed" value="42" min="1" max="999999"
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 outline-none"
+                                   title="Seed for reproducible train/test split and stochastic models">
                         </div>
                     </div>
 
@@ -501,17 +675,17 @@
         </div>
         @else
 
-        {{-- ── 5-Model Leaderboard Cards ── --}}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            @foreach($algos as $key => $algo)
+        {{-- ── 5-Model + Ensemble Leaderboard Cards ── --}}
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            @foreach($evalAlgos as $key => $algo)
             @php $m = $metrics->get($key); @endphp
-            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-5 relative overflow-hidden">
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-4 relative overflow-hidden">
                 <div class="absolute top-0 left-0 right-0 h-1 {{ $colorMap[$algo['color']]['bg'] ?? 'bg-gray-300' }}"></div>
                 <div class="flex items-center gap-2 mb-3">
                     <div class="w-7 h-7 rounded-lg {{ $colorMap[$algo['color']]['light'] ?? 'bg-gray-50' }} flex items-center justify-center">
                         <i data-lucide="{{ $algo['icon'] }}" class="w-3.5 h-3.5 {{ $colorMap[$algo['color']]['text'] ?? 'text-gray-500' }}"></i>
                     </div>
-                    <span class="text-xs font-bold text-gray-700">{{ $algo['label'] }}</span>
+                    <span class="text-xs font-bold text-gray-700 truncate" title="{{ $algo['label'] }}">{{ $algo['label'] }}</span>
                 </div>
                 @if($m)
                 <div class="space-y-2">
@@ -563,10 +737,15 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        @foreach($algos as $key => $algo)
+                        @foreach($evalAlgos as $key => $algo)
                         @php $m = $metrics->get($key); $yearly = $m?->yearly_accuracy_json ?? []; @endphp
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-2.5 font-medium text-gray-800 text-xs">{{ $algo['label'] }}</td>
+                        <tr class="hover:bg-gray-50 {{ $key === 'ensemble' ? 'bg-indigo-50/30' : '' }}">
+                            <td class="py-2.5 font-medium text-gray-800 text-xs flex items-center gap-1.5">
+                                @if($key === 'ensemble')
+                                <span class="w-2 h-2 rounded-full bg-indigo-600 shrink-0"></span>
+                                @endif
+                                <span>{{ $algo['label'] }}</span>
+                            </td>
                             @foreach(['2024','2025','2026','overall'] as $yr)
                             <td class="py-2.5 text-right font-mono text-xs
                                 @if(isset($yearly[$yr]) && $yearly[$yr] >= 90) text-emerald-600 font-bold
@@ -590,8 +769,8 @@
                     <i data-lucide="grid-3x3" class="w-4 h-4 text-indigo-500"></i>
                     Confusion Matrix & Feature Importance
                 </h3>
-                <div class="flex gap-1 bg-gray-100 rounded-lg p-1">
-                    @foreach($algos as $key => $algo)
+                <div class="flex gap-1 bg-gray-100 rounded-lg p-1 flex-wrap">
+                    @foreach($evalAlgos as $key => $algo)
                     <button @click="cmTab = '{{ $key }}'"
                             :class="cmTab === '{{ $key }}' ? '{{ $colorMap[$algo['color']]['bg'] ?? 'bg-gray-400' }} text-white shadow-sm' : 'text-gray-500 hover:bg-white'"
                             class="px-3 py-1 rounded-md text-xs font-semibold transition">{{ $algo['label'] }}</button>
@@ -599,7 +778,7 @@
                 </div>
             </div>
 
-            @foreach($algos as $key => $algo)
+            @foreach($evalAlgos as $key => $algo)
             @php $m = $metrics->get($key); $cm = $m?->confusion_matrix_json; $fi = $m?->extra_meta_json['feature_importances'] ?? null; @endphp
             <div x-show="cmTab === '{{ $key }}'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {{-- Confusion Matrix --}}
@@ -700,8 +879,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ctx) return;
 
     @php
-        $benchLabels = ['Rule-Based', 'Decision Tree', 'Random Forest', 'SVM', 'Logistic Regression'];
-        $benchAlgos  = ['rule_based', 'decision_tree', 'random_forest', 'svm', 'logistic_regression'];
+        $benchLabels = ['Rule-Based', 'Decision Tree', 'Random Forest', 'SVM', 'Logistic Regression', '5-Model Ensemble'];
+        $benchAlgos  = ['rule_based', 'decision_tree', 'random_forest', 'svm', 'logistic_regression', 'ensemble'];
 
         $synData = [];
         $kagData = [];

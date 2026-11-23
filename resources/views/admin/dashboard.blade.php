@@ -217,6 +217,114 @@
     </div>
     @endif
 
+    {{-- Top High-Urgency Fleet Alerts (Supervisor Focus) --}}
+    @if(isset($topHighUrgencyAlerts) && $topHighUrgencyAlerts->count())
+    <div class="mt-4 mb-2 bg-rose-50/70 border border-rose-200/80 rounded-2xl p-5 shadow-xs">
+        <div class="flex items-center justify-between mb-3.5 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>
+                <h3 class="font-bold text-xs sm:text-sm text-rose-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-600"></i>
+                    Top High-Urgency Fleet Alerts (Immediate Action Required)
+                </h3>
+            </div>
+            <a href="{{ route('admin.maintenance') }}?filter=high"
+               class="text-xs font-bold text-rose-700 hover:text-rose-900 flex items-center gap-1 transition">
+                <span>View All {{ $urgentAlerts }} High Priority Alerts →</span>
+            </a>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-rose-200/80 bg-white">
+            <table class="w-full text-left text-xs min-w-[720px]">
+                <thead class="bg-rose-50/50 border-b border-rose-200/80 text-rose-900 uppercase text-[10px] tracking-wider font-bold">
+                    <tr>
+                        <th class="py-2.5 px-3.5">Vehicle</th>
+                        <th class="py-2.5 px-3.5">Predicted Service Issue</th>
+                        <th class="py-2.5 px-3.5">Target Due Date</th>
+                        <th class="py-2.5 px-3.5">Confidence & Agreement</th>
+                        <th class="py-2.5 px-3.5">Verification</th>
+                        <th class="py-2.5 px-3.5 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-rose-100/60">
+                    @foreach($topHighUrgencyAlerts as $alert)
+                    @php
+                        $due = $alert->effective_due_date;
+                        $isOverdue = $due && $due->isPast();
+                        $daysDiff = $due ? abs(now()->startOfDay()->diffInDays($due->startOfDay(), false)) : 0;
+                    @endphp
+                    <tr class="hover:bg-rose-50/30 transition">
+                        <td class="py-3 px-3.5">
+                            <div class="flex items-center gap-1.5">
+                                <p class="font-bold text-gray-900 font-mono text-xs">{{ $alert->vehicle->plate_number ?? '—' }}</p>
+                                @if($alert->vehicle && $alert->vehicle->isFleet())
+                                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                    Fleet
+                                </span>
+                                @endif
+                            </div>
+                            <p class="text-[11px] text-gray-500">
+                                {{ $alert->vehicle->brand ?? '' }} {{ $alert->vehicle->model ?? '' }}
+                                @if($alert->vehicle && $alert->vehicle->owner) &bull; {{ $alert->vehicle->owner->name }} @endif
+                            </p>
+                        </td>
+                        <td class="py-3 px-3.5">
+                            <span class="font-bold text-gray-900 text-xs">{{ $alert->alert_type }}</span>
+                            <p class="text-[11px] text-gray-500 line-clamp-1">{{ $alert->recommendation }}</p>
+                        </td>
+                        <td class="py-3 px-3.5 whitespace-nowrap">
+                            @if($due)
+                            <p class="font-bold text-gray-900 text-xs">{{ $due->format('d M Y') }}</p>
+                            <span class="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold {{ $isOverdue ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800' }}">
+                                {{ $isOverdue ? "Overdue by {$daysDiff}d" : "In ~{$daysDiff}d" }}
+                            </span>
+                            @else
+                            <span class="text-gray-400">Immediate</span>
+                            @endif
+                        </td>
+                        <td class="py-3 px-3.5 whitespace-nowrap">
+                            <div class="space-y-0.5">
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
+                                    {{ $alert->plain_confidence }}
+                                </span>
+                                @if($alert->plain_agreement_rate)
+                                <p class="text-[10px] text-indigo-700 font-semibold">
+                                    {{ $alert->plain_agreement_rate }}
+                                </p>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="py-3 px-3.5 whitespace-nowrap">
+                            @if($alert->is_verified || $alert->ml_staff_verified === 'verified')
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                <i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-600"></i> Verified
+                            </span>
+                            @elseif($alert->ml_staff_verified === 'rejected')
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                                <i data-lucide="x-circle" class="w-3 h-3 text-rose-600"></i> Flagged
+                            </span>
+                            @else
+                            <span class="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                Pending
+                            </span>
+                            @endif
+                        </td>
+                        <td class="py-3 px-3.5 text-right whitespace-nowrap">
+                            <a href="/admin/appointments/walkin?plate_number={{ urlencode($alert->vehicle->plate_number ?? '') }}&service_type={{ urlencode($alert->alert_type) }}"
+                               class="inline-flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-xs transition">
+                                <span>Schedule</span>
+                                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
     {{-- Predictive Projections Table --}}
     @if($upcomingPredictions->count())
     <div class="mt-4" x-data="{ viewMode: 'table' }">
@@ -303,6 +411,14 @@
                                   'bg-slate-100 text-slate-700 border border-slate-200') }}">
                                 {{ ucfirst($alert->urgency) }} Priority
                             </span>
+                            <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[10px] font-bold text-gray-800">{{ $alert->plain_confidence }}</span>
+                                @if($alert->plain_agreement_rate)
+                                <span class="text-[10px] text-indigo-700 font-semibold bg-indigo-50 border border-indigo-100 px-1 py-0.2 rounded">
+                                    {{ $alert->plain_agreement_rate }}
+                                </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="py-3 px-4 text-right">
                             <a href="/admin/appointments?search={{ $alert->vehicle->plate_number ?? '' }}"
@@ -331,12 +447,22 @@
                             <p class="font-bold text-gray-900 text-sm font-mono tracking-tight">{{ $alert->vehicle->plate_number ?? '—' }}</p>
                             <p class="text-xs text-gray-500">{{ $alert->vehicle->brand ?? '' }} {{ $alert->vehicle->model ?? '' }}</p>
                         </div>
-                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded border
-                            {{ $alert->urgency === 'high' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                               ($alert->urgency === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                               'bg-slate-100 text-slate-700 border-slate-200') }}">
-                            {{ ucfirst($alert->urgency) }}
-                        </span>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded border
+                                {{ $alert->urgency === 'high' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                   ($alert->urgency === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                   'bg-slate-100 text-slate-700 border-slate-200') }}">
+                                {{ ucfirst($alert->urgency) }}
+                            </span>
+                            <span class="text-[10px] font-bold text-gray-700">
+                                {{ $alert->plain_confidence }}
+                            </span>
+                            @if($alert->plain_agreement_rate)
+                            <span class="text-[9px] text-indigo-700 font-semibold bg-indigo-50 px-1 rounded">
+                                {{ $alert->plain_agreement_rate }}
+                            </span>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="bg-white border border-gray-200/80 rounded-lg p-2.5 mb-2">

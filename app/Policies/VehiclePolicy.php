@@ -89,4 +89,38 @@ class VehiclePolicy
 
         return $vehicle->user_id === $user->id;
     }
+
+    /**
+     * Determine whether the user can run bulk predictive fleet checks.
+     * Primary PIC or Admin only.
+     * Secondary and Viewer PICs can view results only.
+     */
+    public function runBulkPrediction(User $user): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if ($user->role === 'corporate') {
+            return $user->isPrimaryPic() && ! empty($user->company_id);
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can view fleet health reports and bulk checks.
+     */
+    public function viewBulkPrediction(User $user): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if ($user->role === 'corporate') {
+            return ! empty($user->company_id);
+        }
+
+        return false;
+    }
 }

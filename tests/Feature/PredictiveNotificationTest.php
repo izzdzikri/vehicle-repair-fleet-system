@@ -20,17 +20,33 @@ class PredictiveNotificationTest extends TestCase
     {
         parent::setUp();
 
-        // Ensure Ain's vehicle (VKK 3456) has a recent enough service history to trigger predictive alerts
+        // Ensure Ain's vehicle (VKK 3456) has a single service history record at 175 days ago (medium due soon window <= 14 days)
         $vehicle = Vehicle::where('plate_number', 'VKK 3456')->first();
         if ($vehicle) {
             $jobType = JobType::where('name', 'Oil & Filter Change')->first();
-            $last = ServiceHistory::where('vehicle_id', $vehicle->id)
+            ServiceHistory::where('vehicle_id', $vehicle->id)
+                ->whereHas('jobCard', fn ($q) => $q->where('job_type_id', $jobType->id))
+                ->delete();
+
+            ServiceHistory::create([
+                'vehicle_id'   => $vehicle->id,
+                'job_card_id'  => 38,
+                'service_date' => now()->subDays(175)->toDateString(),
+                'description'  => 'Oil & Filter Change',
+                'cost'         => 164.50,
+            ]);
+        }
+
+        // Ensure Mulia Logistik's vehicle (JQP 1122) has its latest service date at 115 days ago (medium due soon window <= 14 days)
+        $corpVehicle = Vehicle::where('plate_number', 'JQP 1122')->first();
+        if ($corpVehicle) {
+            $jobType = JobType::where('name', 'Oil & Filter Change')->first();
+            $last = ServiceHistory::where('vehicle_id', $corpVehicle->id)
                 ->whereHas('jobCard', fn ($q) => $q->where('job_type_id', $jobType->id))
                 ->orderByDesc('service_date')
                 ->first();
             if ($last) {
-                // Set to 172 days ago so projected due date is ~8 days from now (within medium due soon window of <= 14 days)
-                $last->update(['service_date' => now()->subDays(172)->toDateString()]);
+                $last->update(['service_date' => now()->subDays(115)->toDateString()]);
             }
         }
     }

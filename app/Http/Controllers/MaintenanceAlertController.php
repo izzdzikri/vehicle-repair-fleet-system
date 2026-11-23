@@ -17,14 +17,14 @@ class MaintenanceAlertController extends Controller
         $user = auth()->user();
 
         if ($user->role === 'admin') {
-            $alerts = MaintenanceAlert::with('vehicle.owner')->latest()->get();
+            $alerts = MaintenanceAlert::with(['vehicle.owner.company', 'jobType', 'verifier'])->latest()->get();
             $vehicles = Vehicle::with('owner')->orderBy('plate_number')->get();
 
         } elseif ($user->role === 'corporate') {
             abort_unless($user->company_id, 403, 'Your corporate account has not been assigned to a company.');
             $companyUserIds = User::where('company_id', $user->company_id)->pluck('id');
             $vehicleIds = Vehicle::whereIn('user_id', $companyUserIds)->pluck('id');
-            $alerts = MaintenanceAlert::with('vehicle')
+            $alerts = MaintenanceAlert::with(['vehicle.owner.company', 'jobType', 'verifier'])
                 ->whereIn('vehicle_id', $vehicleIds)
                 ->latest()->get();
             $vehicles = Vehicle::whereIn('user_id', $companyUserIds)
@@ -33,7 +33,7 @@ class MaintenanceAlertController extends Controller
         } else {
             // individual
             $vehicleIds = Vehicle::where('user_id', $user->id)->pluck('id');
-            $alerts = MaintenanceAlert::with('vehicle')
+            $alerts = MaintenanceAlert::with(['vehicle.owner.company', 'jobType', 'verifier'])
                 ->whereIn('vehicle_id', $vehicleIds)
                 ->latest()->get();
             $vehicles = Vehicle::where('user_id', $user->id)->get();

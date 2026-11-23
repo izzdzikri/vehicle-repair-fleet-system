@@ -4,11 +4,62 @@
 @section('content')
 
 @php
-    $role     = auth()->user()->role;
-    $prefix   = match($role) { 'admin' => 'admin', 'corporate' => 'client', default => 'customer' };
-    $unread   = $alerts->where('is_read', false)->count();
-    $highUrge = $alerts->where('urgency', 'high')->where('is_read', false)->count();
+    $role      = auth()->user()->role;
+    $prefix    = match($role) { 'admin' => 'admin', 'corporate' => 'client', default => 'customer' };
+    $unread    = $alerts->where('is_read', false)->count();
+    $highUrge  = $alerts->where('urgency', 'high')->where('is_read', false)->count();
     $predicted = $alerts->where('source', 'predicted')->count();
+
+    $alertsArray = $alerts->map(function ($a) use ($role, $prefix) {
+        $due = $a->effective_due_date;
+        $isOverdue = $due ? $due->isPast() : false;
+        $days = $due ? abs((int) now()->startOfDay()->diffInDays($due->startOfDay(), false)) : 9999;
+        
+        $urgencyWeight = match($a->effective_urgency) {
+            'high' => 3,
+            'medium' => 2,
+            default => 1,
+        };
+
+        $targetDate = $due ? $due->format('Y-m-d') : now()->addDays(3)->format('Y-m-d');
+        $plate = $a->vehicle->plate_number ?? '—';
+        $svc = $a->alert_type ?? 'Service';
+        $ownerName = $a->vehicle->owner->name ?? '';
+
+        $bookUrl = match($role) {
+            'corporate'   => '/client/appointments/create?vehicle_id=' . ($a->vehicle_id ?? '') . '&service_type=' . urlencode($svc) . '&date=' . $targetDate,
+            'individual'  => '/customer/appointments/create?vehicle_id=' . ($a->vehicle_id ?? '') . '&service_type=' . urlencode($svc) . '&date=' . $targetDate,
+            'coordinator' => '/coordinator/appointments/walkin?plate_number=' . urlencode($plate) . '&service_type=' . urlencode($svc) . '&date=' . $targetDate . '&walkin_name=' . urlencode($ownerName),
+            default       => '/admin/appointments/walkin?plate_number=' . urlencode($plate) . '&service_type=' . urlencode($svc) . '&date=' . $targetDate . '&walkin_name=' . urlencode($ownerName),
+        };
+
+        return [
+            'id'                 => $a->id,
+            'vehicle_plate'      => $plate,
+            'vehicle_model'      => trim(($a->vehicle->brand ?? '') . ' ' . ($a->vehicle->model ?? '')),
+            'owner_name'         => $ownerName,
+            'is_fleet'           => $a->vehicle ? $a->vehicle->isFleet() : false,
+            'company_name'       => $a->vehicle->company->name ?? ($a->vehicle->owner->company->name ?? null),
+            'issue'              => $svc,
+            'recommendation'     => $a->recommendation,
+            'urgency'            => $a->effective_urgency,
+            'urgency_weight'     => $urgencyWeight,
+            'confidence_score'   => $a->confidence_score !== null ? (float) $a->confidence_score : null,
+            'plain_confidence'   => $a->plain_confidence,
+            'plain_agreement'    => $a->plain_agreement_rate,
+            'predicted_due_date' => $due ? $due->format('d M Y') : null,
+            'raw_due_date'       => $due ? $due->format('Y-m-d') : '9999-12-31',
+            'is_overdue'         => $isOverdue,
+            'days_remaining'     => $days,
+            'verified_status'    => $a->plain_verification_status,
+            'is_verified'        => $a->is_verified || $a->ml_staff_verified === 'verified',
+            'is_read'            => $a->is_read,
+            'source'             => $a->source,
+            'read_url'           => "/{$prefix}/maintenance/{$a->id}/read",
+            'verify_url'         => "/admin/predictions/{$a->id}/verify",
+            'book_url'           => $bookUrl,
+        ];
+    });
 @endphp
 
 {{-- Summary bar --}}
@@ -49,10 +100,10 @@
     <div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-4 flex items-center justify-between">
         <div>
             <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Predicted</p>
-            <p class="text-2xl font-bold text-blue-600 mt-1">{{ $predicted }}</p>
-            <p class="text-[11px] text-gray-400 mt-0.5">Algorithm projections</p>
+            <p class="text-2xl font-bold text-indigo-600 mt-1">{{ $predicted }}</p>
+            <p class="text-[11px] text-gray-400 mt-0.5">Multi-model consensus</p>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
             <i data-lucide="sparkles" class="w-5 h-5"></i>
         </div>
     </div>
@@ -65,8 +116,8 @@
         <div>
             <h2 class="text-base font-bold text-gray-900">Create Manual Alert</h2>
             <p class="text-xs text-gray-500 mt-1">
-                Automated alerts are derived from odometer velocity and recommended service thresholds —
-                configure intervals in the <a href="/pricing/job-types" class="text-blue-600 hover:underline">Job Types</a> directory.
+                Automated alerts are derived from multi-model consensus and recommended service thresholds —
+                configure intervals in the <a href="/pricing/job-types" class="text-indigo-600 hover:underline">Job Types</a> directory.
             </p>
         </div>
         <form method="POST" action="/admin/maintenance/predict" class="shrink-0">
@@ -82,7 +133,7 @@
         <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Vehicle</label>
             <select name="vehicle_id"
-                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required>
                 <option value="">Select vehicle</option>
                 @foreach($vehicles as $v)
@@ -97,7 +148,7 @@
         <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Alert Type</label>
             <select name="alert_type"
-                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required>
                 <option value="">Select type</option>
                 <option value="Oil Change Due">Oil Change Due</option>
@@ -116,7 +167,7 @@
         <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Urgency</label>
             <select name="urgency"
-                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required>
                 <option value="low">Low — informational</option>
                 <option value="medium" selected>Medium — schedule soon</option>
@@ -127,7 +178,7 @@
             <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">Recommendation</label>
             <input type="text" name="recommendation"
                 placeholder="e.g. Schedule oil change within 500 km or 1 month"
-                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="w-full border border-gray-300 rounded-lg px-3.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required>
         </div>
         <div class="md:col-span-2 pt-1">
@@ -149,8 +200,95 @@
     </p>
 </div>
 
-{{-- Alerts list --}}
-<div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6" x-data="{ filter: 'all', viewMode: 'table' }">
+{{-- ══════════════════════════════════════════════════════════════════════════
+     COMPACT SORTABLE TABLE & ALERTS LOG
+══════════════════════════════════════════════════════════════════════════ --}}
+<div class="bg-white rounded-xl border border-gray-200/80 shadow-xs p-6"
+     x-data="{
+         viewMode: 'table',
+         filter: 'all',
+         search: '',
+         sortCol: 'urgency',
+         sortAsc: false,
+         alerts: {{ Js::from($alertsArray) }},
+
+         sortBy(col) {
+             if (this.sortCol === col) {
+                 this.sortAsc = !this.sortAsc;
+             } else {
+                 this.sortCol = col;
+                 this.sortAsc = (col === 'due_date' || col === 'vehicle' || col === 'issue' || col === 'status');
+             }
+         },
+
+         get sortedAlerts() {
+             let list = this.alerts.slice();
+
+             // Category Filter
+             if (this.filter === 'high') {
+                 list = list.filter(a => a.urgency === 'high');
+             } else if (this.filter === 'medium') {
+                 list = list.filter(a => a.urgency === 'medium');
+             } else if (this.filter === 'low') {
+                 list = list.filter(a => a.urgency === 'low');
+             } else if (this.filter === 'unread') {
+                 list = list.filter(a => !a.is_read);
+             } else if (this.filter === 'predicted') {
+                 list = list.filter(a => a.source === 'predicted');
+             } else if (this.filter === 'verified') {
+                 list = list.filter(a => a.is_verified);
+             }
+
+             // Text Search
+             if (this.search && this.search.trim().length > 0) {
+                 const q = this.search.toLowerCase().trim();
+                 list = list.filter(a =>
+                     (a.vehicle_plate && a.vehicle_plate.toLowerCase().includes(q)) ||
+                     (a.vehicle_model && a.vehicle_model.toLowerCase().includes(q)) ||
+                     (a.owner_name && a.owner_name.toLowerCase().includes(q)) ||
+                     (a.company_name && a.company_name.toLowerCase().includes(q)) ||
+                     (a.issue && a.issue.toLowerCase().includes(q)) ||
+                     (a.recommendation && a.recommendation.toLowerCase().includes(q)) ||
+                     (a.verified_status && a.verified_status.toLowerCase().includes(q))
+                 );
+             }
+
+             // Sorting
+             list.sort((a, b) => {
+                 let va, vb;
+                 if (this.sortCol === 'vehicle') {
+                     va = a.vehicle_plate || '';
+                     vb = b.vehicle_plate || '';
+                 } else if (this.sortCol === 'issue') {
+                     va = a.issue || '';
+                     vb = b.issue || '';
+                 } else if (this.sortCol === 'urgency') {
+                     va = a.urgency_weight || 0;
+                     vb = b.urgency_weight || 0;
+                 } else if (this.sortCol === 'confidence') {
+                     va = a.confidence_score !== null ? a.confidence_score : -1;
+                     vb = b.confidence_score !== null ? b.confidence_score : -1;
+                 } else if (this.sortCol === 'due_date') {
+                     va = a.raw_due_date || '9999-12-31';
+                     vb = b.raw_due_date || '9999-12-31';
+                 } else if (this.sortCol === 'status') {
+                     va = a.verified_status || '';
+                     vb = b.verified_status || '';
+                 } else {
+                     va = a.urgency_weight || 0;
+                     vb = b.urgency_weight || 0;
+                 }
+
+                 if (va < vb) return this.sortAsc ? -1 : 1;
+                 if (va > vb) return this.sortAsc ? 1 : -1;
+                 return 0;
+             });
+
+             return list;
+         }
+     }">
+
+    {{-- Header & View Toggle Controls --}}
     <div class="flex justify-between items-center mb-5 flex-wrap gap-3 pb-3 border-b border-gray-100">
         <div>
             <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -161,10 +299,21 @@
                 </span>
                 @endif
             </h2>
-            <p class="text-xs text-gray-400 mt-0.5">Real-time status of triggered and heuristic maintenance alerts</p>
+            <p class="text-xs text-gray-500 mt-0.5">Compact, sortable view of fleet alerts with multi-model consensus and verification status</p>
         </div>
 
-        <div class="flex items-center gap-2 no-print">
+        <div class="flex items-center gap-2 no-print flex-wrap">
+            {{-- Quick Search Input --}}
+            <div class="relative">
+                <input type="text" x-model="search" placeholder="Filter plate, vehicle, issue..."
+                       class="text-xs border border-gray-200 rounded-lg pl-8 pr-3 py-1.5 w-48 sm:w-60 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <circle cx="11" cy="11" r="8" stroke-width="2"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" stroke-width="2"></line>
+                </svg>
+            </div>
+
+            {{-- Table / Cards View Toggle --}}
             <div class="flex items-center bg-gray-100 p-0.5 rounded-lg text-xs">
                 <button type="button" @click="viewMode = 'table'"
                     :class="viewMode === 'table' ? 'bg-white text-gray-900 font-semibold shadow-xs' : 'text-gray-500 hover:text-gray-900'"
@@ -174,7 +323,7 @@
                 <button type="button" @click="viewMode = 'cards'"
                     :class="viewMode === 'cards' ? 'bg-white text-gray-900 font-semibold shadow-xs' : 'text-gray-500 hover:text-gray-900'"
                     class="px-2.5 py-1 rounded-md transition">
-                    Card View
+                    Cards View
                 </button>
             </div>
 
@@ -187,12 +336,12 @@
         </div>
     </div>
 
-    {{-- Filter tabs --}}
+    {{-- Filter Tabs --}}
     <div class="flex items-center gap-1.5 mb-4 flex-wrap no-print">
         <button type="button" @click="filter='all'"
             :class="filter==='all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-gray-200 hover:bg-slate-50 hover:text-slate-900'"
             class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-            <span>All</span>
+            <span>All Alerts</span>
             <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full"
                 :class="filter==='all' ? 'bg-slate-800 text-slate-200' : 'bg-gray-100 text-gray-600'">
                 {{ $alerts->count() }}
@@ -202,7 +351,7 @@
             :class="filter==='high' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-gray-200 hover:bg-slate-50 hover:text-slate-900'"
             class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-            <span>High Priority</span>
+            <span>High Urgency</span>
             <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full"
                 :class="filter==='high' ? 'bg-slate-800 text-slate-200' : 'bg-gray-100 text-gray-600'">
                 {{ $alerts->where('urgency','high')->count() }}
@@ -240,266 +389,354 @@
         <button type="button" @click="filter='predicted'"
             :class="filter==='predicted' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-gray-200 hover:bg-slate-50 hover:text-slate-900'"
             class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-blue-500"></i>
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-500"></i>
             <span>Projected</span>
             <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full"
                 :class="filter==='predicted' ? 'bg-slate-800 text-slate-200' : 'bg-gray-100 text-gray-600'">
                 {{ $predicted }}
             </span>
         </button>
+        <button type="button" @click="filter='verified'"
+            :class="filter==='verified' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-gray-200 hover:bg-slate-50 hover:text-slate-900'"
+            class="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span>Verified</span>
+            <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full"
+                :class="filter==='verified' ? 'bg-slate-800 text-slate-200' : 'bg-gray-100 text-gray-600'">
+                {{ $alerts->where('is_verified', true)->count() }}
+            </span>
+        </button>
     </div>
 
-    {{-- High Density Scannable Table View (Fast reading) --}}
+    {{-- ══════════════════════════════════════════════════════════════════════
+         COMPACT SORTABLE TABLE (Phase 4 Supervisor Design)
+    ══════════════════════════════════════════════════════════════════════ --}}
     <div x-show="viewMode === 'table'" class="overflow-x-auto rounded-xl border border-gray-200 mb-4 bg-white">
-        <table class="w-full text-left text-xs min-w-[760px]">
-            <thead class="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase text-[10px] tracking-wider font-semibold">
+        <table class="w-full text-left text-xs min-w-[820px]">
+            <thead class="bg-gray-50/90 border-b border-gray-200 text-gray-600 uppercase text-[10px] tracking-wider font-bold select-none">
                 <tr>
-                    <th class="py-3 px-4">Vehicle</th>
-                    <th class="py-3 px-4">Service Projected</th>
-                    <th class="py-3 px-4">Predicted Due</th>
-                    <th class="py-3 px-4">Urgency / Confidence</th>
-                    <th class="py-3 px-4">Recommendation</th>
-                    <th class="py-3 px-4 print:table-cell hidden">Expert Verification</th>
+                    {{-- 1. Vehicle --}}
+                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortBy('vehicle')">
+                        <div class="flex items-center gap-1.5">
+                            <span>Vehicle</span>
+                            <span class="text-gray-400" :class="sortCol === 'vehicle' ? 'text-indigo-600 font-bold' : ''">
+                                <span x-show="sortCol !== 'vehicle'">↕</span>
+                                <span x-show="sortCol === 'vehicle' && sortAsc">↑</span>
+                                <span x-show="sortCol === 'vehicle' && !sortAsc">↓</span>
+                            </span>
+                        </div>
+                    </th>
+
+                    {{-- 2. Issue --}}
+                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortBy('issue')">
+                        <div class="flex items-center gap-1.5">
+                            <span>Issue / Service</span>
+                            <span class="text-gray-400" :class="sortCol === 'issue' ? 'text-indigo-600 font-bold' : ''">
+                                <span x-show="sortCol !== 'issue'">↕</span>
+                                <span x-show="sortCol === 'issue' && sortAsc">↑</span>
+                                <span x-show="sortCol === 'issue' && !sortAsc">↓</span>
+                            </span>
+                        </div>
+                    </th>
+
+                    {{-- 3. Urgency Badge --}}
+                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortBy('urgency')">
+                        <div class="flex items-center gap-1.5">
+                            <span>Urgency</span>
+                            <span class="text-gray-400" :class="sortCol === 'urgency' ? 'text-indigo-600 font-bold' : ''">
+                                <span x-show="sortCol !== 'urgency'">↕</span>
+                                <span x-show="sortCol === 'urgency' && sortAsc">↑</span>
+                                <span x-show="sortCol === 'urgency' && !sortAsc">↓</span>
+                            </span>
+                        </div>
+                    </th>
+
+                    {{-- 4. Confidence & Agreement --}}
+                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortBy('confidence')">
+                        <div class="flex items-center gap-1.5">
+                            <span>Confidence & Agreement</span>
+                            <span class="text-gray-400" :class="sortCol === 'confidence' ? 'text-indigo-600 font-bold' : ''">
+                                <span x-show="sortCol !== 'confidence'">↕</span>
+                                <span x-show="sortCol === 'confidence' && sortAsc">↑</span>
+                                <span x-show="sortCol === 'confidence' && !sortAsc">↓</span>
+                            </span>
+                        </div>
+                    </th>
+
+                    {{-- 5. Predicted Due Date --}}
+                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortBy('due_date')">
+                        <div class="flex items-center gap-1.5">
+                            <span>Predicted Due Date</span>
+                            <span class="text-gray-400" :class="sortCol === 'due_date' ? 'text-indigo-600 font-bold' : ''">
+                                <span x-show="sortCol !== 'due_date'">↕</span>
+                                <span x-show="sortCol === 'due_date' && sortAsc">↑</span>
+                                <span x-show="sortCol === 'due_date' && !sortAsc">↓</span>
+                            </span>
+                        </div>
+                    </th>
+
+                    {{-- 6. Verified Status --}}
+                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortBy('status')">
+                        <div class="flex items-center gap-1.5">
+                            <span>Verified Status</span>
+                            <span class="text-gray-400" :class="sortCol === 'status' ? 'text-indigo-600 font-bold' : ''">
+                                <span x-show="sortCol !== 'status'">↕</span>
+                                <span x-show="sortCol === 'status' && sortAsc">↑</span>
+                                <span x-show="sortCol === 'status' && !sortAsc">↓</span>
+                            </span>
+                        </div>
+                    </th>
+
+                    {{-- Expert Verification for Print Form --}}
+                    <th class="py-3 px-4 print:table-cell hidden">Mechanic Validation</th>
+
+                    {{-- 7. Actions --}}
                     <th class="py-3 px-4 text-right no-print">Action</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-                @foreach($alerts as $alert)
-                <tr class="hover:bg-gray-50/80 transition {{ $alert->is_read ? 'opacity-60 bg-gray-50/40' : '' }}"
-                    x-show="filter==='all' || filter===$alert->urgency || (filter==='unread' && {{ $alert->is_read ? 'false' : 'true' }}) || (filter==='predicted' && {{ $alert->source === 'predicted' ? 'true' : 'false' }})">
-                    <td class="py-3.5 px-4">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <p class="font-bold text-gray-900 text-sm font-mono tracking-tight">{{ $alert->vehicle->plate_number ?? '—' }}</p>
-                            @if($alert->vehicle)
-                                @if($alert->vehicle->isFleet())
-                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
-                                        <i data-lucide="building-2" class="w-3 h-3 text-amber-600"></i> Fleet: {{ $alert->vehicle->company->name ?? ($alert->vehicle->owner->company->name ?? 'Corporate') }}
+                <template x-for="item in sortedAlerts" :key="item.id">
+                    <tr class="hover:bg-gray-50/80 transition" :class="item.is_read ? 'opacity-60 bg-gray-50/30' : ''">
+                        {{-- Vehicle --}}
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-gray-900 font-mono text-xs" x-text="item.vehicle_plate"></span>
+                                <template x-if="item.is_fleet">
+                                    <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                        Fleet
                                     </span>
-                                @else
-                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
-                                        <i data-lucide="user" class="w-3 h-3 text-emerald-600"></i> Individual
+                                </template>
+                                <template x-if="!item.is_fleet && item.owner_name">
+                                    <span class="text-[9px] font-medium px-1.5 py-0.2 rounded bg-gray-100 text-gray-600 border border-gray-200">
+                                        Individual
                                     </span>
+                                </template>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mt-0.5">
+                                <span x-text="item.vehicle_model"></span>
+                                <template x-if="item.company_name">
+                                    <span x-text="'• ' + item.company_name"></span>
+                                </template>
+                                <template x-if="!item.company_name && item.owner_name">
+                                    <span x-text="'• ' + item.owner_name"></span>
+                                </template>
+                            </p>
+                        </td>
+
+                        {{-- Issue --}}
+                        <td class="py-3 px-4">
+                            <p class="font-bold text-gray-900 text-xs" x-text="item.issue"></p>
+                            <p class="text-[11px] text-gray-500 line-clamp-1 max-w-xs mt-0.5" x-text="item.recommendation"></p>
+                        </td>
+
+                        {{-- Urgency Badge --}}
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider"
+                                  :class="{
+                                      'bg-rose-50 text-rose-700 border border-rose-200': item.urgency === 'high',
+                                      'bg-amber-50 text-amber-700 border border-amber-200': item.urgency === 'medium',
+                                      'bg-slate-100 text-slate-700 border border-slate-200': item.urgency === 'low'
+                                  }"
+                                  x-text="item.urgency">
+                            </span>
+                        </td>
+
+                        {{-- Confidence & Agreement (Plain Language) --}}
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <div class="space-y-0.5">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-bold text-gray-800" x-text="item.plain_confidence"></span>
+                                    <template x-if="item.source === 'predicted'">
+                                        <span class="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1 py-0.2 rounded font-semibold">
+                                            AI
+                                        </span>
+                                    </template>
+                                </div>
+                                <template x-if="item.plain_agreement">
+                                    <p class="text-[10px] text-indigo-700 font-semibold" x-text="item.plain_agreement"></p>
+                                </template>
+                            </div>
+                        </td>
+
+                        {{-- Predicted Due Date --}}
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <template x-if="item.predicted_due_date">
+                                <div>
+                                    <p class="font-bold text-gray-900 text-xs" x-text="item.predicted_due_date"></p>
+                                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold mt-0.5"
+                                          :class="item.is_overdue ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-700 border border-slate-200'"
+                                          x-text="item.is_overdue ? ('Overdue by ' + item.days_remaining + 'd') : ('In ~' + item.days_remaining + 'd')">
+                                    </span>
+                                </div>
+                            </template>
+                            <template x-if="!item.predicted_due_date">
+                                <span class="text-gray-400">—</span>
+                            </template>
+                        </td>
+
+                        {{-- Verified Status --}}
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <template x-if="item.verified_status === 'Verified'">
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                    <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    <span>Verified</span>
+                                </span>
+                            </template>
+                            <template x-if="item.verified_status === 'Flagged'">
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                                    <svg class="w-3 h-3 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                    <span>Flagged</span>
+                                </span>
+                            </template>
+                            <template x-if="item.verified_status !== 'Verified' && item.verified_status !== 'Flagged'">
+                                <span class="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                                    <span>Pending Review</span>
+                                </span>
+                            </template>
+                        </td>
+
+                        {{-- Print validation checklist --}}
+                        <td class="py-3 px-4 print:table-cell hidden text-center border-l border-gray-200">
+                            <div class="text-[11px] text-gray-700 space-y-1">
+                                <span class="border px-1.5 py-0.5 mr-2">[ ] Agree</span>
+                                <span class="border px-1.5 py-0.5">[ ] Disagree</span>
+                                <p class="text-[9px] text-gray-400 mt-2">Sign: ____________</p>
+                            </div>
+                        </td>
+
+                        {{-- Action Buttons --}}
+                        <td class="py-3 px-4 text-right whitespace-nowrap no-print">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <a :href="item.book_url"
+                                   class="inline-flex items-center gap-1 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white px-2.5 py-1.5 rounded-lg shadow-xs transition"
+                                   title="Book appointment for this vehicle and service">
+                                    <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+                                    <span>Book Now</span>
+                                </a>
+
+                                <template x-if="!item.is_read">
+                                    <form method="POST" :action="item.read_url">
+                                        @csrf @method('PATCH')
+                                        <button type="submit" class="text-xs text-gray-600 hover:text-gray-900 border border-gray-200 hover:bg-gray-50 px-2.5 py-1.5 rounded-lg transition">
+                                            Mark Read
+                                        </button>
+                                    </form>
+                                </template>
+
+                                @if($role === 'admin')
+                                <template x-if="!item.is_verified">
+                                    <form method="POST" :action="item.verify_url">
+                                        @csrf
+                                        <input type="hidden" name="admin_notes" value="Verified in Alerts Review">
+                                        <button type="submit" class="text-xs text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-1.5 rounded-lg font-bold transition"
+                                                title="Mark verified ground-truth">
+                                            Verify
+                                        </button>
+                                    </form>
+                                </template>
                                 @endif
-                            @endif
-                        </div>
-                        <p class="text-[11px] text-gray-500 mt-0.5">
-                            {{ $alert->vehicle->brand ?? '' }} {{ $alert->vehicle->model ?? '' }}
-                            @if($alert->vehicle && $alert->vehicle->owner) &bull; {{ $alert->vehicle->owner->name }} @endif
-                        </p>
-                    </td>
-                    <td class="py-3.5 px-4">
-                        <span class="font-semibold text-gray-900 text-xs">{{ $alert->alert_type }}</span>
-                        @if($alert->source === 'predicted')
-                        <span class="inline-flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded font-medium mt-0.5">
-                            <i data-lucide="sparkles" class="w-2.5 h-2.5 text-blue-500"></i> Auto-Projected
-                        </span>
-                        @endif
-                        {{-- ML R&D: confidence badge (non-breaking — only shows when pushed from Predictive Analytics) --}}
-                        @if($alert->confidence_score !== null)
-                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5
-                            {{ $alert->confidence_score >= 85 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                               ($alert->confidence_score >= 60 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                                'bg-slate-100 text-slate-600 border border-slate-200') }}">
-                            <i data-lucide="brain-circuit" class="w-2.5 h-2.5"></i>
-                            ML {{ round($alert->confidence_score) }}%
-                            @if($alert->predicted_by_algo)
-                            · {{ str_replace('_',' ', $alert->predicted_by_algo) }}
-                            @endif
-                        </span>
-                        @endif
-                        {{-- ML Staff Verify badge --}}
-                        @if($alert->confidence_score !== null && isset($alert->ml_staff_verified))
-                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5
-                            {{ $alert->ml_staff_verified === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                               ($alert->ml_staff_verified === 'rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                                'bg-slate-100 text-slate-500 border border-slate-200') }}">
-                            @if($alert->ml_staff_verified === 'verified')
-                                <i data-lucide="shield-check" class="w-2.5 h-2.5"></i> Verified
-                            @elseif($alert->ml_staff_verified === 'rejected')
-                                <i data-lucide="shield-x" class="w-2.5 h-2.5"></i> Rejected
-                            @else
-                                <i data-lucide="shield" class="w-2.5 h-2.5"></i> Pending
-                            @endif
-                        </span>
-                        @endif
-                    </td>
-                    <td class="py-3.5 px-4 whitespace-nowrap">
-                        @if($alert->predicted_due_date)
-                        @php
-                            $isOverdue = $alert->predicted_due_date->isPast();
-                            $days = abs(now()->startOfDay()->diffInDays($alert->predicted_due_date->startOfDay(), false));
-                        @endphp
-                        <p class="font-medium {{ $isOverdue ? 'text-rose-600 font-semibold' : 'text-gray-800' }}">
-                            {{ $alert->predicted_due_date->format('d M Y') }}
-                        </p>
-                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold mt-0.5
-                            {{ $isOverdue ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-700 border border-slate-200' }}">
-                            {{ $isOverdue ? "Overdue by {$days}d" : "In ~{$days}d" }}
-                        </span>
-                        @else
-                        <span class="text-gray-400">—</span>
-                        @endif
-                    </td>
-                    <td class="py-3.5 px-4 whitespace-nowrap">
-                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
-                            {{ $alert->urgency === 'high' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                              ($alert->urgency === 'medium' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                              'bg-slate-100 text-slate-700 border border-slate-200') }}">
-                            {{ ucfirst($alert->urgency) }}
-                        </span>
-                    </td>
-                    <td class="py-3.5 px-4 text-gray-600 max-w-xs">
-                        <p class="line-clamp-2 text-xs leading-relaxed text-gray-600">{{ $alert->recommendation }}</p>
-                    </td>
+                            </div>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
 
-                    {{-- Expert Verification Column for Printable Sheet --}}
-                    <td class="py-3.5 px-4 print:table-cell hidden text-center border-l border-gray-200">
-                        <div class="text-[11px] text-gray-700 space-y-1">
-                            <span class="border px-1.5 py-0.5 mr-2">[ ] Agree</span>
-                            <span class="border px-1.5 py-0.5">[ ] Disagree</span>
-                            <p class="text-[9px] text-gray-400 mt-2">Sign: ____________</p>
-                        </div>
-                    </td>
+        {{-- Empty Table State --}}
+        <template x-if="sortedAlerts.length === 0">
+            <div class="py-12 text-center text-gray-400">
+                <i data-lucide="filter-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                <p class="text-xs font-semibold text-gray-700">No maintenance alerts match the selected criteria.</p>
+                <button type="button" @click="filter = 'all'; search = ''" class="mt-2 text-xs text-indigo-600 font-bold hover:underline">
+                    Reset Filter & Search
+                </button>
+            </div>
+        </template>
+    </div>
 
-                    <td class="py-3.5 px-4 text-right whitespace-nowrap no-print">
-                        <div class="flex items-center justify-end gap-1.5">
-                            @php
-                                $targetDate = $alert->effective_due_date ? \Carbon\Carbon::parse($alert->effective_due_date)->format('Y-m-d') : now()->addDays(3)->format('Y-m-d');
-                                $bookUrl = match($role) {
-                                    'corporate'   => '/client/appointments/create?vehicle_id=' . ($alert->vehicle_id ?? '') . '&service_type=' . urlencode($alert->alert_type) . '&date=' . $targetDate,
-                                    'individual'  => '/customer/appointments/create?vehicle_id=' . ($alert->vehicle_id ?? '') . '&service_type=' . urlencode($alert->alert_type) . '&date=' . $targetDate,
-                                    'coordinator' => '/coordinator/appointments/walkin?plate_number=' . urlencode($alert->vehicle->plate_number ?? '') . '&service_type=' . urlencode($alert->alert_type) . '&date=' . $targetDate . '&walkin_name=' . urlencode($alert->vehicle->owner->name ?? ''),
-                                    default       => '/admin/appointments/walkin?plate_number=' . urlencode($alert->vehicle->plate_number ?? '') . '&service_type=' . urlencode($alert->alert_type) . '&date=' . $targetDate . '&walkin_name=' . urlencode($alert->vehicle->owner->name ?? ''),
-                                };
-                            @endphp
-                            <a href="{{ $bookUrl }}"
-                                class="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-xs transition"
-                                title="Book appointment for this vehicle and service">
-                                <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
-                                <span>Book Now</span>
-                            </a>
-                            @if(!$alert->is_read)
-                            <form method="POST" action="/{{ $prefix }}/maintenance/{{ $alert->id }}/read">
+    {{-- ══════════════════════════════════════════════════════════════════════
+         ALTERNATIVE CARDS VIEW
+    ══════════════════════════════════════════════════════════════════════ --}}
+    <div x-show="viewMode === 'cards'" style="display:none">
+        <template x-for="item in sortedAlerts" :key="item.id">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 mb-3 shadow-2xs hover:shadow-sm transition"
+                 :class="{
+                     'border-l-4 border-l-rose-500': item.urgency === 'high',
+                     'border-l-4 border-l-amber-500': item.urgency === 'medium',
+                     'border-l-4 border-l-slate-400': item.urgency === 'low',
+                     'opacity-50': item.is_read
+                 }">
+                <div class="flex justify-between items-start gap-3">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                            <span class="font-bold text-sm text-gray-900 font-mono tracking-tight" x-text="item.vehicle_plate"></span>
+                            <span class="font-normal text-gray-500 text-xs ml-1" x-text="item.vehicle_model"></span>
+
+                            <span class="text-[10px] px-2 py-0.5 rounded font-extrabold uppercase tracking-wider"
+                                  :class="{
+                                      'bg-rose-50 text-rose-700 border border-rose-200': item.urgency === 'high',
+                                      'bg-amber-50 text-amber-700 border border-amber-200': item.urgency === 'medium',
+                                      'bg-slate-100 text-slate-700 border border-slate-200': item.urgency === 'low'
+                                  }"
+                                  x-text="item.urgency">
+                            </span>
+
+                            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                  x-text="item.plain_confidence"></span>
+
+                            <template x-if="item.plain_agreement">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-semibold bg-indigo-50/70 text-indigo-800 border border-indigo-100"
+                                      x-text="item.plain_agreement"></span>
+                            </template>
+
+                            <template x-if="item.verified_status === 'Verified'">
+                                <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+                                    Verified
+                                </span>
+                            </template>
+                        </div>
+
+                        <p class="text-sm font-semibold text-gray-900" x-text="item.issue"></p>
+                        <p class="text-xs text-gray-600 mt-1 leading-relaxed" x-text="item.recommendation"></p>
+
+                        <template x-if="item.predicted_due_date">
+                            <p class="text-xs text-indigo-700 mt-1.5 font-medium flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500"></i>
+                                <span x-text="'Predicted Target: ' + item.predicted_due_date"></span>
+                            </p>
+                        </template>
+                    </div>
+
+                    <div class="flex flex-col gap-2 items-end shrink-0">
+                        <a :href="item.book_url"
+                           class="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-xs transition">
+                            <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+                            <span>Book Now</span>
+                        </a>
+
+                        <template x-if="!item.is_read">
+                            <form method="POST" :action="item.read_url">
                                 @csrf @method('PATCH')
-                                <button type="submit" class="text-xs text-gray-600 hover:text-gray-900 border border-gray-200 hover:bg-gray-50 px-2.5 py-1.5 rounded-lg transition">
+                                <button type="submit" class="text-xs bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50 whitespace-nowrap transition">
                                     Mark Read
                                 </button>
                             </form>
-                            @endif
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    {{-- Cards View --}}
-    <div x-show="viewMode === 'cards'" style="display:none">
-
-    @forelse($alerts as $alert)
-    @php
-        $borderClass = match($alert->urgency) {
-            'high'   => 'border-l-4 border-l-rose-500',
-            'medium' => 'border-l-4 border-l-amber-500',
-            default  => 'border-l-4 border-l-slate-400',
-        };
-        $badgeClass = match($alert->urgency) {
-            'high'   => 'bg-rose-50 text-rose-700 border border-rose-200',
-            'medium' => 'bg-amber-50 text-amber-700 border border-amber-200',
-            default  => 'bg-slate-100 text-slate-700 border border-slate-200',
-        };
-    @endphp
-    <div class="bg-white border border-gray-200 rounded-xl p-4 mb-3 shadow-2xs hover:shadow-sm transition {{ $borderClass }} {{ $alert->is_read ? 'opacity-50' : '' }}"
-        x-show="filter==='all' || filter===$alert->urgency || (filter==='unread' && {{ $alert->is_read ? 'false' : 'true' }}) || (filter==='predicted' && {{ $alert->source === 'predicted' ? 'true' : 'false' }})">
-        <div class="flex justify-between items-start gap-3">
-            <div class="flex-1">
-                <div class="flex items-center gap-2 flex-wrap mb-1.5">
-                    <span class="font-bold text-sm text-gray-900 font-mono tracking-tight">
-                        {{ $alert->vehicle->plate_number ?? '—' }}
-                        <span class="font-normal text-gray-500 text-xs ml-1 font-sans">
-                            {{ $alert->vehicle->brand ?? '' }} {{ $alert->vehicle->model ?? '' }}
-                        </span>
-                    </span>
-                    <span class="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider {{ $badgeClass }}">
-                        {{ ucfirst($alert->urgency) }}
-                    </span>
-                    @if($alert->source === 'predicted')
-                    <span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                        <i data-lucide="sparkles" class="w-2.5 h-2.5 text-blue-500"></i> Projected
-                    </span>
-                    @endif
-                    @if($alert->is_read)
-                    <span class="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Read</span>
-                    @else
-                    <span class="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full font-semibold">Unread</span>
-                    @endif
-                    @if($alert->vehicle)
-                        @if($alert->vehicle->isFleet())
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
-                            <i data-lucide="building-2" class="w-3 h-3 text-amber-600"></i> Fleet: {{ $alert->vehicle->company->name ?? ($alert->vehicle->owner->company->name ?? 'Corporate') }}
-                        </span>
-                        @else
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
-                            <i data-lucide="user" class="w-3 h-3 text-emerald-600"></i> Individual: {{ $alert->vehicle->owner->name ?? 'Unassigned' }}
-                        </span>
-                        @endif
-                    @endif
+                        </template>
+                    </div>
                 </div>
-                <p class="text-sm font-semibold text-gray-900">{{ $alert->alert_type }}</p>
-                <p class="text-xs text-gray-600 mt-1 leading-relaxed">{{ $alert->recommendation }}</p>
-                @if($alert->predicted_due_date)
-                <p class="text-xs text-blue-700 mt-1.5 font-medium flex items-center gap-1">
-                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-500"></i>
-                    <span>Predicted target: {{ $alert->predicted_due_date->format('d M Y') }}</span>
-                </p>
-                @endif
-                <p class="text-[11px] text-gray-400 mt-1">
-                    Created {{ $alert->created_at->diffForHumans() }} &bull; {{ $alert->created_at->format('d M Y') }}
-                </p>
             </div>
-            <div class="flex flex-col gap-2 items-end shrink-0">
-                @php
-                    $targetDate = $alert->effective_due_date ? \Carbon\Carbon::parse($alert->effective_due_date)->format('Y-m-d') : now()->addDays(3)->format('Y-m-d');
-                    $bookUrl = match($role) {
-                        'corporate'   => '/client/appointments/create?vehicle_id=' . ($alert->vehicle_id ?? '') . '&service_type=' . urlencode($alert->alert_type) . '&date=' . $targetDate,
-                        'individual'  => '/customer/appointments/create?vehicle_id=' . ($alert->vehicle_id ?? '') . '&service_type=' . urlencode($alert->alert_type) . '&date=' . $targetDate,
-                        'coordinator' => '/coordinator/appointments/walkin?plate_number=' . urlencode($alert->vehicle->plate_number ?? '') . '&service_type=' . urlencode($alert->alert_type) . '&date=' . $targetDate . '&walkin_name=' . urlencode($alert->vehicle->owner->name ?? ''),
-                        default       => '/admin/appointments/walkin?plate_number=' . urlencode($alert->vehicle->plate_number ?? '') . '&service_type=' . urlencode($alert->alert_type) . '&date=' . $targetDate . '&walkin_name=' . urlencode($alert->vehicle->owner->name ?? ''),
-                    };
-                @endphp
-                <a href="{{ $bookUrl }}"
-                    class="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-xs transition"
-                    title="Book appointment for this vehicle and service">
-                    <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
-                    <span>Book Now</span>
-                </a>
-                @if(!$alert->is_read)
-                <form method="POST" action="/{{ $prefix }}/maintenance/{{ $alert->id }}/read">
-                    @csrf @method('PATCH')
-                    <button class="text-xs bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50 whitespace-nowrap transition">
-                        Mark read
-                    </button>
-                </form>
-                @endif
-                @if($role === 'admin')
-                <a href="/admin/vehicles/{{ $alert->vehicle_id }}"
-                    class="text-xs text-blue-600 hover:text-blue-800 font-semibold whitespace-nowrap">
-                    View vehicle &rarr;
-                </a>
-                @endif
+        </template>
+
+        <template x-if="sortedAlerts.length === 0">
+            <div class="py-12 text-center text-gray-400">
+                <i data-lucide="bell-off" class="w-12 h-12 text-gray-200 mx-auto mb-3"></i>
+                <p class="text-gray-400">No maintenance alerts match the selected criteria.</p>
             </div>
-        </div>
-    </div>
-    @empty
-    <div class="text-center py-12">
-        <i data-lucide="bell-off" class="w-12 h-12 text-gray-200 mx-auto mb-3"></i>
-        <p class="text-gray-400">No maintenance alerts for your vehicles.</p>
-        @if($role !== 'admin')
-        <p class="text-gray-300 text-xs mt-1">Alerts will appear here when the workshop flags your vehicle.</p>
-        @endif
-    </div>
-    @endforelse
+        </template>
     </div>
 </div>
 

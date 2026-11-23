@@ -11,6 +11,9 @@ use App\Models\ServiceHistory;
 use App\Models\TripLog;
 use App\Models\Vehicle;
 use App\Models\JobType;
+use App\Services\Prediction\DataPreprocessingService;
+use App\Services\Prediction\DatasetImportService;
+use App\Services\Prediction\InSystemTrainingPipeline;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -103,6 +106,72 @@ class PredictiveAnalyticsController extends Controller
         return back()->with('success', "Dataset \"{$dataset->name}\" uploaded successfully ({$rowCount} rows).");
     }
 
+    /**
+     * Preview an uploaded dataset file (CSV/XLSX), return sample rows, headers,
+     * and auto-suggested column mappings for user confirmation.
+     */
+    public function previewDataset(Request $request, DatasetImportService $importService): JsonResponse
+    {
+        $request->validate([
+            'dataset_file' => 'required|file|mimes:csv,xlsx,xls,txt|max:20480',
+        ]);
+
+        $file = $request->file('dataset_file');
+        $tempPath = $file->getRealPath();
+
+        try {
+            $preview = $importService->previewFile($tempPath, 5, $file->getClientOriginalExtension());
+
+            return response()->json([
+                'status'            => 'success',
+                'headers'           => $preview['headers'],
+                'preview_rows'      => $preview['preview_rows'],
+                'total_rows'        => $preview['total_rows'],
+                'suggested_mapping' => $preview['suggested_mapping'],
+                'target_fields'     => DatasetImportService::TARGET_FIELDS,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Import dataset with confirmed column mapping, preprocess (imputation + outlier clipping),
+     * and register into MlDataset table.
+     */
+    public function importMappedDataset(Request $request, DatasetImportService $importService)
+    {
+        $request->validate([
+            'dataset_file'   => 'required|file|mimes:csv,xlsx,xls,txt|max:20480',
+            'dataset_name'   => 'required|string|max:100',
+            'source_type'    => 'required|in:synthetic,kaggle_benchmark,system_live,unlabeled_test',
+            'column_mapping' => 'required|array',
+        ]);
+
+        $file = $request->file('dataset_file');
+        $tempPath = $file->getRealPath();
+        $mapping = (array) $request->input('column_mapping');
+
+        try {
+            $result = $importService->importAndPreprocess($tempPath, $mapping, [
+                'dataset_name'  => $request->dataset_name,
+                'source_type'   => $request->source_type,
+                'user_id'       => Auth::id(),
+                'impute'        => true,
+                'clip_outliers' => true,
+            ], $file->getClientOriginalExtension());
+
+            return redirect()
+                ->route('admin.predictive-analytics.index', ['tab' => 'data'])
+                ->with('success', "Dataset \"{$result['dataset']->name}\" imported & preprocessed ({$result['row_count']} clean rows).");
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Dataset import failed: ' . $e->getMessage());
+        }
+    }
+
     // ─────────────────────────── Export System Data ───────────────────────────
 
     public function exportSystemData(Request $request)
@@ -183,160 +252,46 @@ class PredictiveAnalyticsController extends Controller
 
     // ─────────────────────────── Run ML Experiment ────────────────────────────
 
-    public function runExperiment(Request $request)
+    public function runExperiment(Request $request, InSystemTrainingPipeline $pipeline)
     {
         $request->validate([
             'dataset_id'    => 'required|exists:ml_datasets,id',
             'algorithms'    => 'required|array|min:1',
             'algorithms.*'  => 'in:rule_based,decision_tree,random_forest,svm,logistic_regression',
             'split_ratio'   => 'numeric|between:0.6,0.95',
-            'cv_folds'      => 'integer|between:3,10',
+            'seed'          => 'nullable|integer',
         ]);
 
-        $dataset   = MlDataset::findOrFail($request->dataset_id);
+        $dataset    = MlDataset::findOrFail($request->dataset_id);
         $splitRatio = (float) $request->input('split_ratio', 0.80);
-        $cvFolds    = (int) $request->input('cv_folds', 5);
+        $seed       = (int) $request->input('seed', 42);
         $algorithms = $request->input('algorithms');
 
         // Hyperparameter overrides
         $hyperparams = [
-            'dt_max_depth'     => $request->input('dt_max_depth') ?: null,
-            'rf_n_estimators'  => (int) $request->input('rf_n_estimators', 100),
-            'rf_max_depth'     => $request->input('rf_max_depth') ?: null,
+            'dt_max_depth'     => $request->input('dt_max_depth') ? (int) $request->input('dt_max_depth') : null,
+            'rf_n_estimators'  => (int) $request->input('rf_n_estimators', 30),
+            'rf_max_depth'     => $request->input('rf_max_depth') ? (int) $request->input('rf_max_depth') : null,
             'svm_c'            => (float) $request->input('svm_c', 1.0),
-            'svm_gamma'        => $request->input('svm_gamma', 'scale'),
-            'lr_C'             => (float) $request->input('lr_C', 1.0),
-            'lr_solver'        => $request->input('lr_solver', 'lbfgs'),
-            'lr_max_iter'      => (int) $request->input('lr_max_iter', 1000),
+            'svm_gamma'        => is_numeric($request->input('svm_gamma')) ? (float) $request->input('svm_gamma') : 0.1,
+            'lr_c'             => (float) $request->input('lr_C', 1.0),
+            'lr_max_iter'      => (int) $request->input('lr_max_iter', 200),
+            'seed'             => $seed,
         ];
 
-        $runNumber = $dataset->experiments()->count() + 1;
-        $experiment = MlExperiment::create([
-            'dataset_id'       => $dataset->id,
-            'run_name'         => "Run #{$runNumber} — {$dataset->name}",
-            'split_ratio'      => $splitRatio,
-            'cv_folds'         => $cvFolds,
-            'status'           => 'running',
-            'hyperparams_json' => $hyperparams,
-            'run_by'           => Auth::id(),
-        ]);
+        try {
+            $experiment = $pipeline->run($dataset, $algorithms, $splitRatio, $seed, $hyperparams, Auth::id());
 
-        $outputDir = storage_path("app/ml_models/exp_{$experiment->id}");
-        @mkdir($outputDir, 0755, true);
-
-        $payload = [
-            'dataset_path'  => $dataset->absolute_path,
-            'dataset_type'  => $dataset->source_type,
-            'models_to_run' => $algorithms,
-            'output_dir'    => $outputDir,
-            'split_ratio'   => $splitRatio,
-            'cv_folds'      => $cvFolds,
-            'hyperparams'   => $hyperparams,
-        ];
-
-        $payloadFile = $outputDir . '/payload.json';
-        file_put_contents($payloadFile, json_encode($payload));
-
-        $scriptPath = storage_path('app/ml_engine/run_experiment.py');
-
-        // Run Python ML engine (synchronous for now — can be queued in production)
-        $result = Process::timeout(300)->run([
-            'python3', $scriptPath, '--payload', json_encode($payload),
-        ]);
-
-        if (! $result->successful()) {
-            $experiment->update([
-                'status'        => 'failed',
-                'error_message' => Str::limit($result->errorOutput() ?: 'Unknown error', 1000),
-            ]);
-            Log::error('ML experiment failed', [
-                'experiment_id' => $experiment->id,
-                'stderr'        => $result->errorOutput(),
-            ]);
             return redirect()
                 ->route('admin.predictive-analytics.index', ['tab' => 'train'])
-                ->with('error', 'ML experiment failed: ' . Str::limit($result->errorOutput() ?: 'Unknown error', 200));
-        }
+                ->with('success', "Experiment \"{$experiment->run_name}\" completed successfully in pure PHP.");
+        } catch (\Throwable $e) {
+            Log::error('In-system training failed', ['error' => $e->getMessage()]);
 
-        $output = json_decode($result->output(), true);
-
-        if (! $output || ($output['status'] ?? 'failed') === 'failed') {
-            $experiment->update([
-                'status'        => 'failed',
-                'error_message' => $output['error'] ?? 'Python script returned an error',
-            ]);
             return redirect()
                 ->route('admin.predictive-analytics.index', ['tab' => 'train'])
-                ->with('error', 'ML engine returned an error: ' . ($output['error'] ?? 'Unknown'));
+                ->with('error', 'Training failed: ' . $e->getMessage());
         }
-
-        // Persist results
-        DB::transaction(function () use ($experiment, $output, $algorithms) {
-            // Build summary
-            $summary = [
-                'algorithms_run' => $algorithms,
-                'row_count'      => $output['row_count'],
-                'has_labels'     => $output['has_labels'],
-                'models'         => $output['models'],
-            ];
-            $experiment->update([
-                'status'       => 'completed',
-                'summary_json' => $summary,
-            ]);
-
-            // Persist per-model metrics
-            foreach ($output['models'] as $algo => $modelData) {
-                MlModelMetric::updateOrCreate(
-                    ['experiment_id' => $experiment->id, 'algorithm' => $algo],
-                    [
-                        'accuracy'             => $modelData['accuracy'] ?? null,
-                        'precision_macro'      => $modelData['precision_macro'] ?? null,
-                        'recall_macro'         => $modelData['recall_macro'] ?? null,
-                        'f1_macro'             => $modelData['f1_macro'] ?? null,
-                        'high_urgency_recall'  => $modelData['high_urgency_recall'] ?? null,
-                        'confusion_matrix_json' => $modelData['confusion_matrix'] ?? null,
-                        'yearly_accuracy_json'  => $modelData['yearly_accuracy'] ?? null,
-                        'extra_meta_json'       => $modelData['extra_meta'] ?? null,
-                    ]
-                );
-            }
-
-            // Persist row-by-row predictions (chunked for memory efficiency)
-            $chunks = array_chunk($output['predictions'] ?? [], 100);
-            foreach ($chunks as $chunk) {
-                $rows = [];
-                foreach ($chunk as $pred) {
-                    $rows[] = [
-                        'experiment_id'      => $experiment->id,
-                        'vehicle_identifier' => $pred['vehicle_identifier'] ?? 'UNKNOWN',
-                        'service_type'       => $pred['service_type'] ?? '',
-                        'scan_year'          => $pred['scan_year'] ?? null,
-                        'ground_truth_label' => $pred['ground_truth_label'] ?? null,
-                        'rb_prediction'      => $pred['rb_prediction'] ?? null,
-                        'rb_confidence'      => $pred['rb_confidence'] ?? null,
-                        'rb_days_remaining'  => $pred['rb_days_remaining'] ?? null,
-                        'dt_prediction'      => $pred['dt_prediction'] ?? null,
-                        'dt_confidence'      => $pred['dt_confidence'] ?? null,
-                        'rf_prediction'      => $pred['rf_prediction'] ?? null,
-                        'rf_confidence'      => $pred['rf_confidence'] ?? null,
-                        'svm_prediction'     => $pred['svm_prediction'] ?? null,
-                        'svm_confidence'     => $pred['svm_confidence'] ?? null,
-                        'lr_prediction'      => $pred['lr_prediction'] ?? null,
-                        'lr_confidence'      => $pred['lr_confidence'] ?? null,
-                        'consensus_label'    => $pred['consensus_label'] ?? null,
-                        'agreement_rate'     => $pred['agreement_rate'] ?? null,
-                        'features_json'      => isset($pred['features']) ? json_encode($pred['features']) : null,
-                        'created_at'         => now(),
-                        'updated_at'         => now(),
-                    ];
-                }
-                DB::table('ml_prediction_comparisons')->insert($rows);
-            }
-        });
-
-        return redirect()
-            ->route('admin.predictive-analytics.index', ['tab' => 'train'])
-            ->with('success', "Experiment \"{$experiment->run_name}\" completed successfully.");
     }
 
     // ─────────────────────────── Push to Live Alerts ──────────────────────────
@@ -344,13 +299,21 @@ class PredictiveAnalyticsController extends Controller
     public function pushToAlerts(Request $request, MlPredictionComparison $prediction)
     {
         $request->validate([
-            'algorithm' => 'required|in:rule_based,decision_tree,random_forest,svm,logistic_regression',
+            'algorithm' => 'required|in:rule_based,decision_tree,random_forest,svm,logistic_regression,ensemble',
         ]);
 
-        $algo  = $request->input('algorithm');
-        $field = $algo . '_prediction';
-        $confField = $algo . '_confidence';
-        $label = $prediction->$field;
+        $algo = $request->input('algorithm');
+        if ($algo === 'ensemble') {
+            $label = $prediction->consensus_label;
+            $conf = max(50.0, (float) ($prediction->rf_confidence ?? ($prediction->dt_confidence ?? 80.0)));
+            $agreement = $prediction->agreement_rate ?: '5/5';
+        } else {
+            $field = $algo . '_prediction';
+            $confField = $algo . '_confidence';
+            $label = $prediction->$field;
+            $conf = (float) ($prediction->$confField ?? 50.0);
+            $agreement = null;
+        }
 
         if (! $label) {
             return back()->with('error', 'No prediction available for selected algorithm.');
@@ -363,15 +326,33 @@ class PredictiveAnalyticsController extends Controller
         // Try to find the vehicle by plate number
         $vehicle = Vehicle::where('plate_number', $prediction->vehicle_identifier)->first();
 
+        // Calculate target due date
+        $daysRem = $prediction->rb_days_remaining ?? ($urgency === 'high' ? 0 : ($urgency === 'medium' ? 7 : 30));
+        $predictedDueDate = now()->addDays(max(0, $daysRem))->toDateString();
+
+        $recommendation = ($algo === 'ensemble')
+            ? sprintf('Multi-Model Consensus (%s): %s urgency for %s with %.1f%% confidence.', $agreement ?: '5/5', ucfirst($urgency), $prediction->service_type ?: 'Scheduled Service', $conf)
+            : sprintf('%s algorithm projected %s urgency for %s with %.1f%% confidence.', ucfirst(str_replace('_', ' ', $algo)), ucfirst($urgency), $prediction->service_type ?: 'Scheduled Service', $conf);
+
         $alert = MaintenanceAlert::create([
-            'vehicle_id'         => $vehicle?->id ?? 1, // fallback for synthetic data
-            'source'             => 'predicted',
-            'alert_type'        => $prediction->service_type,
-            'urgency'            => $urgency,
-            'recommendation'    => "ML prediction ({$algo}): {$label} urgency for {$prediction->service_type}. Confidence: {$prediction->$confField}%",
-            'predicted_by_algo'  => $algo,
-            'confidence_score'   => $prediction->$confField,
-            'ml_staff_verified'  => 'pending',
+            'vehicle_id'          => $vehicle?->id ?? 1, // fallback for synthetic benchmark data
+            'source'              => 'predicted',
+            'alert_type'          => $prediction->service_type ?: 'Scheduled Maintenance',
+            'urgency'             => $urgency,
+            'recommendation'      => $recommendation,
+            'predicted_due_date'  => $predictedDueDate,
+            'predicted_by_algo'   => $algo,
+            'confidence_score'    => $conf,
+            'agreement_rate'      => $agreement ?: ($prediction->agreement_rate ?? '5/5'),
+            'ensemble_votes_json' => [
+                'rule_based'          => $prediction->rb_prediction,
+                'decision_tree'       => $prediction->dt_prediction,
+                'random_forest'       => $prediction->rf_prediction,
+                'svm'                 => $prediction->svm_prediction,
+                'logistic_regression' => $prediction->lr_prediction,
+            ],
+            'ml_staff_verified'   => 'pending',
+            'is_read'             => false,
         ]);
 
         $prediction->update([
@@ -395,6 +376,11 @@ class PredictiveAnalyticsController extends Controller
 
     public function verifyPrediction(Request $request, MlPredictionComparison $prediction)
     {
+        $user = Auth::user();
+        if (! $user || ! in_array($user->role, ['admin', 'staff', 'coordinator'], true)) {
+            abort(403, 'Unauthorized to record prediction verification feedback.');
+        }
+
         $request->validate([
             'status' => 'required|in:verified_correct,verified_incorrect',
             'notes'  => 'nullable|string|max:500',
@@ -402,20 +388,32 @@ class PredictiveAnalyticsController extends Controller
 
         $prediction->update([
             'staff_verification_status' => $request->input('status'),
-            'verified_by'   => Auth::id(),
-            'verified_at'   => now(),
-            'staff_notes'   => $request->input('notes'),
+            'verified_by'               => $user->id,
+            'verified_at'               => now(),
+            'staff_notes'               => $request->input('notes'),
         ]);
+
+        // Keep pushed live alert in sync if present
+        if ($prediction->pushedAlert) {
+            $prediction->pushedAlert->update([
+                'ml_staff_verified'      => $request->input('status') === 'verified_correct' ? 'verified' : 'rejected',
+                'ml_verified_by_user_id' => $user->id,
+                'is_verified'            => $request->input('status') === 'verified_correct',
+                'verified_by'            => $user->id,
+                'verified_at'            => now(),
+                'admin_notes'            => $request->input('notes') ?: ($user->name . ' verified prediction ground-truth.'),
+            ]);
+        }
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Prediction verification recorded.',
+                'message' => 'Ground-truth verification recorded.',
                 'data'    => $prediction->fresh()->getExplainability(),
             ]);
         }
 
-        return back()->with('success', 'Prediction verification recorded.');
+        return back()->with('success', 'Ground-truth verification recorded.');
     }
 
     // ─────────────────────────── Delete Dataset ───────────────────────────────
@@ -613,7 +611,7 @@ class PredictiveAnalyticsController extends Controller
         $metrics = $experiment->metrics->keyBy('algorithm');
 
         $data = [];
-        foreach (['rule_based', 'decision_tree', 'random_forest', 'svm', 'logistic_regression'] as $algo) {
+        foreach (['rule_based', 'decision_tree', 'random_forest', 'svm', 'logistic_regression', 'ensemble'] as $algo) {
             $m = $metrics->get($algo);
             $data[$algo] = [
                 'accuracy'            => $m ? round($m->accuracy * 100, 2) : null,

@@ -24,22 +24,22 @@ class MlFeatureSeeder extends Seeder
         $kaggleDataset = MlDataset::firstOrCreate(
             ['name' => 'Kaggle Fleet Maintenance Benchmark'],
             [
-                'file_path'      => 'ml_datasets/kaggle_benchmark_data.csv',
-                'description'    => 'Public benchmark fleet maintenance dataset containing 600 real-world operational records across diverse duty cycles.',
-                'row_count'      => 600,
-                'columns_meta'   => ['features' => ['days_since_service', 'km_since_service', 'interval_km', 'interval_months', 'daily_km', 'terrain_severity', 'total_mileage', 'vehicle_age', 'fuel_type', 'owner_type'], 'target' => 'urgency_label'],
-                'uploaded_by'    => $adminId,
+                'source_type'          => 'kaggle_benchmark',
+                'file_path'            => 'ml_datasets/kaggle_benchmark_data.csv',
+                'row_count'            => 600,
+                'feature_mapping_json' => ['features' => ['days_since_service', 'km_since_service', 'interval_km', 'interval_months', 'daily_km', 'terrain_severity', 'total_mileage', 'vehicle_age', 'fuel_type', 'owner_type'], 'target' => 'urgency_label'],
+                'uploaded_by'          => $adminId,
             ]
         );
 
         MlDataset::firstOrCreate(
             ['name' => 'Synthetic Fleet Wear Simulation'],
             [
-                'file_path'      => 'ml_datasets/synthetic_fleet_data.csv',
-                'description'    => 'Synthetic fleet degradation dataset with simulated boundary noise and stochastic operating conditions.',
-                'row_count'      => 600,
-                'columns_meta'   => ['features' => ['days_since_service', 'km_since_service', 'interval_km', 'interval_months', 'daily_km', 'terrain_severity', 'total_mileage', 'vehicle_age', 'fuel_type', 'owner_type'], 'target' => 'urgency_label'],
-                'uploaded_by'    => $adminId,
+                'source_type'          => 'synthetic',
+                'file_path'            => 'ml_datasets/synthetic_fleet_data.csv',
+                'row_count'            => 600,
+                'feature_mapping_json' => ['features' => ['days_since_service', 'km_since_service', 'interval_km', 'interval_months', 'daily_km', 'terrain_severity', 'total_mileage', 'vehicle_age', 'fuel_type', 'owner_type'], 'target' => 'urgency_label'],
+                'uploaded_by'          => $adminId,
             ]
         );
 

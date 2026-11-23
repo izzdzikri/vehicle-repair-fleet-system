@@ -54,11 +54,18 @@ class AdminController extends Controller
         $mediumAlerts = (int) ($alertCounts->medium_cnt ?? 0);
         $lowAlerts = (int) ($alertCounts->low_cnt ?? 0);
 
-        $upcomingPredictions = MaintenanceAlert::with(['vehicle.owner', 'jobType'])
+        $upcomingPredictions = MaintenanceAlert::with(['vehicle.owner.company', 'jobType', 'verifier'])
             ->where('is_read', false)
             ->orderByRaw("CASE urgency WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderBy('predicted_due_date')
             ->take(6)
+            ->get();
+
+        $topHighUrgencyAlerts = MaintenanceAlert::with(['vehicle.owner.company', 'jobType', 'verifier'])
+            ->where('is_read', false)
+            ->where('urgency', 'high')
+            ->orderBy('predicted_due_date')
+            ->take(5)
             ->get();
 
         // Calculate fleet health index percentage
@@ -94,6 +101,7 @@ class AdminController extends Controller
             'urgentAlerts' => $urgentAlerts,
             'mediumAlerts' => $mediumAlerts,
             'lowAlerts' => $lowAlerts,
+            'topHighUrgencyAlerts' => $topHighUrgencyAlerts,
             'upcomingPredictions' => $upcomingPredictions,
             'fleetHealthScore' => $fleetHealthScore,
             'vehiclesAtRisk' => $vehiclesAtRisk,

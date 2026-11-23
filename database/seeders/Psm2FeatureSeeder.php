@@ -542,11 +542,7 @@ class Psm2FeatureSeeder extends Seeder
         // Run the prediction scanner dynamically across the 34 vehicles and 100+ trip logs!
         // Then verify and override a subset to populate the admin proofread screen.
         // ----------------------------------------------------------------
-        if (DB::getDriverName() === 'sqlite') {
-            DB::table('maintenance_alerts')->delete();
-        } else {
-            DB::table('maintenance_alerts')->truncate();
-        }
+        DB::table('maintenance_alerts')->delete();
 
         // Run the prediction engine
         $predictionService = app(MaintenancePredictionService::class);

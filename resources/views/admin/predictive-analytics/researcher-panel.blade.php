@@ -778,18 +778,45 @@
                                 Push →
                             </button>
                             <div x-show="open" @click.outside="open = false"
-                                 class="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-30 w-44 py-1 text-left"
+                                 class="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-30 w-56 py-1 text-left"
                                  style="display:none">
                                 <div class="px-3 py-1 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase">
                                     Push Selected Model
                                 </div>
+
+                                {{-- 1. Push Ensemble Consensus --}}
+                                @if($pred->consensus_label)
+                                <form action="{{ route('admin.predictive-analytics.predictions.push', $pred) }}" method="POST"
+                                      onsubmit="return confirmSubmit(event, {
+                                          title: 'Push Consensus to Maintenance Alerts?',
+                                          message: 'Push vehicle {{ $pred->vehicle_identifier }} with consensus urgency {{ $pred->consensus_label }} (agreement {{ $pred->agreement_rate ?: '5/5' }}) into live workshop alerts?',
+                                          confirmLabel: 'Push Alert'
+                                      })">
+                                    @csrf
+                                    <input type="hidden" name="algorithm" value="ensemble">
+                                    <button type="submit" class="w-full text-left px-3 py-2 text-xs bg-indigo-50/60 hover:bg-indigo-100 text-indigo-800 font-bold transition flex items-center justify-between border-b border-gray-100">
+                                        <span class="flex items-center gap-1.5">
+                                            <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-600"></i>
+                                            <span>Ensemble Consensus</span>
+                                        </span>
+                                        <span class="font-mono text-xs px-1.5 py-0.5 rounded {{ $pred->consensus_label === 'HIGH' ? 'bg-rose-100 text-rose-700' : ($pred->consensus_label === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700') }}">{{ $pred->consensus_label }}</span>
+                                    </button>
+                                </form>
+                                @endif
+
+                                {{-- 2. Individual Model Push Options --}}
                                 @foreach(['random_forest'=>'Random Forest','decision_tree'=>'Decision Tree','svm'=>'SVM (RBF)','logistic_regression'=>'Logistic Regression','rule_based'=>'Rule-Based'] as $k => $name)
                                 @php $field = $k . '_prediction'; $cField = $k . '_confidence'; @endphp
                                 @if($pred->$field)
-                                <form action="{{ route('admin.predictive-analytics.predictions.push', $pred) }}" method="POST">
+                                <form action="{{ route('admin.predictive-analytics.predictions.push', $pred) }}" method="POST"
+                                      onsubmit="return confirmSubmit(event, {
+                                          title: 'Push {{ $name }} to Maintenance Alerts?',
+                                          message: 'Push vehicle {{ $pred->vehicle_identifier }} with {{ $name }} predicted urgency {{ $pred->$field }} ({{ round($pred->$cField) }}% confidence) into live workshop alerts?',
+                                          confirmLabel: 'Push Alert'
+                                      })">
                                     @csrf
                                     <input type="hidden" name="algorithm" value="{{ $k }}">
-                                    <button type="submit" class="w-full text-left px-3 py-1.5 text-xs hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 transition flex items-center justify-between">
+                                    <button type="submit" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700 hover:text-indigo-700 transition flex items-center justify-between">
                                         <span>{{ $name }}</span>
                                         <span class="font-mono text-xs font-bold text-gray-500">{{ $pred->$field }} ({{ round($pred->$cField) }}%)</span>
                                     </button>
