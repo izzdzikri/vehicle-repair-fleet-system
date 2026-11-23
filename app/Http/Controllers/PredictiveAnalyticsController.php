@@ -213,7 +213,10 @@ class PredictiveAnalyticsController extends Controller
         $rows = max(100, min($rows, 2000));
 
         $noise = (float) $request->input('noise', 0.08);
-        $noise = max(0.01, min($noise, 0.50));
+        if ($noise > 1.0) {
+            $noise = $noise / 100.0;
+        }
+        $noise = max(0.0, min($noise, 0.50));
 
         $missing = (float) $request->input('missing', 0.0);
         $missing = max(0.0, min($missing, 0.40));

@@ -339,7 +339,7 @@
 
                 {{-- Synthetic Generator Card with Noise Selector --}}
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-5"
-                     x-data="{ noise: 0.08, rows: 600, missing: 0.0, bias: 'none', seed: 42, showAdvanced: false }">
+                     x-data="{ noise: 8, rows: 600, missing: 0.0, bias: 'none', seed: 42, showAdvanced: false }">
                     <div class="flex items-center gap-3 mb-4">
                         <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 shrink-0">
                             <i data-lucide="wand-sparkles" class="w-5 h-5"></i>
@@ -360,46 +360,57 @@
                                     <i data-lucide="activity" class="w-3.5 h-3.5 text-violet-600"></i>
                                     Telemetry Noise Jitter
                                 </label>
-                                <span class="text-xs font-bold px-2 py-0.5 rounded-full"
-                                      :class="noise <= 0.05 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : (noise <= 0.10 ? 'bg-violet-100 text-violet-800 border border-violet-200' : (noise <= 0.18 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-rose-100 text-rose-800 border border-rose-200'))"
-                                      x-text="Math.round(noise * 100) + '% — ' + (noise <= 0.05 ? 'Clean Sensor' : (noise <= 0.10 ? 'Standard Benchmark' : (noise <= 0.18 ? 'Harsh Vibration' : 'Severe Noise')))">
+                                <span class="text-xs font-bold px-2 py-0.5 rounded-full transition"
+                                      :class="noise <= 3 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : (noise <= 10 ? 'bg-violet-100 text-violet-800 border border-violet-200' : (noise <= 18 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-rose-100 text-rose-800 border border-rose-200'))"
+                                      x-text="noise + '% — ' + (noise <= 3 ? 'Clean Sensor' : (noise <= 10 ? 'Standard Benchmark' : (noise <= 18 ? 'Harsh Vibration' : 'Severe Noise')))">
                                 </span>
                             </div>
 
                             {{-- Range Slider --}}
                             <div>
-                                <input type="range" min="0.01" max="0.35" step="0.01" x-model.number="noise" name="noise"
+                                <input type="range" min="0" max="30" step="1" x-model.number="noise"
                                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-violet-600">
-                                <div class="flex justify-between text-[10px] text-gray-400 font-medium mt-1">
-                                    <span>1% (Clean)</span>
-                                    <span>8% (Default)</span>
-                                    <span>15% (Harsh)</span>
-                                    <span>35% (Extreme)</span>
+                                <input type="hidden" name="noise" :value="(noise / 100).toFixed(2)">
+                                <div class="relative h-4 text-[10px] text-gray-400 font-medium mt-1 select-none">
+                                    <span class="absolute left-0 cursor-pointer hover:text-violet-600 transition"
+                                          :class="noise === 0 ? 'text-violet-700 font-bold' : ''"
+                                          @click="noise = 0">0% (Clean)</span>
+                                    <span class="absolute -translate-x-1/2 cursor-pointer hover:text-violet-600 transition"
+                                          style="left: 26.67%"
+                                          :class="noise === 8 ? 'text-violet-700 font-bold' : ''"
+                                          @click="noise = 8">8% (Default)</span>
+                                    <span class="absolute -translate-x-1/2 cursor-pointer hover:text-violet-600 transition"
+                                          style="left: 50%"
+                                          :class="noise === 15 ? 'text-violet-700 font-bold' : ''"
+                                          @click="noise = 15">15% (Harsh)</span>
+                                    <span class="absolute right-0 cursor-pointer hover:text-violet-600 transition"
+                                          :class="noise === 30 ? 'text-violet-700 font-bold' : ''"
+                                          @click="noise = 30">30% (Severe)</span>
                                 </div>
                             </div>
 
                             {{-- Quick Preset Pills --}}
                             <div class="flex items-center gap-1.5 pt-1 flex-wrap">
                                 <span class="text-[11px] font-semibold text-gray-500 mr-1">Presets:</span>
-                                <button type="button" @click="noise = 0.03"
+                                <button type="button" @click="noise = 0"
                                         class="px-2 py-1 rounded-md text-xs font-semibold transition"
-                                        :class="noise === 0.03 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
-                                    Clean 3%
+                                        :class="noise === 0 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                    Clean 0%
                                 </button>
-                                <button type="button" @click="noise = 0.08"
+                                <button type="button" @click="noise = 8"
                                         class="px-2 py-1 rounded-md text-xs font-semibold transition"
-                                        :class="noise === 0.08 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                        :class="noise === 8 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
                                     Default 8%
                                 </button>
-                                <button type="button" @click="noise = 0.15"
+                                <button type="button" @click="noise = 15"
                                         class="px-2 py-1 rounded-md text-xs font-semibold transition"
-                                        :class="noise === 0.15 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                        :class="noise === 15 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
                                     Harsh 15%
                                 </button>
-                                <button type="button" @click="noise = 0.25"
+                                <button type="button" @click="noise = 30"
                                         class="px-2 py-1 rounded-md text-xs font-semibold transition"
-                                        :class="noise === 0.25 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
-                                    Severe 25%
+                                        :class="noise === 30 ? 'bg-violet-600 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'">
+                                    Severe 30%
                                 </button>
                             </div>
                         </div>
@@ -472,7 +483,7 @@
                         <button type="submit"
                                 class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow-xs">
                             <i data-lucide="cpu" class="w-4 h-4"></i>
-                            <span>Generate Datasets (<span x-text="rows"></span> rows, <span x-text="Math.round(noise * 100) + '% noise'"></span>)</span>
+                            <span>Generate Datasets (<span x-text="rows"></span> rows, <span x-text="noise + '% noise'"></span>)</span>
                         </button>
                         <p class="text-[11px] text-gray-400 text-center">
                             Produces 1&times; Synthetic system dataset + 1&times; Kaggle benchmark dataset with selected noise.
