@@ -51,7 +51,7 @@
 {{-- Printable Report Sheet Container --}}
 <div class="print-sheet bg-white rounded-2xl border border-gray-200/90 shadow-sm p-8 space-y-8">
 
-    {{-- Header with Workshop Branding & Supervisor Endorsement --}}
+    {{-- Header with Workshop Branding --}}
     <div class="border-b-2 border-slate-900 pb-6">
         <div class="flex justify-between items-start flex-wrap gap-6">
             <div class="max-w-xl">
@@ -72,7 +72,7 @@
                         <span class="font-semibold text-gray-700">Email:</span> {{ $workshop['email'] }}
                     </p>
                     <p class="mt-1 text-[11px] text-gray-500 font-mono">
-                        Reg No: {{ $workshop['reg_no'] }} &bull; Academic Supervision: <span class="font-semibold text-gray-800">{{ $workshop['supervisor'] }}</span>
+                        Reg No: {{ $workshop['reg_no'] }}
                     </p>
                 </div>
             </div>
@@ -399,7 +399,7 @@
         @endif
     </div>
 
-    {{-- Official Sign-Off & Supervisor Endorsement Block --}}
+    {{-- Official Sign-Off Block --}}
     <div class="pt-8 border-t-2 border-gray-200">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs text-gray-600">
             <div>
@@ -409,8 +409,8 @@
                     Model ensemble incorporates Decision Trees, Random Forests, Support Vector Machines, Logistic Regression, and Expert Rule Baselines.
                 </p>
                 <div class="mt-4 pt-3 border-t border-gray-200">
-                    <p class="font-semibold text-gray-900">Dr. Nureize</p>
-                    <p class="text-[11px] text-gray-500">Academic & Technical Project Supervisor</p>
+                    <p class="font-semibold text-gray-900">Diagnostic Intelligence Unit</p>
+                    <p class="text-[11px] text-gray-500">Automated Vehicle Telemetry & Health Audit</p>
                 </div>
             </div>
 

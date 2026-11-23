@@ -105,7 +105,8 @@ class CorporateFleetPackageTest extends TestCase
         $response->assertSee('Fleet Health & Predictive Maintenance Report', false);
         $response->assertSee('Swift Haulage Logistics Sdn Bhd');
         $response->assertSee('TERAJU SETIA ENTERPRISE');
-        $response->assertSee('Dr. Nureize');
+        $response->assertSee('Diagnostic Intelligence Unit');
+        $response->assertDontSee('Dr. Nureize');
         $response->assertSee('SWIFT-8001');
         $response->assertSee('High Urgency');
         $response->assertSee('Print Official Report');
