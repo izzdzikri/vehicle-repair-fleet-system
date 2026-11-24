@@ -45,7 +45,7 @@
     $algos = [
         'rule_based'          => ['icon' => 'ruler',        'label' => 'Rule-Based Baseline',         'color' => 'violet'],
         'decision_tree'       => ['icon' => 'git-branch',   'label' => 'Decision Tree (CART)',        'color' => 'sky'],
-        'random_forest'       => ['icon' => 'trees',        'label' => 'Random Forest (100 Trees)',   'color' => 'emerald'],
+        'random_forest'       => ['icon' => 'trees',        'label' => 'Random Forest (' . config('prediction.random_forest.n_estimators', 30) . ' Trees)', 'color' => 'emerald'],
         'svm'                 => ['icon' => 'circle-dot',   'label' => 'Support Vector Machine (RBF)','color' => 'amber'],
         'logistic_regression' => ['icon' => 'trending-up',  'label' => 'Logistic Regression (lbfgs)', 'color' => 'rose'],
     ];
@@ -99,7 +99,7 @@
             <div class="flex items-center gap-3 text-sm text-gray-600 mt-1">
                 <span>Evaluated: <strong class="text-gray-900 font-mono">{{ number_format($confStats['total_rows'] ?? 0) }}</strong> test rows</span>
                 <span>•</span>
-                <span>Cross-Validation: <strong class="text-gray-900 font-mono">{{ $selectedExperiment->cv_folds }}-Fold Stratified</strong></span>
+                <span>Validation: <strong class="text-gray-900 font-mono">Hold-out split (80/20, shuffled)</strong></span>
                 <span>•</span>
                 <span>Generated: <strong class="text-gray-700">{{ $selectedExperiment->created_at->format('d M Y, H:i') }}</strong></span>
             </div>
@@ -194,7 +194,6 @@
         </div>
         <div class="mt-2.5 pt-2 border-t border-gray-100 text-xs text-gray-600 font-medium flex justify-between">
             <span>Accuracy: <strong class="text-gray-900">{{ isset($metrics['decision_tree']) ? round($metrics['decision_tree']->accuracy * 100, 1) . '%' : '—' }}</strong></span>
-            <span>5-Fold CV: <strong class="text-sky-600">{{ isset($summaryModels['decision_tree']['cv_accuracy']) ? round($summaryModels['decision_tree']['cv_accuracy'] * 100, 1) . '%' : '—' }}</strong></span>
         </div>
     </div>
 
@@ -209,7 +208,7 @@
                 Random Forest (Ensemble)
             </span>
             <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                100 Trees
+                {{ config('prediction.random_forest.n_estimators', 30) }} Trees
             </span>
         </div>
         <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Average Confidence</p>
@@ -219,7 +218,6 @@
         </div>
         <div class="mt-2.5 pt-2 border-t border-gray-100 text-xs text-gray-600 font-medium flex justify-between">
             <span>Accuracy: <strong class="text-emerald-700 font-bold">{{ isset($metrics['random_forest']) ? round($metrics['random_forest']->accuracy * 100, 1) . '%' : '—' }}</strong></span>
-            <span>5-Fold CV: <strong class="text-emerald-700">{{ isset($summaryModels['random_forest']['cv_accuracy']) ? round($summaryModels['random_forest']['cv_accuracy'] * 100, 1) . '%' : '—' }}</strong></span>
         </div>
     </div>
 
@@ -234,7 +232,7 @@
                 SVM (RBF Kernel)
             </span>
             <span class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
-                Platt
+                Softmax margins
             </span>
         </div>
         <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Average Confidence</p>
@@ -244,7 +242,6 @@
         </div>
         <div class="mt-2.5 pt-2 border-t border-gray-100 text-xs text-gray-600 font-medium flex justify-between">
             <span>Accuracy: <strong class="text-gray-900">{{ isset($metrics['svm']) ? round($metrics['svm']->accuracy * 100, 1) . '%' : '—' }}</strong></span>
-            <span>5-Fold CV: <strong class="text-amber-600">{{ isset($summaryModels['svm']['cv_accuracy']) ? round($summaryModels['svm']['cv_accuracy'] * 100, 1) . '%' : '—' }}</strong></span>
         </div>
     </div>
 
@@ -269,7 +266,6 @@
         </div>
         <div class="mt-2.5 pt-2 border-t border-gray-100 text-xs text-gray-600 font-medium flex justify-between">
             <span>Accuracy: <strong class="text-gray-900">{{ isset($metrics['logistic_regression']) ? round($metrics['logistic_regression']->accuracy * 100, 1) . '%' : '—' }}</strong></span>
-            <span>5-Fold CV: <strong class="text-rose-600">{{ isset($summaryModels['logistic_regression']['cv_accuracy']) ? round($summaryModels['logistic_regression']['cv_accuracy'] * 100, 1) . '%' : '—' }}</strong></span>
         </div>
     </div>
 </div>
@@ -439,7 +435,7 @@
                 <span class="w-2 h-2 rounded-full bg-violet-400"></span> 1. Baseline Heuristic Rigidity
             </h4>
             <p class="text-slate-400">
-                The deterministic formula calculates exact threshold cutoffs (d ≤ 0, d ≤ 14). Under real-world wear noise and stochastic trip patterns, fixed boundaries lead to false-positive over-servicing or missed critical urgency (Accuracy: ~77.5%).
+                The deterministic formula calculates exact threshold cutoffs (d ≤ 0, d ≤ 14). Under real-world wear noise and stochastic trip patterns, fixed boundaries lead to false-positive over-servicing or missed critical urgency@if(isset($metrics['rule_based'])) (Evaluated Accuracy: {{ round($metrics['rule_based']->accuracy * 100, 1) }}%)@endif.
             </p>
         </div>
 
@@ -448,7 +444,7 @@
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 2. Random Forest Bagging
             </h4>
             <p class="text-slate-400">
-                100 decision trees trained on bootstrap samples with feature subspacing (√p) effectively average out sensor variance and capture non-linear degradation interactions between terrain severity and engine daily km without circular leakage (Accuracy: ~92.5%, OOB: ~92.1%).
+                {{ config('prediction.random_forest.n_estimators', 30) }} decision trees trained on bootstrap samples with feature subspacing (√p) effectively average out sensor variance and capture non-linear degradation interactions between terrain severity and engine daily km without circular leakage@if(isset($metrics['random_forest'])) (Evaluated Accuracy: {{ round($metrics['random_forest']->accuracy * 100, 1) }}%, F1-Macro: {{ round($metrics['random_forest']->f1_macro * 100, 1) }}%)@else (demonstrating empirical accuracy gains over single-tree baselines)@endif.
             </p>
         </div>
 
@@ -1110,7 +1106,7 @@
                                 <div class="flex items-center justify-between pb-2 mb-2 border-b border-emerald-100">
                                     <span class="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
                                         <i data-lucide="trees" class="w-4 h-4 text-emerald-700"></i>
-                                        3. Random Forest (100 Trees)
+                                        3. Random Forest ({{ config('prediction.random_forest.n_estimators', 30) }} Trees)
                                     </span>
                                     <div class="flex items-center gap-1.5">
                                         <span class="px-2 py-0.5 rounded-full text-xs font-bold border"
@@ -1135,7 +1131,7 @@
                             </div>
                             <div class="pt-2.5 mt-2.5 border-t border-emerald-100/80 text-2xs text-emerald-800 flex items-center justify-between">
                                 <span>Bootstrap Bagging + Feature Subspacing</span>
-                                <span class="font-mono font-bold">100 Estimators</span>
+                                <span class="font-mono font-bold">{{ config('prediction.random_forest.n_estimators', 30) }} Estimators</span>
                             </div>
                         </div>
 
@@ -1169,7 +1165,7 @@
                                 </div>
                             </div>
                             <div class="pt-2.5 mt-2.5 border-t border-amber-100/80 text-2xs text-amber-800 flex items-center justify-between">
-                                <span>Platt Logistic Sigmoid Calibration</span>
+                                <span>Softmax Margin Probability Calibration</span>
                                 <span class="font-mono font-bold">Infinite-Dim Hilbert Space</span>
                             </div>
                         </div>
@@ -1521,8 +1517,8 @@
                                 <td class="px-3 py-2.5 font-sans text-gray-500">
                                     @if($key === 'rule_based') Deterministic d = min(d_km, d_time)
                                     @elseif($key === 'decision_tree') CART Recursive Binary Partitioning (Gini)
-                                    @elseif($key === 'random_forest') 100-Tree Bootstrap Bagging Ensemble
-                                    @elseif($key === 'svm') RBF Kernel Hyperplane Separation + Platt Scaling
+                                    @elseif($key === 'random_forest') {{ config('prediction.random_forest.n_estimators', 30) }}-Tree Bootstrap Bagging Ensemble
+                                    @elseif($key === 'svm') RBF Kernel Hyperplane Separation + Softmax Margins
                                     @elseif($key === 'logistic_regression') Multinomial L-BFGS Log-Odds + Softmax
                                     @endif
                                 </td>

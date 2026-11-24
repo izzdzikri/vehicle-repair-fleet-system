@@ -228,7 +228,6 @@ class ClientController extends Controller
             'name'        => 'Teraju Setia Enterprise',
             'tagline'     => 'Commercial Fleet Maintenance & Vehicle Repair Specialists',
             'reg_no'      => 'TSE-2024-KPT/FYP',
-            'supervisor'  => 'Dr. Nureize (Technical Supervisor)',
             'address'     => 'Kawasan Perindustrian Ringan Batu 3, Jalan Kapar, 41400 Klang, Selangor',
             'phone'       => '+60 3-3344 5566 / +60 12-345 6789',
             'email'       => 'fleet@terajusetia.com.my',
