@@ -124,14 +124,14 @@
             {{-- High Urgency --}}
             <div class="bg-rose-50/70 rounded-xl p-4 border border-rose-200/80">
                 <span class="text-[10px] font-bold text-rose-700 uppercase tracking-wider block">High Urgency</span>
-                <p class="text-2xl font-black text-rose-700 tracking-tight mt-1">{{ $highUrgencyAlerts }}</p>
+                <p class="text-2xl font-black text-rose-700 tracking-tight mt-1">{{ $highUrgencyAlerts->count() }}</p>
                 <span class="text-[11px] text-rose-600 block mt-0.5">Immediate repair needed</span>
             </div>
 
             {{-- Medium Urgency --}}
             <div class="bg-amber-50/70 rounded-xl p-4 border border-amber-200/80">
                 <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">Medium Urgency</span>
-                <p class="text-2xl font-black text-amber-700 tracking-tight mt-1">{{ $mediumUrgencyAlerts }}</p>
+                <p class="text-2xl font-black text-amber-700 tracking-tight mt-1">{{ $mediumUrgencyAlerts->count() }}</p>
                 <span class="text-[11px] text-amber-600 block mt-0.5">Schedule within 14 days</span>
             </div>
 
