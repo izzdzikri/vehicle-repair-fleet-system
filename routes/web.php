@@ -6,6 +6,7 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CompanyDocumentController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\FeedbackController;
@@ -101,6 +102,26 @@ Route::middleware(['auth', 'permission:invoice.manage'])->prefix('staff-manageme
 
 // Printable Payslip Voucher (Admin, Accountant, or the Employee themselves)
 Route::middleware(['auth'])->get('/staff-management/salary/{salaryPayment}/payslip', [StaffManagementController::class, 'payslip'])->name('staff-management.salary.payslip');
+
+// ----------------------------------------------------------------
+// Document Management Hub
+// Read-only access: Admin (implicitly) + Staff holding 'documents.view'.
+// Corporate / Individual users and staff without permission get 403.
+// ----------------------------------------------------------------
+Route::middleware(['auth', 'permission:documents.view'])->prefix('admin/documents')->group(function () {
+    Route::get('/', [CompanyDocumentController::class, 'index'])->name('admin.documents.index');
+    Route::get('/{document}', [CompanyDocumentController::class, 'show'])->name('admin.documents.show');
+    Route::get('/{document}/preview', [CompanyDocumentController::class, 'preview'])->name('admin.documents.preview');
+    Route::get('/{document}/download', [CompanyDocumentController::class, 'download'])->name('admin.documents.download');
+});
+
+// Write actions: strictly Admin only (staff, corporate, individual get 403)
+Route::middleware(['auth', 'role:admin'])->prefix('admin/documents')->group(function () {
+    Route::post('/', [CompanyDocumentController::class, 'store'])->name('admin.documents.store');
+    Route::put('/{document}', [CompanyDocumentController::class, 'update'])->name('admin.documents.update');
+    Route::post('/{document}/replace', [CompanyDocumentController::class, 'replaceFile'])->name('admin.documents.replace');
+    Route::delete('/{document}', [CompanyDocumentController::class, 'destroy'])->name('admin.documents.destroy');
+});
 
 // ----------------------------------------------------------------
 // Admin

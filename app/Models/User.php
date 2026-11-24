@@ -30,6 +30,7 @@ class User extends Authenticatable
         'pricing.manage' => 'Manage Pricing (job types & part prices)',
         'invoice.manage' => 'Generate Invoices & Record Payments',
         'job_cards.manage_all' => 'Edit Any Job Card (not just their own assigned jobs)',
+        'documents.view' => 'View Company Documents (SSM, delivery orders)',
     ];
 
     protected $fillable = [
@@ -112,6 +113,11 @@ class User extends Authenticatable
     public function salaryPayments()
     {
         return $this->hasMany(SalaryPayment::class, 'staff_id');
+    }
+
+    public function companyDocuments()
+    {
+        return $this->hasMany(CompanyDocument::class, 'uploaded_by');
     }
 
     // ----------------------------------------------------------------

@@ -137,14 +137,18 @@
                 @if(auth()->user()->role === 'admin')
                     @php
                         $sidebarCounts = \Illuminate\Support\Facades\Cache::remember('sidebar_counts_admin', 30, function () {
-                            return [
-                                'pending_appts'    => \App\Models\Appointment::where('status','pending')->count(),
-                                'low_stock'        => \App\Models\SparePart::whereColumn('stock','<=','min_stock')->count(),
-                                'pending_requests' => \App\Models\AccountRequest::where('status','pending')->count(),
-                                'draft_pos'        => \App\Models\PurchaseOrder::where('status','draft')->count(),
-                                'pending_leave'    => \App\Models\LeaveRequest::where('status','pending')->count(),
-                                'urgent_alerts'    => \App\Models\MaintenanceAlert::where('urgency','high')->where('is_read', false)->count(),
-                            ];
+                            $today = \Carbon\Carbon::today()->toDateString();
+                            $in30Days = \Carbon\Carbon::today()->addDays(30)->toDateString();
+                            return (array) \Illuminate\Support\Facades\DB::selectOne("
+                                SELECT
+                                    (SELECT COUNT(*) FROM appointments WHERE status = 'pending') as pending_appts,
+                                    (SELECT COUNT(*) FROM spare_parts WHERE stock <= min_stock) as low_stock,
+                                    (SELECT COUNT(*) FROM account_requests WHERE status = 'pending') as pending_requests,
+                                    (SELECT COUNT(*) FROM purchase_orders WHERE status = 'draft') as draft_pos,
+                                    (SELECT COUNT(*) FROM leave_requests WHERE status = 'pending') as pending_leave,
+                                    (SELECT COUNT(*) FROM maintenance_alerts WHERE urgency = 'high' AND is_read = 0) as urgent_alerts,
+                                    (SELECT COUNT(*) FROM company_documents WHERE expiry_date IS NOT NULL AND expiry_date >= ? AND expiry_date <= ? AND deleted_at IS NULL) as expiring_docs
+                            ", [$today, $in30Days]);
                         });
                     @endphp
 
@@ -181,6 +185,7 @@
                     {!! $link('/admin/users',           'users',            'Users',             'admin/users*') !!}
                     {!! $link('/admin/staff-management/roster', 'user-cog', 'Staff Management', 'admin/staff-management*', $sidebarCounts['pending_leave'] ?: null) !!}
                     {!! $link('/admin/companies',       'building-2',       'Companies',         'admin/companies*') !!}
+                    {!! $link('/admin/documents',       'file-text',        'Document Hub',      'admin/documents*', $sidebarCounts['expiring_docs'] ?: null) !!}
                     {!! $link('/admin/account-requests','user-x',           'Account Requests',  'admin/account-requests*', $sidebarCounts['pending_requests'] ?: null) !!}
 
                     {!! $section('System') !!}
@@ -208,6 +213,9 @@
                     {!! $link('/staff/invoices',        'receipt',          'Invoices',          'staff/invoices*') !!}
                     @if(auth()->user()->hasPermission('invoice.manage'))
                     {!! $link('/staff-management/salary', 'wallet',         'Salary Payments',   'staff-management/salary') !!}
+                    @endif
+                    @if(auth()->user()->hasPermission('documents.view'))
+                    {!! $link('/admin/documents',       'file-text',        'Document Hub',      'admin/documents*') !!}
                     @endif
 
                     {!! $section('My Account') !!}
@@ -340,7 +348,7 @@
                     'clock-in' => 'Clock In', 'clock-out' => 'Clock Out', 'leave' => 'Leave Requests',
                     'performance' => 'Performance', 'email' => 'Email Report', 'salary' => 'Salary', 'suppliers' => 'Suppliers',
                     'purchase-orders' => 'Purchase Orders', 'order' => 'Order', 'receive' => 'Receive',
-                    'company' => 'Company', 'profile' => 'Profile', 'activity-log' => 'Activity Log',
+                    'company' => 'Company', 'documents' => 'Document Hub', 'profile' => 'Profile', 'activity-log' => 'Activity Log',
                     'capacity' => 'Booking Capacity', 'feedback' => 'Feedback',
                     'notifications' => 'Notifications', 'go' => 'Notification', 'read-all' => 'Mark All Read',
                 ];
@@ -403,10 +411,14 @@
 
                     {{-- Notifications bell (admin — surfaces the same counts that badge the sidebar) --}}
                     @if(auth()->user()->role === 'admin')
+                    @php
+                        $adminNotifications = \App\Models\Notification::where('user_id', auth()->id())->latest()->take(6)->get();
+                        $adminUnreadNotifications = $adminNotifications->where('is_read', false)->count();
+                        $totalAlerts = collect($sidebarCounts ?? [])->sum() + $adminUnreadNotifications;
+                    @endphp
                     <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.stop="open = false">
                         <button @click="open = !open" class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="Notifications">
                             <i data-lucide="bell" class="w-5 h-5"></i>
-                            @php $totalAlerts = collect($sidebarCounts ?? [])->sum(); @endphp
                             @if($totalAlerts > 0)
                             <span class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] leading-none rounded-full w-4 h-4 flex items-center justify-center font-semibold">
                                 {{ $totalAlerts > 9 ? '9+' : $totalAlerts }}
@@ -414,7 +426,7 @@
                             @endif
                         </button>
                         <div x-show="open" x-transition
-                            class="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border py-2 z-30"
+                            class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border py-2 z-30"
                             style="display:none">
                             <p class="px-4 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Needs Attention</p>
                             @if(!empty($sidebarCounts['pending_appts']))
@@ -453,8 +465,40 @@
                                 <span class="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['urgent_alerts'] }}</span>
                             </a>
                             @endif
+                            @if(!empty($sidebarCounts['expiring_docs']))
+                            <a href="/admin/documents?expiry_status=expiring_soon" class="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <span>Expiring documents</span>
+                                <span class="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">{{ $sidebarCounts['expiring_docs'] }}</span>
+                            </a>
+                            @endif
                             @if($totalAlerts === 0)
                             <p class="px-4 py-3 text-sm text-gray-400">You're all caught up 🎉</p>
+                            @endif
+
+                            @if($adminNotifications->isNotEmpty())
+                            <div class="border-t border-gray-100 my-1 pt-1">
+                                <div class="flex justify-between items-center px-4 py-1.5">
+                                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Notifications</p>
+                                    @if($adminUnreadNotifications > 0)
+                                    <form method="POST" action="/notifications/read-all">
+                                        @csrf
+                                        <button class="text-xs text-blue-600 hover:underline">Mark all read</button>
+                                    </form>
+                                    @endif
+                                </div>
+                                @foreach($adminNotifications as $n)
+                                <a href="/notifications/{{ $n->id }}/go" class="block px-4 py-2 hover:bg-gray-50 {{ !$n->is_read ? 'bg-blue-50/50' : '' }}">
+                                    <div class="flex items-start gap-2">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ !$n->is_read ? 'bg-blue-500' : '' }} mt-1.5 shrink-0"></span>
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-medium text-gray-800 truncate">{{ $n->title }}</p>
+                                            <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-1">{{ $n->message }}</p>
+                                            <p class="text-[10px] text-gray-400 mt-0.5">{{ $n->created_at->diffForHumans() }}</p>
+                                        </div>
+                                    </div>
+                                </a>
+                                @endforeach
+                            </div>
                             @endif
                         </div>
                     </div>

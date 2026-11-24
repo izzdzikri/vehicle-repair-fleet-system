@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             FreshSeeder::class,
             Psm2FeatureSeeder::class,
             MlFeatureSeeder::class,
+            CompanyDocumentSeeder::class,
         ]);
     }
 }
